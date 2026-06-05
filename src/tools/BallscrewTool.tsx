@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Field, Stat, TextInput, fmtNum } from "../components/ui";
+import { LineChart, PALETTE, type Pt } from "../components/charts";
 
 export default function BallscrewTool() {
   const [lead, setLead] = useState("10"); // mm/rev (스크류 1회전 이송)
@@ -19,6 +20,16 @@ export default function BallscrewTool() {
   const screwRpm = L === 0 ? 0 : (v / L) * 60; // 스크류 회전수
   const motorRpm = screwRpm * i; // 모터 회전수
   const pulseFreq = resolutionMm === 0 ? 0 : v / resolutionMm; // pulse/s (Hz)
+
+  // 속도 vs 모터RPM / 펄스주파수(kHz) 곡선
+  const vMax = Math.max(v * 1.5, 100);
+  const rpmLine: Pt[] = [];
+  const freqLine: Pt[] = [];
+  for (let s = 0; s <= vMax; s += vMax / 40) {
+    const sRpm = L === 0 ? 0 : (s / L) * 60;
+    rpmLine.push({ x: s, y: sRpm * i });
+    freqLine.push({ x: s, y: (resolutionMm === 0 ? 0 : s / resolutionMm) / 1000 });
+  }
 
   return (
     <div className="space-y-5">
@@ -74,6 +85,23 @@ export default function BallscrewTool() {
           accent
         />
         <Stat label="펄스 주파수" value={fmtNum(pulseFreq, 0)} unit="pps" />
+      </div>
+
+      <div>
+        <div className="mb-2 text-sm font-semibold text-zinc-700 dark:text-zinc-300">
+          이송속도에 따른 모터 RPM · 펄스주파수
+        </div>
+        <LineChart
+          series={[
+            { points: rpmLine, color: PALETTE.indigo, label: "모터 RPM" },
+            { points: freqLine, color: PALETTE.emerald, label: "펄스주파수 (kHz)" },
+          ]}
+          xMin={0}
+          xMax={vMax}
+          markerX={v}
+          xUnit="이송속도 (mm/s)"
+          height={220}
+        />
       </div>
 
       <p className="text-xs text-zinc-500">

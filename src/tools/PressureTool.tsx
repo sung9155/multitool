@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Field, Stat, TextInput, fmtNum } from "../components/ui";
+import { Gauge, PALETTE } from "../components/charts";
 
 // 각 단위 → Pa 변환계수
 const TO_PA: Record<string, number> = {
@@ -58,6 +59,24 @@ export default function PressureTool() {
           />
         ))}
       </div>
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Gauge
+          value={(pa / 1_000_000 / 1) * 100}
+          label="공압 표준 (0~1 MPa 기준)"
+          color={
+            pa <= 1_000_000 ? PALETTE.emerald : pa <= 1_600_000 ? PALETTE.amber : PALETTE.rose
+          }
+        />
+        <Gauge
+          value={(pa / 1_000_000 / 10) * 100}
+          label="유압 표준 (0~10 MPa 기준)"
+          color={PALETTE.sky}
+        />
+      </div>
+      <p className="text-xs text-zinc-500">
+        게이지는 일반 공압(≤1 MPa) · 유압(≤10 MPa) 범위 대비 현재 압력 위치.
+      </p>
     </div>
   );
 }

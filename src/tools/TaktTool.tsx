@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Field, Stat, TextInput, fmtNum } from "../components/ui";
+import { Bars, PALETTE } from "../components/charts";
 
 export default function TaktTool() {
   const [ct, setCt] = useState("4.5"); // 사이클타임 s/ea
@@ -69,6 +70,20 @@ export default function TaktTool() {
           <Stat
             label="현재 CT 여유"
             value={CT <= taktNeeded ? "충족 ✓" : "부족 ✗"}
+          />
+        </div>
+        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+          <Bars
+            items={[
+              { label: "사이클타임 CT", value: CT, display: fmtNum(CT, 2) + "s", color: CT <= taktNeeded ? PALETTE.emerald : PALETTE.rose },
+              { label: "허용 택트", value: taktNeeded, display: fmtNum(taktNeeded, 2) + "s", color: PALETTE.indigo },
+            ]}
+          />
+          <Bars
+            items={[
+              { label: "일 생산량", value: dailyOut, display: fmtNum(dailyOut, 0), color: dailyOut >= D ? PALETTE.emerald : PALETTE.rose },
+              { label: "목표 수량", value: D, display: fmtNum(D, 0), color: PALETTE.indigo },
+            ]}
           />
         </div>
       </div>

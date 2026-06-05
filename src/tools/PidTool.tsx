@@ -13,25 +13,35 @@ interface Sim {
   };
 }
 
+interface PlantOpts {
+  K: number; // 게인
+  tau: number; // 시정수 s
+  deadSteps: number; // 데드타임 (샘플)
+  order: 1 | 2; // 플랜트 차수
+  distTime: number; // 외란 주입 시각 s (<0 = 없음)
+  distMag: number; // 외란 크기 (플랜트 입력 외란)
+}
+
 function simulate(
   Kp: number,
   Ki: number,
   Kd: number,
   sp: number,
-  K: number, // 플랜트 게인
-  tau: number, // 시정수 s
-  deadSteps: number, // 데드타임 (샘플)
+  pl: PlantOpts,
 ): Sim {
   const dt = 0.02;
   const T = 12;
   const N = Math.round(T / dt);
   const uMax = 10;
+  // 2차는 시정수를 절반씩 2단 직렬 → 동일 정착 스케일 유지
+  const tauStage = pl.order === 2 ? pl.tau / 2 : pl.tau;
 
   let pv = 0;
+  let x1 = 0; // 2차 1단 상태
   let integral = 0;
   let prevPv = 0;
   let dFilt = 0; // 미분 저역필터 상태
-  const Tf = 8 * dt; // 미분 필터 시정수
+  const Tf = 8 * dt;
   const uHist: number[] = [];
   const pvPts: Pt[] = [];
   const uPts: Pt[] = [];
@@ -50,7 +60,6 @@ function simulate(
     dFilt += (dt / (Tf + dt)) * (dRaw - dFilt);
 
     let u = Kp * err + Ki * integral - Kd * dFilt;
-    // 적분 (안티와인드업: 포화 시 누적 보류)
     const uRaw = u;
     if (u > uMax) u = uMax;
     if (u < -uMax) u = -uMax;
@@ -58,15 +67,25 @@ function simulate(
     prevPv = pv;
 
     uHist.push(u);
-    const uDelayed = uHist[Math.max(0, i - deadSteps)];
+    const uDelayed = uHist[Math.max(0, i - pl.deadSteps)];
 
-    // 1차 지연 플랜트: tau·dPV/dt + PV = K·u
-    pv += (dt / tau) * (K * uDelayed - pv);
+    // 플랜트 입력 외란 (지정 시각 이후 계단 추가)
+    const dist = pl.distTime >= 0 && t >= pl.distTime ? pl.distMag : 0;
+    const plantIn = pl.K * (uDelayed + dist);
+
+    if (pl.order === 2) {
+      x1 += (dt / tauStage) * (plantIn - x1);
+      pv += (dt / tauStage) * (x1 - pv);
+    } else {
+      pv += (dt / tauStage) * (plantIn - pv);
+    }
 
     pvPts.push({ x: t, y: pv });
     uPts.push({ x: t, y: u });
 
-    if (sp > 0) {
+    // 지표는 외란 전(추종) 구간 기준
+    const trackWindow = pl.distTime < 0 || t < pl.distTime;
+    if (sp > 0 && trackWindow) {
       if (riseStart < 0 && pv >= 0.1 * sp) riseStart = t;
       if (riseEnd < 0 && pv >= 0.9 * sp) riseEnd = t;
       if (pv > maxPv) maxPv = pv;
@@ -133,10 +152,22 @@ export default function PidTool() {
   const [sp, setSp] = useState(1);
   const [tau, setTau] = useState(1);
   const [dead, setDead] = useState(0); // 데드타임 (초)
+  const [order, setOrder] = useState<1 | 2>(1); // 플랜트 차수
+  const [distOn, setDistOn] = useState(false); // 외란 주입
+  const [distMag, setDistMag] = useState(0.5); // 외란 크기
+  const DIST_TIME = 7; // 외란 주입 시각 (s)
 
   const sim = useMemo(
-    () => simulate(kp, ki, kd, sp, 1, tau, Math.round(dead / 0.02)),
-    [kp, ki, kd, sp, tau, dead],
+    () =>
+      simulate(kp, ki, kd, sp, {
+        K: 1,
+        tau,
+        deadSteps: Math.round(dead / 0.02),
+        order,
+        distTime: distOn ? DIST_TIME : -1,
+        distMag,
+      }),
+    [kp, ki, kd, sp, tau, dead, order, distOn, distMag],
   );
 
   // 애니메이션 마커 (스텝응답 재생)
@@ -190,19 +221,63 @@ export default function PidTool() {
         <Slider label="데드타임 (s)" value={dead} min={0} max={1} step={0.05} onChange={setDead} />
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
+        {/* 플랜트 차수 */}
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-zinc-600 dark:text-zinc-400">플랜트</span>
+          {([1, 2] as const).map((o) => (
+            <button
+              key={o}
+              onClick={() => setOrder(o)}
+              className={`rounded-md px-3 py-1.5 text-sm ${
+                o === order
+                  ? "bg-indigo-600 text-white"
+                  : "bg-zinc-200 text-zinc-600 hover:bg-zinc-300 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
+              }`}
+            >
+              {o}차
+            </button>
+          ))}
+        </div>
+
+        {/* 외란 주입 */}
         <button
-          onClick={() => setPlaying((p) => !p)}
-          className="rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-500"
+          onClick={() => setDistOn((d) => !d)}
+          className={`rounded-md px-3 py-1.5 text-sm ${
+            distOn
+              ? "bg-amber-500 text-white hover:bg-amber-400"
+              : "bg-zinc-200 text-zinc-600 hover:bg-zinc-300 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
+          }`}
         >
-          {playing ? "⏸ 정지" : "▶ 재생"}
+          외란 {distOn ? "ON" : "OFF"} (7s)
         </button>
-        <button
-          onClick={() => setMarker(0)}
-          className="rounded-md bg-zinc-200 px-3 py-1.5 text-sm text-zinc-700 hover:bg-zinc-300 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
-        >
-          ↺ 처음
-        </button>
+        {distOn && (
+          <div className="w-40">
+            <Slider
+              label="외란 크기"
+              value={distMag}
+              min={-1}
+              max={1}
+              step={0.1}
+              onChange={setDistMag}
+            />
+          </div>
+        )}
+
+        <div className="ml-auto flex items-center gap-2">
+          <button
+            onClick={() => setPlaying((p) => !p)}
+            className="rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-500"
+          >
+            {playing ? "⏸ 정지" : "▶ 재생"}
+          </button>
+          <button
+            onClick={() => setMarker(0)}
+            className="rounded-md bg-zinc-200 px-3 py-1.5 text-sm text-zinc-700 hover:bg-zinc-300 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
+          >
+            ↺ 처음
+          </button>
+        </div>
       </div>
 
       <LineChart
@@ -222,6 +297,9 @@ export default function PidTool() {
         xMin={0}
         xMax={12}
         markerX={marker}
+        refLines={
+          distOn ? [{ x: DIST_TIME, color: PALETTE.amber, label: "외란" }] : undefined
+        }
         xUnit="시간(s)"
       />
 

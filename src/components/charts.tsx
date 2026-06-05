@@ -27,6 +27,7 @@ export function LineChart({
   yMin,
   yMax,
   markerX,
+  refLines,
   xUnit,
   yUnit,
   height = 280,
@@ -37,6 +38,7 @@ export function LineChart({
   yMin?: number;
   yMax?: number;
   markerX?: number | null;
+  refLines?: { x: number; color: string; label?: string }[];
   xUnit?: string;
   yUnit?: string;
   height?: number;
@@ -122,6 +124,31 @@ export function LineChart({
             </text>
           );
         })}
+
+        {/* 정적 기준선 (예: 외란 주입 시각) */}
+        {refLines?.map((r, i) => (
+          <g key={`ref${i}`}>
+            <line
+              x1={sx(r.x)}
+              y1={T}
+              x2={sx(r.x)}
+              y2={T + ph}
+              stroke={r.color}
+              strokeWidth={1.5}
+              strokeDasharray="4 3"
+            />
+            {r.label && (
+              <text
+                x={sx(r.x) + 4}
+                y={T + 12}
+                fill={r.color}
+                className="text-[11px]"
+              >
+                {r.label}
+              </text>
+            )}
+          </g>
+        ))}
 
         {/* 마커 (애니메이션 위치) */}
         {markerX != null && (
