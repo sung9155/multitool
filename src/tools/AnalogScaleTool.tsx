@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Field, Stat, TextInput, fmtNum } from "../components/ui";
+import { LineChart, PALETTE } from "../components/charts";
 
 const PRESETS: Record<string, [number, number, string]> = {
   "4-20mA": [4, 20, "mA"],
@@ -108,6 +109,35 @@ export default function AnalogScaleTool() {
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
           <Stat label="측정값 (EU)" value={fmtNum(calcEu)} accent />
           <Stat label="범위 비율" value={fmtNum(pct, 2)} unit="%" />
+        </div>
+        <div className="mt-3">
+          <LineChart
+            series={[
+              {
+                points: [
+                  { x: rMin, y: eMin },
+                  { x: rMax, y: eMax },
+                ],
+                color: PALETTE.indigo,
+                label: "선형 매핑",
+              },
+              {
+                points: [
+                  { x: sig, y: eMin },
+                  { x: sig, y: calcEu },
+                ],
+                color: PALETTE.rose,
+                label: "현재 신호",
+                dashed: true,
+              },
+            ]}
+            xMin={Math.min(rMin, rMax)}
+            xMax={Math.max(rMin, rMax)}
+            markerX={sig}
+            xUnit="신호"
+            yUnit="측정값(EU)"
+            height={220}
+          />
         </div>
       </div>
 

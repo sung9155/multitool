@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Field, Stat, TextInput, fmtNum } from "../components/ui";
+import { Gauge, Bars, PALETTE } from "../components/charts";
 
 export default function OeeTool() {
   const [planned, setPlanned] = useState("480"); // 계획 가동시간 min
@@ -68,7 +69,22 @@ export default function OeeTool() {
         <Stat label="성능 (Performance)" value={pct(performance)} unit="%" />
         <Stat label="양품률 (Quality)" value={pct(quality)} unit="%" />
       </div>
-      <Stat label="OEE 설비종합효율" value={pct(oee)} unit="%" accent />
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Gauge
+          value={oee * 100}
+          label="OEE 설비종합효율"
+          color={oee >= 0.85 ? PALETTE.emerald : oee >= 0.6 ? PALETTE.amber : PALETTE.rose}
+        />
+        <Bars
+          items={[
+            { label: "가동률", value: availability * 100, display: pct(availability) + "%" },
+            { label: "성능", value: performance * 100, display: pct(performance) + "%" },
+            { label: "양품률", value: quality * 100, display: pct(quality) + "%" },
+            { label: "OEE", value: oee * 100, display: pct(oee) + "%", color: PALETTE.indigo },
+          ]}
+        />
+      </div>
 
       <p className="text-xs text-zinc-500">
         OEE = 가동률 × 성능 × 양품률. 성능 = (이론CT × 생산수) ÷ 실가동시간.

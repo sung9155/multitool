@@ -15,6 +15,7 @@ import TaktTool from "./TaktTool";
 import OeeTool from "./OeeTool";
 import PressureTool from "./PressureTool";
 import EncoderTool from "./EncoderTool";
+import PidTool from "./PidTool";
 
 /**
  * 새 도구 추가 방법:
@@ -51,6 +52,13 @@ export const tools: Tool[] = [
     description: "보어·로드·압력 → 전진/후진 추력 (N·kgf)",
     category: "자동화",
     component: CylinderForceTool,
+  },
+  {
+    slug: "pid",
+    name: "PID 시뮬레이터",
+    description: "Kp·Ki·Kd 튜닝 → 스텝응답 그래프 + 오버슈트/정정시간",
+    category: "자동화",
+    component: PidTool,
   },
   {
     slug: "three-phase",

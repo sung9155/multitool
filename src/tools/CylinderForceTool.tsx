@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Field, Stat, TextInput, fmtNum } from "../components/ui";
+import { Bars, PALETTE } from "../components/charts";
 
 export default function CylinderForceTool() {
   const [bore, setBore] = useState("32"); // mm
@@ -7,6 +8,20 @@ export default function CylinderForceTool() {
   const [pressure, setPressure] = useState("0.5"); // MPa
   const [unit, setUnit] = useState<"MPa" | "bar">("MPa");
   const [eff, setEff] = useState("100"); // 부하율 %
+
+  // 피스톤 왕복 애니메이션 (0=후진, 1=전진)
+  const [s, setS] = useState(0);
+  const raf = useRef(0);
+  const t = useRef(0);
+  useEffect(() => {
+    const tick = () => {
+      t.current += 0.02;
+      setS((Math.sin(t.current) + 1) / 2); // 0~1 왕복
+      raf.current = requestAnimationFrame(tick);
+    };
+    raf.current = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf.current);
+  }, []);
 
   const D = Number(bore);
   const d = Number(rod);
@@ -74,6 +89,82 @@ export default function CylinderForceTool() {
         <Stat label="전진 추력" value={fmtNum(toKgf(pushN), 2)} unit="kgf" />
         <Stat label="후진 추력 (Pull)" value={fmtNum(pullN, 1)} unit="N" accent />
         <Stat label="후진 추력" value={fmtNum(toKgf(pullN), 2)} unit="kgf" />
+      </div>
+
+      <div className="grid gap-3 lg:grid-cols-2">
+        <div className="rounded-lg border border-zinc-200 bg-white p-3 dark:border-zinc-800 dark:bg-zinc-900/40">
+          <div className="mb-1 text-sm font-semibold text-zinc-700 dark:text-zinc-300">
+            동작 (왕복)
+          </div>
+          {(() => {
+            // 보어/로드 비율을 시각 반영
+            const dRatio = D > 0 ? Math.min(1, d / D) : 0.3;
+            const barH = 46;
+            const rodH = barH * dRatio;
+            const cy = 50;
+            const strokeX = 70 + s * 150; // 피스톤 위치
+            return (
+              <svg viewBox="0 0 320 100" width="100%" height={100}>
+                {/* 실린더 배럴 */}
+                <rect
+                  x={60}
+                  y={cy - barH / 2}
+                  width={170}
+                  height={barH}
+                  rx={4}
+                  className="fill-zinc-100 stroke-zinc-400 dark:fill-zinc-800 dark:stroke-zinc-600"
+                  strokeWidth={2}
+                />
+                {/* 압력 채움 (피스톤 왼쪽) */}
+                <rect
+                  x={62}
+                  y={cy - barH / 2 + 2}
+                  width={strokeX - 62}
+                  height={barH - 4}
+                  fill={PALETTE.sky}
+                  opacity={0.25}
+                />
+                {/* 피스톤 */}
+                <rect
+                  x={strokeX - 8}
+                  y={cy - barH / 2 + 2}
+                  width={8}
+                  height={barH - 4}
+                  className="fill-zinc-500 dark:fill-zinc-400"
+                />
+                {/* 로드 */}
+                <rect
+                  x={strokeX}
+                  y={cy - rodH / 2}
+                  width={300 - strokeX}
+                  height={rodH}
+                  className="fill-zinc-400 dark:fill-zinc-500"
+                />
+                {/* 추력 화살표 */}
+                <line
+                  x1={300}
+                  y1={cy}
+                  x2={312}
+                  y2={cy}
+                  stroke={PALETTE.rose}
+                  strokeWidth={3}
+                />
+                <polygon points={`312,${cy - 5} 320,${cy} 312,${cy + 5}`} fill={PALETTE.rose} />
+              </svg>
+            );
+          })()}
+        </div>
+        <div>
+          <div className="mb-1 text-sm font-semibold text-zinc-700 dark:text-zinc-300">
+            추력 비교
+          </div>
+          <Bars
+            items={[
+              { label: "전진 Push", value: pushN, display: fmtNum(pushN, 0) + " N", color: PALETTE.indigo },
+              { label: "후진 Pull", value: pullN, display: fmtNum(pullN, 0) + " N", color: PALETTE.emerald },
+            ]}
+          />
+        </div>
       </div>
 
       <p className="text-xs text-zinc-500">
