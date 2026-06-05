@@ -24,6 +24,7 @@ import BmiTool from "./BmiTool";
 import DateCalcTool from "./DateCalcTool";
 import SplitBillTool from "./SplitBillTool";
 import CharCountTool from "./CharCountTool";
+import WorldClockTool from "./WorldClockTool";
 
 /**
  * 새 도구 추가 방법:
@@ -145,6 +146,13 @@ export const tools: Tool[] = [
     description: "총액·인원·팁 → 1인당 금액",
     category: "일상",
     component: SplitBillTool,
+  },
+  {
+    slug: "world-clock",
+    name: "세계 시간",
+    description: "주요 도시 현재 시각 · 시차 (실시간)",
+    category: "일상",
+    component: WorldClockTool,
   },
   {
     slug: "char-count",

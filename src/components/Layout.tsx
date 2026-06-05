@@ -3,6 +3,8 @@ import { Link, useLocation } from "react-router-dom";
 import { tools } from "../tools/registry";
 import type { ToolCategory } from "../tools/types";
 import { useFavorites } from "./favorites";
+import { useRecent } from "./recent";
+import { LangSwitcher, localizeTool, useLang, useT } from "./i18n";
 
 const ORDER: ToolCategory[] = [
   "자동화",
@@ -55,6 +57,46 @@ function ThemeToggle({
   );
 }
 
+function NavGroup({
+  title,
+  titleClass,
+  items,
+  lang,
+  pathname,
+}: {
+  title: string;
+  titleClass: string;
+  items: typeof tools;
+  lang: import("./i18n").Lang;
+  pathname: string;
+}) {
+  return (
+    <div className="mb-3">
+      <div
+        className={`px-3 py-1 text-xs font-semibold uppercase tracking-wide ${titleClass}`}
+      >
+        {title}
+      </div>
+      {items.map((tool) => {
+        const active = pathname === `/t/${tool.slug}`;
+        return (
+          <Link
+            key={tool.slug}
+            to={`/t/${tool.slug}`}
+            className={`block rounded-md px-3 py-2.5 text-sm ${
+              active
+                ? "bg-indigo-100 text-indigo-700 dark:bg-indigo-600/20 dark:text-indigo-300"
+                : "text-zinc-700 hover:bg-zinc-200 dark:text-zinc-300 dark:hover:bg-zinc-800"
+            }`}
+          >
+            {localizeTool(tool, lang).name}
+          </Link>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function Layout({ children }: { children: React.ReactNode }) {
   const [q, setQ] = useState("");
   const [open, setOpen] = useState(false); // 모바일 드로어
@@ -94,26 +136,37 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     setTheme((t) => (t === "dark" ? "light" : "dark"));
 
   const favs = useFavorites();
+  const recent = useRecent();
+  const lang = useLang();
+  const t = useT();
 
-  const filtered = useMemo(
-    () =>
-      tools.filter((t) =>
-        (t.name + t.description).toLowerCase().includes(q.toLowerCase().trim()),
-      ),
-    [q],
-  );
+  const filtered = useMemo(() => {
+    const query = q.toLowerCase().trim();
+    return tools.filter((tool) => {
+      const loc = localizeTool(tool, lang);
+      return (
+        (tool.name + tool.description + loc.name + loc.description)
+          .toLowerCase()
+          .includes(query)
+      );
+    });
+  }, [q, lang]);
 
   const grouped = useMemo(() => {
     const map = new Map<ToolCategory, typeof tools>();
-    for (const t of filtered) {
-      if (!map.has(t.category)) map.set(t.category, []);
-      map.get(t.category)!.push(t);
+    for (const tool of filtered) {
+      if (!map.has(tool.category)) map.set(tool.category, []);
+      map.get(tool.category)!.push(tool);
     }
     return ORDER.filter((c) => map.has(c)).map((c) => [c, map.get(c)!] as const);
   }, [filtered]);
 
   // 즐겨찾기한 도구 (검색 필터 반영, 등록 순서 유지)
-  const favTools = filtered.filter((t) => favs.includes(t.slug));
+  const favTools = filtered.filter((tool) => favs.includes(tool.slug));
+  // 최근 사용 (최신순, 검색/존재 반영)
+  const recentTools = recent
+    .map((slug) => filtered.find((tool) => tool.slug === slug))
+    .filter((tool): tool is (typeof tools)[number] => Boolean(tool));
 
   return (
     <div className="flex min-h-full bg-zinc-50 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100">
@@ -136,7 +189,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         <Link to="/" className="font-bold">
           🧰 Multitool
         </Link>
-        <div className="ml-auto">
+        <div className="ml-auto flex items-center gap-1">
+          <LangSwitcher />
           <ThemeToggle theme={theme} onToggle={toggleTheme} />
         </div>
       </header>
@@ -158,9 +212,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         <div className="flex items-center justify-between px-5 py-4">
           <Link to="/" className="block">
             <h1 className="text-lg font-bold">🧰 Multitool</h1>
-            <p className="text-xs text-zinc-500">일상 · 개발 도구 모음</p>
+            <p className="text-xs text-zinc-500">{t("subtitle")}</p>
           </Link>
           <div className="flex items-center gap-1">
+            <LangSwitcher />
             <ThemeToggle theme={theme} onToggle={toggleTheme} />
             <button
               aria-label="메뉴 닫기"
@@ -183,60 +238,42 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="도구 검색…"
+            placeholder={t("search")}
             className="w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm outline-none focus:border-indigo-500 dark:border-zinc-700 dark:bg-zinc-900"
           />
         </div>
 
         <nav className="flex-1 overflow-y-auto px-2 pb-6">
           {favTools.length > 0 && (
-            <div className="mb-3">
-              <div className="px-3 py-1 text-xs font-semibold uppercase tracking-wide text-amber-500">
-                ★ 즐겨찾기
-              </div>
-              {favTools.map((t) => {
-                const active = pathname === `/t/${t.slug}`;
-                return (
-                  <Link
-                    key={t.slug}
-                    to={`/t/${t.slug}`}
-                    className={`block rounded-md px-3 py-2.5 text-sm ${
-                      active
-                        ? "bg-indigo-100 text-indigo-700 dark:bg-indigo-600/20 dark:text-indigo-300"
-                        : "text-zinc-700 hover:bg-zinc-200 dark:text-zinc-300 dark:hover:bg-zinc-800"
-                    }`}
-                  >
-                    {t.name}
-                  </Link>
-                );
-              })}
-            </div>
+            <NavGroup
+              title={t("favorites")}
+              titleClass="text-amber-500"
+              items={favTools}
+              lang={lang}
+              pathname={pathname}
+            />
+          )}
+          {recentTools.length > 0 && (
+            <NavGroup
+              title={t("recent")}
+              titleClass="text-zinc-500"
+              items={recentTools}
+              lang={lang}
+              pathname={pathname}
+            />
           )}
           {grouped.map(([cat, items]) => (
-            <div key={cat} className="mb-3">
-              <div className="px-3 py-1 text-xs font-semibold uppercase tracking-wide text-zinc-500">
-                {cat}
-              </div>
-              {items.map((t) => {
-                const active = pathname === `/t/${t.slug}`;
-                return (
-                  <Link
-                    key={t.slug}
-                    to={`/t/${t.slug}`}
-                    className={`block rounded-md px-3 py-2.5 text-sm ${
-                      active
-                        ? "bg-indigo-100 text-indigo-700 dark:bg-indigo-600/20 dark:text-indigo-300"
-                        : "text-zinc-700 hover:bg-zinc-200 dark:text-zinc-300 dark:hover:bg-zinc-800"
-                    }`}
-                  >
-                    {t.name}
-                  </Link>
-                );
-              })}
-            </div>
+            <NavGroup
+              key={cat}
+              title={t(`cat_${cat}`)}
+              titleClass="text-zinc-500"
+              items={items}
+              lang={lang}
+              pathname={pathname}
+            />
           ))}
           {grouped.length === 0 && (
-            <p className="px-3 text-sm text-zinc-500">결과 없음</p>
+            <p className="px-3 text-sm text-zinc-500">{t("noResult")}</p>
           )}
         </nav>
       </aside>
