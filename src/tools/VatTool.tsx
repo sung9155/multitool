@@ -41,7 +41,7 @@ export default function VatTool() {
               className={`rounded-md px-3 py-1.5 text-sm ${
                 m === mode
                   ? "bg-indigo-600 text-white"
-                  : "bg-zinc-800 text-zinc-300 hover:bg-zinc-700"
+                  : "bg-zinc-200 text-zinc-600 hover:bg-zinc-300 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
               }`}
             >
               {label}
@@ -78,10 +78,10 @@ export default function VatTool() {
         ].map(([label, v]) => (
           <div
             key={label as string}
-            className="rounded-md border border-zinc-700 bg-zinc-900 p-3"
+            className="rounded-md border border-zinc-200 bg-zinc-100 p-3 dark:border-zinc-700 dark:bg-zinc-900"
           >
             <div className="text-xs text-zinc-500">{label}</div>
-            <div className="font-mono text-lg text-zinc-100">
+            <div className="font-mono text-lg text-zinc-900 dark:text-zinc-100">
               {won(v as number)}
             </div>
           </div>

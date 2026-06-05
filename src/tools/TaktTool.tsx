@@ -48,8 +48,8 @@ export default function TaktTool() {
         <Stat label="일 생산량" value={fmtNum(dailyOut, 0)} unit="개/일" accent />
       </div>
 
-      <div className="rounded-lg border border-zinc-800 p-4">
-        <div className="mb-3 text-sm font-semibold text-zinc-300">
+      <div className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-800">
+        <div className="mb-3 text-sm font-semibold text-zinc-700 dark:text-zinc-300">
           목표 수량 → 필요 택트타임
         </div>
         <Field label="목표 수량" hint="개/일">

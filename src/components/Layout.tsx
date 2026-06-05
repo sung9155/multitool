@@ -12,15 +12,82 @@ const ORDER: ToolCategory[] = [
   "텍스트",
 ];
 
+function ThemeToggle({
+  theme,
+  onToggle,
+}: {
+  theme: "dark" | "light";
+  onToggle: () => void;
+}) {
+  return (
+    <button
+      aria-label="테마 전환"
+      onClick={onToggle}
+      className="rounded-md p-2 text-zinc-500 hover:bg-zinc-200 dark:text-zinc-400 dark:hover:bg-zinc-800"
+    >
+      {theme === "dark" ? (
+        // 해 (라이트로 전환)
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+          <circle cx="12" cy="12" r="4" stroke="currentColor" strokeWidth="2" />
+          <path
+            d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M19.1 4.9l-1.4 1.4M6.3 17.7l-1.4 1.4"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+          />
+        </svg>
+      ) : (
+        // 달 (다크로 전환)
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+          <path
+            d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinejoin="round"
+          />
+        </svg>
+      )}
+    </button>
+  );
+}
+
 export default function Layout({ children }: { children: React.ReactNode }) {
   const [q, setQ] = useState("");
   const [open, setOpen] = useState(false); // 모바일 드로어
+  const [theme, setTheme] = useState<"dark" | "light">(() =>
+    typeof document !== "undefined" &&
+    document.documentElement.classList.contains("dark")
+      ? "dark"
+      : "light",
+  );
   const { pathname } = useLocation();
 
-  // 경로 바뀌면 드로어 닫기 (도구 선택 시 자동 닫힘)
+  // 경로 바뀌면 드로어 닫기
   useEffect(() => {
     setOpen(false);
   }, [pathname]);
+
+  // 드로어 열림 시 배경 스크롤 잠금
+  useEffect(() => {
+    document.body.style.overflow = open ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [open]);
+
+  // 테마 적용 + 저장
+  useEffect(() => {
+    const root = document.documentElement;
+    root.classList.toggle("dark", theme === "dark");
+    try {
+      localStorage.setItem("theme", theme);
+    } catch {
+      /* 저장 실패 무시 */
+    }
+  }, [theme]);
+
+  const toggleTheme = () =>
+    setTheme((t) => (t === "dark" ? "light" : "dark"));
 
   const grouped = useMemo(() => {
     const filtered = tools.filter((t) =>
@@ -35,13 +102,13 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   }, [q]);
 
   return (
-    <div className="flex min-h-full bg-zinc-950 text-zinc-100">
+    <div className="flex min-h-full bg-zinc-50 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100">
       {/* 모바일 상단바 */}
-      <header className="fixed inset-x-0 top-0 z-30 flex h-14 items-center gap-3 border-b border-zinc-800 bg-zinc-950/95 px-4 backdrop-blur md:hidden">
+      <header className="fixed inset-x-0 top-0 z-30 flex h-14 items-center gap-3 border-b border-zinc-200 bg-white/95 px-4 backdrop-blur md:hidden dark:border-zinc-800 dark:bg-zinc-950/95">
         <button
           aria-label="메뉴 열기"
           onClick={() => setOpen(true)}
-          className="rounded-md p-2 text-zinc-300 hover:bg-zinc-800"
+          className="rounded-md p-2 text-zinc-600 hover:bg-zinc-200 dark:text-zinc-300 dark:hover:bg-zinc-800"
         >
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
             <path
@@ -55,9 +122,12 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         <Link to="/" className="font-bold">
           🧰 Multitool
         </Link>
+        <div className="ml-auto">
+          <ThemeToggle theme={theme} onToggle={toggleTheme} />
+        </div>
       </header>
 
-      {/* 드로어 열렸을 때 배경 */}
+      {/* 드로어 배경 */}
       {open && (
         <div
           className="fixed inset-0 z-30 bg-black/60 md:hidden"
@@ -67,7 +137,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
       {/* 사이드바 — 모바일: 슬라이드 드로어 / md↑: 고정 */}
       <aside
-        className={`fixed inset-y-0 left-0 z-40 flex w-72 max-w-[85vw] transform flex-col border-r border-zinc-800 bg-zinc-900 transition-transform duration-200 md:static md:z-auto md:translate-x-0 md:bg-zinc-900/40 ${
+        className={`fixed inset-y-0 left-0 z-40 flex w-72 max-w-[85vw] transform flex-col border-r border-zinc-200 bg-white transition-transform duration-200 md:static md:z-auto md:translate-x-0 md:bg-zinc-100/60 dark:border-zinc-800 dark:bg-zinc-900 dark:md:bg-zinc-900/40 ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}
       >
@@ -76,20 +146,23 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             <h1 className="text-lg font-bold">🧰 Multitool</h1>
             <p className="text-xs text-zinc-500">일상 · 개발 도구 모음</p>
           </Link>
-          <button
-            aria-label="메뉴 닫기"
-            onClick={() => setOpen(false)}
-            className="rounded-md p-1.5 text-zinc-400 hover:bg-zinc-800 md:hidden"
-          >
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-              <path
-                d="M6 6l12 12M18 6L6 18"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-              />
-            </svg>
-          </button>
+          <div className="flex items-center gap-1">
+            <ThemeToggle theme={theme} onToggle={toggleTheme} />
+            <button
+              aria-label="메뉴 닫기"
+              onClick={() => setOpen(false)}
+              className="rounded-md p-1.5 text-zinc-500 hover:bg-zinc-200 md:hidden dark:text-zinc-400 dark:hover:bg-zinc-800"
+            >
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                <path
+                  d="M6 6l12 12M18 6L6 18"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                />
+              </svg>
+            </button>
+          </div>
         </div>
 
         <div className="px-4 pb-3">
@@ -97,7 +170,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="도구 검색…"
-            className="w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm outline-none focus:border-indigo-500"
+            className="w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm outline-none focus:border-indigo-500 dark:border-zinc-700 dark:bg-zinc-900"
           />
         </div>
 
@@ -115,8 +188,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                     to={`/t/${t.slug}`}
                     className={`block rounded-md px-3 py-2.5 text-sm ${
                       active
-                        ? "bg-indigo-600/20 text-indigo-300"
-                        : "text-zinc-300 hover:bg-zinc-800 active:bg-zinc-800"
+                        ? "bg-indigo-100 text-indigo-700 dark:bg-indigo-600/20 dark:text-indigo-300"
+                        : "text-zinc-700 hover:bg-zinc-200 dark:text-zinc-300 dark:hover:bg-zinc-800"
                     }`}
                   >
                     {t.name}

@@ -5,6 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Multitool — 일상 도구 모음</title>
     <meta name="description" content="개발자와 업무에 필요한 유틸리티 도구 모음" />
+    <script>
+      // 렌더 전 테마 적용 (깜빡임 방지). 기본 다크.
+      try {
+        if ((localStorage.getItem("theme") || "dark") === "dark")
+          document.documentElement.classList.add("dark");
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <div id="root"></div>

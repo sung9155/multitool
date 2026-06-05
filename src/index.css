@@ -1,6 +1,12 @@
 @import "tailwindcss";
 
+/* 클래스 기반 다크모드 (.dark 토글) */
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
+  color-scheme: light;
+}
+.dark {
   color-scheme: dark;
 }
 
@@ -12,6 +18,10 @@ body,
 
 body {
   margin: 0;
+  background: #fafafa; /* zinc-50 */
+}
+.dark body {
+  background: #09090b; /* zinc-950 */
 }
 
 /* 모바일: input 포커스 시 자동 줌 방지 (iOS 는 16px 미만이면 확대) */

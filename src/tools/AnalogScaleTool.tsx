@@ -54,7 +54,7 @@ export default function AnalogScaleTool() {
               className={`rounded-md px-3 py-1.5 text-sm ${
                 p === preset
                   ? "bg-indigo-600 text-white"
-                  : "bg-zinc-800 text-zinc-300 hover:bg-zinc-700"
+                  : "bg-zinc-200 text-zinc-600 hover:bg-zinc-300 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
               }`}
             >
               {p}
@@ -94,8 +94,8 @@ export default function AnalogScaleTool() {
         </Field>
       </div>
 
-      <div className="rounded-lg border border-zinc-800 p-4">
-        <div className="mb-3 text-sm font-semibold text-zinc-300">
+      <div className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-800">
+        <div className="mb-3 text-sm font-semibold text-zinc-700 dark:text-zinc-300">
           신호 → 측정값
         </div>
         <Field label="현재 신호값">
@@ -111,8 +111,8 @@ export default function AnalogScaleTool() {
         </div>
       </div>
 
-      <div className="rounded-lg border border-zinc-800 p-4">
-        <div className="mb-3 text-sm font-semibold text-zinc-300">
+      <div className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-800">
+        <div className="mb-3 text-sm font-semibold text-zinc-700 dark:text-zinc-300">
           측정값 → 신호 (역산)
         </div>
         <Field label="목표 측정값 (EU)">

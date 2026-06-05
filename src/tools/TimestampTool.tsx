@@ -29,13 +29,13 @@ export default function TimestampTool() {
       </Field>
 
       <div className="grid gap-3 sm:grid-cols-2">
-        <div className="rounded-md border border-zinc-700 bg-zinc-900 p-3">
+        <div className="rounded-md border border-zinc-200 bg-zinc-100 p-3 dark:border-zinc-700 dark:bg-zinc-900">
           <div className="text-xs text-zinc-500">로컬 시간</div>
-          <div className="font-mono text-zinc-100">{fmt(date)}</div>
+          <div className="font-mono text-zinc-900 dark:text-zinc-100">{fmt(date)}</div>
         </div>
-        <div className="rounded-md border border-zinc-700 bg-zinc-900 p-3">
+        <div className="rounded-md border border-zinc-200 bg-zinc-100 p-3 dark:border-zinc-700 dark:bg-zinc-900">
           <div className="text-xs text-zinc-500">UTC (ISO 8601)</div>
-          <div className="font-mono text-zinc-100">
+          <div className="font-mono text-zinc-900 dark:text-zinc-100">
             {Number.isNaN(date.getTime()) ? "—" : date.toISOString()}
           </div>
         </div>
@@ -43,7 +43,7 @@ export default function TimestampTool() {
 
       <div className="flex flex-wrap items-center gap-2">
         <button
-          className="rounded-md bg-zinc-800 px-3 py-1.5 text-sm text-zinc-200 hover:bg-zinc-700"
+          className="rounded-md bg-zinc-200 px-3 py-1.5 text-sm text-zinc-700 hover:bg-zinc-300 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700"
           onClick={() => setTs(String(Math.floor(Date.now() / 1000)))}
         >
           지금

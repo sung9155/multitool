@@ -49,10 +49,10 @@ export default function ColorTool() {
           type="color"
           value={rgb ? hex : "#000000"}
           onChange={(e) => setHex(e.target.value)}
-          className="h-10 w-14 cursor-pointer rounded-md border border-zinc-700 bg-zinc-900"
+          className="h-10 w-14 cursor-pointer rounded-md border border-zinc-300 bg-white dark:border-zinc-700 dark:bg-zinc-900"
         />
         <div
-          className="h-10 flex-1 rounded-md border border-zinc-700"
+          className="h-10 flex-1 rounded-md border border-zinc-300 dark:border-zinc-700"
           style={{ background: rgb ? hex : "transparent" }}
         />
       </div>
@@ -63,7 +63,7 @@ export default function ColorTool() {
       ].map(([label, v]) => (
         <Field key={label} label={label}>
           <div className="flex items-center gap-2">
-            <code className="flex-1 rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100">
+            <code className="flex-1 rounded-md border border-zinc-200 bg-zinc-100 px-3 py-2 text-sm text-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100">
               {v}
             </code>
             <CopyButton value={v} />

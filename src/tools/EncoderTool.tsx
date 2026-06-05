@@ -39,7 +39,7 @@ export default function EncoderTool() {
                 className={`rounded-md px-4 py-2 text-sm ${
                   m === mult
                     ? "bg-indigo-600 text-white"
-                    : "bg-zinc-800 text-zinc-300 hover:bg-zinc-700"
+                    : "bg-zinc-200 text-zinc-600 hover:bg-zinc-300 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
                 }`}
               >
                 {m}체배
@@ -66,8 +66,8 @@ export default function EncoderTool() {
         />
       </div>
 
-      <div className="rounded-lg border border-zinc-800 p-4">
-        <div className="mb-3 text-sm font-semibold text-zinc-300">
+      <div className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-800">
+        <div className="mb-3 text-sm font-semibold text-zinc-700 dark:text-zinc-300">
           선형 환산 (옵션)
         </div>
         <Field label="측정 방식">
@@ -85,7 +85,7 @@ export default function EncoderTool() {
                 className={`rounded-md px-3 py-1.5 text-sm ${
                   m === mode
                     ? "bg-indigo-600 text-white"
-                    : "bg-zinc-800 text-zinc-300 hover:bg-zinc-700"
+                    : "bg-zinc-200 text-zinc-600 hover:bg-zinc-300 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
                 }`}
               >
                 {label}
@@ -124,7 +124,7 @@ export default function EncoderTool() {
         )}
       </div>
 
-      <div className="rounded-lg border border-zinc-800 p-4">
+      <div className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-800">
         <Field label="카운터 최대 응답주파수" hint="kHz (체배 후 기준)">
           <TextInput
             mono

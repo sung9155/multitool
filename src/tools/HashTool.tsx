@@ -38,7 +38,7 @@ export default function HashTool() {
               className={`rounded-md px-3 py-1.5 text-sm ${
                 a === algo
                   ? "bg-indigo-600 text-white"
-                  : "bg-zinc-800 text-zinc-300 hover:bg-zinc-700"
+                  : "bg-zinc-200 text-zinc-600 hover:bg-zinc-300 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
               }`}
             >
               {a}
@@ -55,7 +55,7 @@ export default function HashTool() {
       </Field>
       <Field label={`${algo} 해시`}>
         <div className="space-y-2">
-          <div className="break-all rounded-md border border-zinc-700 bg-zinc-900 p-3 font-mono text-sm text-zinc-100">
+          <div className="break-all rounded-md border border-zinc-200 bg-zinc-100 p-3 font-mono text-sm text-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100">
             {digest}
           </div>
           <CopyButton value={digest} />

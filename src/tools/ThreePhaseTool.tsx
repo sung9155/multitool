@@ -40,7 +40,7 @@ export default function ThreePhaseTool() {
               className={`rounded-md px-3 py-2 text-sm ${
                 m === mode
                   ? "bg-indigo-600 text-white"
-                  : "bg-zinc-800 text-zinc-300 hover:bg-zinc-700"
+                  : "bg-zinc-200 text-zinc-600 hover:bg-zinc-300 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
               }`}
             >
               {label}
