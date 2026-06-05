@@ -2,6 +2,18 @@ export const toolI18n: Record<
   string,
   { en: { name: string; description: string }; zh: { name: string; description: string } }
 > = {
+  "jwt": {
+    en: { name: "JWT Decoder", description: "Decode JWT header & payload + check expiry" },
+    zh: { name: "JWT 解码器", description: "解码 JWT 头部和载荷 + 检查过期" },
+  },
+  "regex": {
+    en: { name: "Regex Tester", description: "Match highlighting + capture groups table" },
+    zh: { name: "正则测试", description: "匹配高亮 + 分组表" },
+  },
+  "qr": {
+    en: { name: "QR Code Generator", description: "URL/text → QR (offline, PNG download)" },
+    zh: { name: "二维码生成器", description: "URL/文本 → 二维码（离线，PNG 下载）" },
+  },
   "world-clock": {
     en: {
       name: "World Clock",

@@ -1,6 +1,85 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Stat, fmtNum } from "../components/ui";
 import { LineChart, PALETTE, type Pt } from "../components/charts";
+import { useLang } from "../components/i18n";
+
+const TEXT = {
+  ko: {
+    slowStable: "느린 안정",
+    kpLabel: "Kp (비례)",
+    kiLabel: "Ki (적분)",
+    kdLabel: "Kd (미분)",
+    spLabel: "목표값 (SP)",
+    tauLabel: "플랜트 시정수 τ (s)",
+    deadLabel: "데드타임 (s)",
+    plant: "플랜트",
+    order: "차",
+    disturbance: "외란",
+    distMag: "외란 크기",
+    pause: "⏸ 정지",
+    play: "▶ 재생",
+    reset: "↺ 처음",
+    spLegend: "목표 (SP)",
+    pvLegend: "출력 (PV)",
+    mvLegend: "제어량 (MV)",
+    timeUnit: "시간(s)",
+    overshoot: "오버슈트",
+    settling: "정정시간 (±2%)",
+    rise: "상승시간",
+    ssErr: "정상편차",
+    desc: "플랜트 = 1차 지연(τ·dPV/dt + PV = K·u). 슬라이더 움직이면 즉시 재시뮬. Kp↑ 빠르지만 진동, Ki↑ 정상편차 제거하나 오버슈트, Kd↑ 진동 억제. 안티와인드업 적용.",
+  },
+  en: {
+    slowStable: "Slow stable",
+    kpLabel: "Kp (proportional)",
+    kiLabel: "Ki (integral)",
+    kdLabel: "Kd (derivative)",
+    spLabel: "Setpoint (SP)",
+    tauLabel: "Plant time constant τ (s)",
+    deadLabel: "Dead time (s)",
+    plant: "Plant",
+    order: "-order",
+    disturbance: "Disturbance",
+    distMag: "Disturbance magnitude",
+    pause: "⏸ Pause",
+    play: "▶ Play",
+    reset: "↺ Reset",
+    spLegend: "Setpoint (SP)",
+    pvLegend: "Output (PV)",
+    mvLegend: "Control (MV)",
+    timeUnit: "Time(s)",
+    overshoot: "Overshoot",
+    settling: "Settling time (±2%)",
+    rise: "Rise time",
+    ssErr: "Steady-state error",
+    desc: "Plant = 1st-order lag (τ·dPV/dt + PV = K·u). Moving a slider re-simulates instantly. Kp↑ faster but oscillates, Ki↑ removes steady-state error but overshoots, Kd↑ suppresses oscillation. Anti-windup applied.",
+  },
+  zh: {
+    slowStable: "缓慢稳定",
+    kpLabel: "Kp (比例)",
+    kiLabel: "Ki (积分)",
+    kdLabel: "Kd (微分)",
+    spLabel: "目标值 (SP)",
+    tauLabel: "被控对象时间常数 τ (s)",
+    deadLabel: "死区时间 (s)",
+    plant: "被控对象",
+    order: "阶",
+    disturbance: "扰动",
+    distMag: "扰动幅值",
+    pause: "⏸ 停止",
+    play: "▶ 播放",
+    reset: "↺ 重置",
+    spLegend: "目标 (SP)",
+    pvLegend: "输出 (PV)",
+    mvLegend: "控制量 (MV)",
+    timeUnit: "时间(s)",
+    overshoot: "超调",
+    settling: "稳定时间 (±2%)",
+    rise: "上升时间",
+    ssErr: "稳态误差",
+    desc: "被控对象 = 一阶滞后(τ·dPV/dt + PV = K·u)。移动滑块即时重新仿真。Kp↑ 更快但振荡，Ki↑ 消除稳态误差但超调，Kd↑ 抑制振荡。已应用抗积分饱和。",
+  },
+} as const;
 
 interface Sim {
   pv: Pt[];
@@ -146,6 +225,7 @@ const PRESETS: Record<string, [number, number, number]> = {
 };
 
 export default function PidTool() {
+  const t = TEXT[useLang()];
   const [kp, setKp] = useState(2.5);
   const [ki, setKi] = useState(1.5);
   const [kd, setKd] = useState(0.4);
@@ -207,24 +287,24 @@ export default function PidTool() {
             }}
             className="rounded-md bg-zinc-200 px-3 py-1.5 text-sm text-zinc-700 hover:bg-zinc-300 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
           >
-            {name}
+            {name === "느린 안정" ? t.slowStable : name}
           </button>
         ))}
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <Slider label="Kp (비례)" value={kp} min={0} max={8} step={0.1} onChange={setKp} />
-        <Slider label="Ki (적분)" value={ki} min={0} max={5} step={0.1} onChange={setKi} />
-        <Slider label="Kd (미분)" value={kd} min={0} max={3} step={0.05} onChange={setKd} />
-        <Slider label="목표값 (SP)" value={sp} min={0.2} max={3} step={0.1} onChange={setSp} />
-        <Slider label="플랜트 시정수 τ (s)" value={tau} min={0.2} max={4} step={0.1} onChange={setTau} />
-        <Slider label="데드타임 (s)" value={dead} min={0} max={1} step={0.05} onChange={setDead} />
+        <Slider label={t.kpLabel} value={kp} min={0} max={8} step={0.1} onChange={setKp} />
+        <Slider label={t.kiLabel} value={ki} min={0} max={5} step={0.1} onChange={setKi} />
+        <Slider label={t.kdLabel} value={kd} min={0} max={3} step={0.05} onChange={setKd} />
+        <Slider label={t.spLabel} value={sp} min={0.2} max={3} step={0.1} onChange={setSp} />
+        <Slider label={t.tauLabel} value={tau} min={0.2} max={4} step={0.1} onChange={setTau} />
+        <Slider label={t.deadLabel} value={dead} min={0} max={1} step={0.05} onChange={setDead} />
       </div>
 
       <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
         {/* 플랜트 차수 */}
         <div className="flex items-center gap-2">
-          <span className="text-sm text-zinc-600 dark:text-zinc-400">플랜트</span>
+          <span className="text-sm text-zinc-600 dark:text-zinc-400">{t.plant}</span>
           {([1, 2] as const).map((o) => (
             <button
               key={o}
@@ -235,7 +315,7 @@ export default function PidTool() {
                   : "bg-zinc-200 text-zinc-600 hover:bg-zinc-300 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
               }`}
             >
-              {o}차
+              {o}{t.order}
             </button>
           ))}
         </div>
@@ -249,12 +329,12 @@ export default function PidTool() {
               : "bg-zinc-200 text-zinc-600 hover:bg-zinc-300 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
           }`}
         >
-          외란 {distOn ? "ON" : "OFF"} (7s)
+          {t.disturbance} {distOn ? "ON" : "OFF"} (7s)
         </button>
         {distOn && (
           <div className="w-40">
             <Slider
-              label="외란 크기"
+              label={t.distMag}
               value={distMag}
               min={-1}
               max={1}
@@ -269,13 +349,13 @@ export default function PidTool() {
             onClick={() => setPlaying((p) => !p)}
             className="rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-500"
           >
-            {playing ? "⏸ 정지" : "▶ 재생"}
+            {playing ? t.pause : t.play}
           </button>
           <button
             onClick={() => setMarker(0)}
             className="rounded-md bg-zinc-200 px-3 py-1.5 text-sm text-zinc-700 hover:bg-zinc-300 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
           >
-            ↺ 처음
+            {t.reset}
           </button>
         </div>
       </div>
@@ -288,42 +368,38 @@ export default function PidTool() {
               { x: 12, y: sp },
             ],
             color: PALETTE.rose,
-            label: "목표 (SP)",
+            label: t.spLegend,
             dashed: true,
           },
-          { points: sim.pv, color: PALETTE.indigo, label: "출력 (PV)" },
-          { points: sim.u, color: PALETTE.emerald, label: "제어량 (MV)" },
+          { points: sim.pv, color: PALETTE.indigo, label: t.pvLegend },
+          { points: sim.u, color: PALETTE.emerald, label: t.mvLegend },
         ]}
         xMin={0}
         xMax={12}
         markerX={marker}
         refLines={
-          distOn ? [{ x: DIST_TIME, color: PALETTE.amber, label: "외란" }] : undefined
+          distOn ? [{ x: DIST_TIME, color: PALETTE.amber, label: t.disturbance }] : undefined
         }
-        xUnit="시간(s)"
+        xUnit={t.timeUnit}
       />
 
       <div className="grid gap-3 sm:grid-cols-4">
         <Stat
-          label="오버슈트"
+          label={t.overshoot}
           value={fmtNum(m.overshoot, 1)}
           unit="%"
           accent={m.overshoot > 20}
         />
-        <Stat label="정정시간 (±2%)" value={fmtNum(m.settling, 2)} unit="s" />
-        <Stat label="상승시간" value={fmtNum(m.rise, 2)} unit="s" />
+        <Stat label={t.settling} value={fmtNum(m.settling, 2)} unit="s" />
+        <Stat label={t.rise} value={fmtNum(m.rise, 2)} unit="s" />
         <Stat
-          label="정상편차"
+          label={t.ssErr}
           value={fmtNum(m.ssErr, 3)}
           accent={Math.abs(m.ssErr) > 0.05}
         />
       </div>
 
-      <p className="text-xs text-zinc-500">
-        플랜트 = 1차 지연(τ·dPV/dt + PV = K·u). 슬라이더 움직이면 즉시 재시뮬.
-        Kp↑ 빠르지만 진동, Ki↑ 정상편차 제거하나 오버슈트, Kd↑ 진동 억제.
-        안티와인드업 적용.
-      </p>
+      <p className="text-xs text-zinc-500">{t.desc}</p>
     </div>
   );
 }

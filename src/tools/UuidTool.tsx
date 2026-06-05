@@ -1,18 +1,26 @@
 import { useState } from "react";
 import { Button, CopyButton, Field, TextInput } from "../components/ui";
+import { useLang } from "../components/i18n";
+
+const TEXT = {
+  ko: { count: "개수", generate: "생성 (v4)" },
+  en: { count: "Count", generate: "Generate (v4)" },
+  zh: { count: "数量", generate: "生成 (v4)" },
+} as const;
 
 function makeList(count: number) {
   return Array.from({ length: count }, () => crypto.randomUUID());
 }
 
 export default function UuidTool() {
+  const t = TEXT[useLang()];
   const [count, setCount] = useState(5);
   const [list, setList] = useState<string[]>(() => makeList(5));
 
   return (
     <div className="space-y-4">
       <div className="flex items-end gap-3">
-        <Field label="개수">
+        <Field label={t.count}>
           <TextInput
             type="number"
             min={1}
@@ -24,7 +32,7 @@ export default function UuidTool() {
             className="w-28"
           />
         </Field>
-        <Button onClick={() => setList(makeList(count))}>생성 (v4)</Button>
+        <Button onClick={() => setList(makeList(count))}>{t.generate}</Button>
         <CopyButton value={list.join("\n")} />
       </div>
       <div className="space-y-1">

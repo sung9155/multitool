@@ -1,15 +1,46 @@
 import { useState } from "react";
 import { Field, Stat, TextInput, fmtNum } from "../components/ui";
+import { useLang } from "../components/i18n";
+
+const TEXT = {
+  ko: {
+    category: "카테고리",
+    value: "값",
+    unit: "단위",
+    length: "길이",
+    weight: "무게",
+    area: "넓이",
+    volume: "부피",
+    temp: "온도",
+    pyeong: "평",
+  },
+  en: {
+    category: "Category",
+    value: "Value",
+    unit: "Unit",
+    length: "Length",
+    weight: "Weight",
+    area: "Area",
+    volume: "Volume",
+    temp: "Temperature",
+    pyeong: "pyeong",
+  },
+  zh: {
+    category: "类别",
+    value: "数值",
+    unit: "单位",
+    length: "长度",
+    weight: "重量",
+    area: "面积",
+    volume: "体积",
+    temp: "温度",
+    pyeong: "坪",
+  },
+} as const;
 
 type Cat = "length" | "weight" | "area" | "volume" | "temp";
 
-const CATS: [Cat, string][] = [
-  ["length", "길이"],
-  ["weight", "무게"],
-  ["area", "넓이"],
-  ["volume", "부피"],
-  ["temp", "온도"],
-];
+const CATS: Cat[] = ["length", "weight", "area", "volume", "temp"];
 
 // 각 단위 → 기준단위 변환계수 (선형 카테고리)
 const FACTORS: Record<Exclude<Cat, "temp">, Record<string, number>> = {
@@ -63,7 +94,11 @@ function fromCelsius(c: number, unit: string): number {
 }
 
 export default function UnitConvertTool() {
+  const t = TEXT[useLang()];
   const [cat, setCat] = useState<Cat>("length");
+
+  // 단위 표시명 (키는 유지, "평"만 현지화)
+  const unitLabel = (u: string) => (u === "평" ? t.pyeong : u);
   const [value, setValue] = useState("1");
   const [unit, setUnit] = useState("m");
 
@@ -87,9 +122,9 @@ export default function UnitConvertTool() {
 
   return (
     <div className="space-y-4">
-      <Field label="카테고리">
+      <Field label={t.category}>
         <div className="flex flex-wrap gap-2">
-          {CATS.map(([c, label]) => (
+          {CATS.map((c) => (
             <button
               key={c}
               onClick={() => {
@@ -104,14 +139,14 @@ export default function UnitConvertTool() {
                   : "bg-zinc-200 text-zinc-600 hover:bg-zinc-300 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
               }`}
             >
-              {label}
+              {t[c]}
             </button>
           ))}
         </div>
       </Field>
 
       <div className="grid gap-3 sm:grid-cols-2">
-        <Field label="값">
+        <Field label={t.value}>
           <TextInput
             mono
             inputMode="decimal"
@@ -119,7 +154,7 @@ export default function UnitConvertTool() {
             onChange={(e) => setValue(e.target.value)}
           />
         </Field>
-        <Field label="단위">
+        <Field label={t.unit}>
           <div className="flex flex-wrap gap-2">
             {units.map((u) => (
               <button
@@ -131,7 +166,7 @@ export default function UnitConvertTool() {
                     : "bg-zinc-200 text-zinc-600 hover:bg-zinc-300 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
                 }`}
               >
-                {u}
+                {unitLabel(u)}
               </button>
             ))}
           </div>
@@ -142,7 +177,7 @@ export default function UnitConvertTool() {
         {results.map((r) => (
           <Stat
             key={r.u}
-            label={r.u}
+            label={unitLabel(r.u)}
             value={fmtNum(r.out, 6)}
             accent={r.u === activeUnit}
           />

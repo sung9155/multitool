@@ -1,11 +1,52 @@
 import { useState } from "react";
 import { Field, Stat, TextInput } from "../components/ui";
 import { Bars, PALETTE } from "../components/charts";
+import { useLang } from "../components/i18n";
 
-const won = (n: number) =>
-  Number.isFinite(n) ? Math.round(n).toLocaleString("ko-KR") + " 원" : "—";
+const TEXT = {
+  ko: {
+    totalLabel: "총액 (원)",
+    people: "인원수",
+    tip: (p: number) => `팁 (${p}%)`,
+    tipAmount: "팁 금액",
+    grandTotal: "총 지불액",
+    perPerson: (p: number) => `1인당 (${p}명)`,
+    perPersonBar: "1인당 금액",
+    grandTotalBar: "총 지불액",
+    currency: " 원",
+    locale: "ko-KR",
+  },
+  en: {
+    totalLabel: "Total (KRW)",
+    people: "People",
+    tip: (p: number) => `Tip (${p}%)`,
+    tipAmount: "Tip amount",
+    grandTotal: "Grand total",
+    perPerson: (p: number) => `Per person (${p})`,
+    perPersonBar: "Per person",
+    grandTotalBar: "Grand total",
+    currency: " KRW",
+    locale: "en-US",
+  },
+  zh: {
+    totalLabel: "总额 (元)",
+    people: "人数",
+    tip: (p: number) => `小费 (${p}%)`,
+    tipAmount: "小费金额",
+    grandTotal: "总支付额",
+    perPerson: (p: number) => `每人 (${p}人)`,
+    perPersonBar: "每人金额",
+    grandTotalBar: "总支付额",
+    currency: " 元",
+    locale: "zh-CN",
+  },
+} as const;
 
 export default function SplitBillTool() {
+  const t = TEXT[useLang()];
+  const won = (n: number) =>
+    Number.isFinite(n) ? Math.round(n).toLocaleString(t.locale) + t.currency : "—";
+
   const [total, setTotal] = useState("80000");
   const [people, setPeople] = useState("4");
   const [tip, setTip] = useState("10");
@@ -21,7 +62,7 @@ export default function SplitBillTool() {
   return (
     <div className="space-y-4">
       <div className="grid gap-3 sm:grid-cols-3">
-        <Field label="총액 (원)">
+        <Field label={t.totalLabel}>
           <TextInput
             mono
             inputMode="numeric"
@@ -29,7 +70,7 @@ export default function SplitBillTool() {
             onChange={(e) => setTotal(e.target.value)}
           />
         </Field>
-        <Field label="인원수">
+        <Field label={t.people}>
           <TextInput
             mono
             inputMode="numeric"
@@ -37,7 +78,7 @@ export default function SplitBillTool() {
             onChange={(e) => setPeople(e.target.value)}
           />
         </Field>
-        <Field label={`팁 (${tipV || 0}%)`}>
+        <Field label={t.tip(tipV || 0)}>
           <input
             type="range"
             min={0}
@@ -51,21 +92,21 @@ export default function SplitBillTool() {
       </div>
 
       <div className="grid gap-3 sm:grid-cols-3">
-        <Stat label="팁 금액" value={won(tipAmount)} />
-        <Stat label="총 지불액" value={won(grandTotal)} />
-        <Stat label={`1인당 (${peopleV}명)`} value={won(perPerson)} accent />
+        <Stat label={t.tipAmount} value={won(tipAmount)} />
+        <Stat label={t.grandTotal} value={won(grandTotal)} />
+        <Stat label={t.perPerson(peopleV)} value={won(perPerson)} accent />
       </div>
 
       <Bars
         items={[
           {
-            label: "1인당 금액",
+            label: t.perPersonBar,
             value: perPerson,
             color: PALETTE.indigo,
             display: won(perPerson),
           },
           {
-            label: "총 지불액",
+            label: t.grandTotalBar,
             value: grandTotal,
             color: PALETTE.emerald,
             display: won(grandTotal),

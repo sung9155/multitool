@@ -25,6 +25,9 @@ import DateCalcTool from "./DateCalcTool";
 import SplitBillTool from "./SplitBillTool";
 import CharCountTool from "./CharCountTool";
 import WorldClockTool from "./WorldClockTool";
+import JwtTool from "./JwtTool";
+import RegexTool from "./RegexTool";
+import QrTool from "./QrTool";
 
 /**
  * 새 도구 추가 방법:
@@ -162,6 +165,27 @@ export const tools: Tool[] = [
     component: CharCountTool,
   },
   // ───── 일반 / 개발 ─────
+  {
+    slug: "jwt",
+    name: "JWT 디코더",
+    description: "JWT 헤더·페이로드 디코딩 + 만료 확인",
+    category: "인코딩",
+    component: JwtTool,
+  },
+  {
+    slug: "regex",
+    name: "정규식 테스터",
+    description: "패턴 매치 하이라이트 + 그룹 표",
+    category: "텍스트",
+    component: RegexTool,
+  },
+  {
+    slug: "qr",
+    name: "QR 코드 생성기",
+    description: "URL·텍스트 → QR (오프라인, PNG 다운로드)",
+    category: "생성",
+    component: QrTool,
+  },
   {
     slug: "json-format",
     name: "JSON 포맷터",

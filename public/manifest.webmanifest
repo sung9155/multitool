@@ -1,0 +1,19 @@
+{
+  "name": "Multitool — 도구 모음",
+  "short_name": "Multitool",
+  "description": "일상·실무·개발 유틸리티 도구 모음",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#09090b",
+  "theme_color": "#6366f1",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

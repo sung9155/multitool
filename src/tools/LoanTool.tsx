@@ -1,12 +1,97 @@
 import { useState } from "react";
 import { Field, Stat, TextInput, fmtNum } from "../components/ui";
 import { LineChart, PALETTE, type Pt } from "../components/charts";
+import { useLang } from "../components/i18n";
 
-const won = (n: number) => Math.round(n).toLocaleString("ko-KR") + " 원";
+const TEXT = {
+  ko: {
+    won: "원",
+    method: "상환 방식",
+    equalPI: "원리금균등",
+    equalP: "원금균등",
+    bullet: "만기일시",
+    loanPrincipal: "대출 원금",
+    principalHint: "원",
+    annualRate: "연이율",
+    rateHint: "%",
+    term: "기간",
+    termHint: "년",
+    monthlyPayment: "월 상환액",
+    firstPayment: "첫 달 상환액",
+    lastPayment: "마지막 달 상환액",
+    totalInterest: "총 이자",
+    totalPayment: "총 상환액",
+    balanceTrend: "대출 잔액 추이",
+    balance: "잔액",
+    yearUnit: "년",
+    balanceUnit: "잔액(원)",
+    principal: "원금",
+    interestRatio: "이자 비율",
+    interestRatioUnit: "% (원금 대비)",
+    note: "원리금균등: 매월 동일 납부. 원금균등: 원금 일정, 이자 감소(초기 부담↑). 만기일시: 매월 이자만, 만기에 원금 일시상환. 거치기간·중도상환 미반영.",
+  },
+  en: {
+    won: "KRW",
+    method: "Repayment method",
+    equalPI: "Equal payment",
+    equalP: "Equal principal",
+    bullet: "Bullet",
+    loanPrincipal: "Loan principal",
+    principalHint: "KRW",
+    annualRate: "Annual rate",
+    rateHint: "%",
+    term: "Term",
+    termHint: "yr",
+    monthlyPayment: "Monthly payment",
+    firstPayment: "First month payment",
+    lastPayment: "Last month payment",
+    totalInterest: "Total interest",
+    totalPayment: "Total repayment",
+    balanceTrend: "Loan balance trend",
+    balance: "Balance",
+    yearUnit: "yr",
+    balanceUnit: "Balance (KRW)",
+    principal: "Principal",
+    interestRatio: "Interest ratio",
+    interestRatioUnit: "% (of principal)",
+    note: "Equal payment: same amount each month. Equal principal: fixed principal, decreasing interest (higher early burden). Bullet: interest only each month, principal repaid at maturity. Grace period and prepayment not reflected.",
+  },
+  zh: {
+    won: "元",
+    method: "还款方式",
+    equalPI: "等额本息",
+    equalP: "等额本金",
+    bullet: "到期一次性",
+    loanPrincipal: "贷款本金",
+    principalHint: "元",
+    annualRate: "年利率",
+    rateHint: "%",
+    term: "期限",
+    termHint: "年",
+    monthlyPayment: "月还款额",
+    firstPayment: "首月还款额",
+    lastPayment: "末月还款额",
+    totalInterest: "总利息",
+    totalPayment: "总还款额",
+    balanceTrend: "贷款余额走势",
+    balance: "余额",
+    yearUnit: "年",
+    balanceUnit: "余额(元)",
+    principal: "本金",
+    interestRatio: "利息比例",
+    interestRatioUnit: "% (相对本金)",
+    note: "等额本息: 每月还款相同。等额本金: 本金固定, 利息递减(前期负担↑)。到期一次性: 每月仅付利息, 到期一次性偿还本金。未含宽限期·提前还款。",
+  },
+} as const;
+
+const won = (n: number, suffix: string) =>
+  Math.round(n).toLocaleString("ko-KR") + " " + suffix;
 
 type Method = "equalPI" | "equalP" | "bullet";
 
 export default function LoanTool() {
+  const t = TEXT[useLang()];
+  const w = (n: number) => won(n, t.won);
   const [principal, setPrincipal] = useState("100000000"); // 원금
   const [rate, setRate] = useState("4.5"); // 연이율 %
   const [years, setYears] = useState("30"); // 기간(년)
@@ -53,13 +138,13 @@ export default function LoanTool() {
 
   return (
     <div className="space-y-5">
-      <Field label="상환 방식">
+      <Field label={t.method}>
         <div className="flex flex-wrap gap-2">
           {(
             [
-              ["equalPI", "원리금균등"],
-              ["equalP", "원금균등"],
-              ["bullet", "만기일시"],
+              ["equalPI", t.equalPI],
+              ["equalP", t.equalP],
+              ["bullet", t.bullet],
             ] as const
           ).map(([m, label]) => (
             <button
@@ -78,7 +163,7 @@ export default function LoanTool() {
       </Field>
 
       <div className="grid gap-3 sm:grid-cols-3">
-        <Field label="대출 원금" hint="원">
+        <Field label={t.loanPrincipal} hint={t.principalHint}>
           <TextInput
             mono
             inputMode="numeric"
@@ -86,55 +171,52 @@ export default function LoanTool() {
             onChange={(e) => setPrincipal(e.target.value)}
           />
         </Field>
-        <Field label="연이율" hint="%">
+        <Field label={t.annualRate} hint={t.rateHint}>
           <TextInput mono value={rate} onChange={(e) => setRate(e.target.value)} />
         </Field>
-        <Field label="기간" hint="년">
+        <Field label={t.term} hint={t.termHint}>
           <TextInput mono value={years} onChange={(e) => setYears(e.target.value)} />
         </Field>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-3">
         <Stat
-          label={method === "equalPI" ? "월 상환액" : "첫 달 상환액"}
-          value={won(firstPay)}
+          label={method === "equalPI" ? t.monthlyPayment : t.firstPayment}
+          value={w(firstPay)}
           accent
         />
         {method !== "equalPI" && (
-          <Stat label="마지막 달 상환액" value={won(lastPay)} />
+          <Stat label={t.lastPayment} value={w(lastPay)} />
         )}
-        <Stat label="총 이자" value={won(totalInterest)} />
-        <Stat label="총 상환액" value={won(totalPay)} accent />
+        <Stat label={t.totalInterest} value={w(totalInterest)} />
+        <Stat label={t.totalPayment} value={w(totalPay)} accent />
       </div>
 
       <div>
         <div className="mb-2 text-sm font-semibold text-zinc-700 dark:text-zinc-300">
-          대출 잔액 추이
+          {t.balanceTrend}
         </div>
         <LineChart
-          series={[{ points: balCurve, color: PALETTE.indigo, label: "잔액" }]}
+          series={[{ points: balCurve, color: PALETTE.indigo, label: t.balance }]}
           xMin={0}
           xMax={Number(years)}
           yMin={0}
-          xUnit="년"
-          yUnit="잔액(원)"
+          xUnit={t.yearUnit}
+          yUnit={t.balanceUnit}
           height={220}
         />
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2">
-        <Stat label="원금" value={won(P)} />
+        <Stat label={t.principal} value={w(P)} />
         <Stat
-          label="이자 비율"
+          label={t.interestRatio}
           value={fmtNum((totalInterest / P) * 100, 1)}
-          unit="% (원금 대비)"
+          unit={t.interestRatioUnit}
         />
       </div>
 
-      <p className="text-xs text-zinc-500">
-        원리금균등: 매월 동일 납부. 원금균등: 원금 일정, 이자 감소(초기 부담↑).
-        만기일시: 매월 이자만, 만기에 원금 일시상환. 거치기간·중도상환 미반영.
-      </p>
+      <p className="text-xs text-zinc-500">{t.note}</p>
     </div>
   );
 }

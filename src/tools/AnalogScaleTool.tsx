@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Field, Stat, TextInput, fmtNum } from "../components/ui";
 import { LineChart, PALETTE } from "../components/charts";
+import { useLang } from "../components/i18n";
 
 const PRESETS: Record<string, [number, number, string]> = {
   "4-20mA": [4, 20, "mA"],
@@ -11,7 +12,68 @@ const PRESETS: Record<string, [number, number, string]> = {
   직접입력: [0, 100, ""],
 };
 
+const TEXT = {
+  ko: {
+    signalType: "신호 종류",
+    rawMin: "신호 최소 (Raw Min)",
+    rawMax: "신호 최대 (Raw Max)",
+    euMin: "측정값 최소 (EU Min)",
+    euMax: "측정값 최대 (EU Max)",
+    sigToEu: "신호 → 측정값",
+    currentSignal: "현재 신호값",
+    measuredEu: "측정값 (EU)",
+    rangeRatio: "범위 비율",
+    linearMapping: "선형 매핑",
+    currentSignalLabel: "현재 신호",
+    xSignal: "신호",
+    yMeasured: "측정값(EU)",
+    euToSig: "측정값 → 신호 (역산)",
+    targetEu: "목표 측정값 (EU)",
+    targetEuPlaceholder: "예: 50",
+    neededSignal: "필요 신호값",
+  },
+  en: {
+    signalType: "Signal type",
+    rawMin: "Signal min (Raw Min)",
+    rawMax: "Signal max (Raw Max)",
+    euMin: "Value min (EU Min)",
+    euMax: "Value max (EU Max)",
+    sigToEu: "Signal → Value",
+    currentSignal: "Current signal",
+    measuredEu: "Value (EU)",
+    rangeRatio: "Range ratio",
+    linearMapping: "Linear mapping",
+    currentSignalLabel: "Current signal",
+    xSignal: "Signal",
+    yMeasured: "Value (EU)",
+    euToSig: "Value → Signal (inverse)",
+    targetEu: "Target value (EU)",
+    targetEuPlaceholder: "e.g. 50",
+    neededSignal: "Required signal",
+  },
+  zh: {
+    signalType: "信号类型",
+    rawMin: "信号最小 (Raw Min)",
+    rawMax: "信号最大 (Raw Max)",
+    euMin: "测量值最小 (EU Min)",
+    euMax: "测量值最大 (EU Max)",
+    sigToEu: "信号 → 测量值",
+    currentSignal: "当前信号值",
+    measuredEu: "测量值 (EU)",
+    rangeRatio: "量程比例",
+    linearMapping: "线性映射",
+    currentSignalLabel: "当前信号",
+    xSignal: "信号",
+    yMeasured: "测量值(EU)",
+    euToSig: "测量值 → 信号 (反算)",
+    targetEu: "目标测量值 (EU)",
+    targetEuPlaceholder: "例: 50",
+    neededSignal: "所需信号值",
+  },
+} as const;
+
 export default function AnalogScaleTool() {
+  const t = TEXT[useLang()];
   const [preset, setPreset] = useState("4-20mA");
   const [rawMin, setRawMin] = useState("4");
   const [rawMax, setRawMax] = useState("20");
@@ -46,7 +108,7 @@ export default function AnalogScaleTool() {
 
   return (
     <div className="space-y-5">
-      <Field label="신호 종류">
+      <Field label={t.signalType}>
         <div className="flex flex-wrap gap-2">
           {Object.keys(PRESETS).map((p) => (
             <button
@@ -65,28 +127,28 @@ export default function AnalogScaleTool() {
       </Field>
 
       <div className="grid gap-3 sm:grid-cols-2">
-        <Field label="신호 최소 (Raw Min)">
+        <Field label={t.rawMin}>
           <TextInput
             mono
             value={rawMin}
             onChange={(e) => setRawMin(e.target.value)}
           />
         </Field>
-        <Field label="신호 최대 (Raw Max)">
+        <Field label={t.rawMax}>
           <TextInput
             mono
             value={rawMax}
             onChange={(e) => setRawMax(e.target.value)}
           />
         </Field>
-        <Field label="측정값 최소 (EU Min)">
+        <Field label={t.euMin}>
           <TextInput
             mono
             value={euMin}
             onChange={(e) => setEuMin(e.target.value)}
           />
         </Field>
-        <Field label="측정값 최대 (EU Max)">
+        <Field label={t.euMax}>
           <TextInput
             mono
             value={euMax}
@@ -97,9 +159,9 @@ export default function AnalogScaleTool() {
 
       <div className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-800">
         <div className="mb-3 text-sm font-semibold text-zinc-700 dark:text-zinc-300">
-          신호 → 측정값
+          {t.sigToEu}
         </div>
-        <Field label="현재 신호값">
+        <Field label={t.currentSignal}>
           <TextInput
             mono
             value={signal}
@@ -107,8 +169,8 @@ export default function AnalogScaleTool() {
           />
         </Field>
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
-          <Stat label="측정값 (EU)" value={fmtNum(calcEu)} accent />
-          <Stat label="범위 비율" value={fmtNum(pct, 2)} unit="%" />
+          <Stat label={t.measuredEu} value={fmtNum(calcEu)} accent />
+          <Stat label={t.rangeRatio} value={fmtNum(pct, 2)} unit="%" />
         </div>
         <div className="mt-3">
           <LineChart
@@ -119,7 +181,7 @@ export default function AnalogScaleTool() {
                   { x: rMax, y: eMax },
                 ],
                 color: PALETTE.indigo,
-                label: "선형 매핑",
+                label: t.linearMapping,
               },
               {
                 points: [
@@ -127,15 +189,15 @@ export default function AnalogScaleTool() {
                   { x: sig, y: calcEu },
                 ],
                 color: PALETTE.rose,
-                label: "현재 신호",
+                label: t.currentSignalLabel,
                 dashed: true,
               },
             ]}
             xMin={Math.min(rMin, rMax)}
             xMax={Math.max(rMin, rMax)}
             markerX={sig}
-            xUnit="신호"
-            yUnit="측정값(EU)"
+            xUnit={t.xSignal}
+            yUnit={t.yMeasured}
             height={220}
           />
         </div>
@@ -143,19 +205,19 @@ export default function AnalogScaleTool() {
 
       <div className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-800">
         <div className="mb-3 text-sm font-semibold text-zinc-700 dark:text-zinc-300">
-          측정값 → 신호 (역산)
+          {t.euToSig}
         </div>
-        <Field label="목표 측정값 (EU)">
+        <Field label={t.targetEu}>
           <TextInput
             mono
             value={eu}
             onChange={(e) => setEu(e.target.value)}
-            placeholder="예: 50"
+            placeholder={t.targetEuPlaceholder}
           />
         </Field>
         <div className="mt-3">
           <Stat
-            label="필요 신호값"
+            label={t.neededSignal}
             value={eu === "" ? "—" : fmtNum(backSignal)}
             accent
           />
