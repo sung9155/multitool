@@ -1,22 +1,31 @@
 import { Link, Route, Routes, useParams } from "react-router-dom";
 import Layout from "./components/Layout";
 import { findTool, tools } from "./tools/registry";
+import { StarButton, useFavorites } from "./components/favorites";
 
 function Home() {
+  const favs = useFavorites();
+  const ordered = [
+    ...tools.filter((t) => favs.includes(t.slug)),
+    ...tools.filter((t) => !favs.includes(t.slug)),
+  ];
   return (
     <div>
       <h2 className="text-2xl font-bold">일상 · 개발 도구 모음</h2>
       <p className="mt-1 text-zinc-500 dark:text-zinc-400">
-        자주 쓰는 유틸을 한곳에. 아래에서 골라 바로 사용.
+        자주 쓰는 유틸을 한곳에. 별(★)로 즐겨찾기하면 위로 고정.
       </p>
       <div className="mt-6 grid gap-3 sm:grid-cols-2">
-        {tools.map((t) => (
+        {ordered.map((t) => (
           <Link
             key={t.slug}
             to={`/t/${t.slug}`}
-            className="rounded-lg border border-zinc-200 bg-white p-4 transition-colors hover:border-indigo-500/50 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900/40 dark:hover:bg-zinc-900"
+            className="group relative rounded-lg border border-zinc-200 bg-white p-4 transition-colors hover:border-indigo-500/50 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900/40 dark:hover:bg-zinc-900"
           >
-            <div className="font-semibold text-zinc-900 dark:text-zinc-100">
+            <div className="absolute right-2 top-2">
+              <StarButton slug={t.slug} size={18} />
+            </div>
+            <div className="pr-7 font-semibold text-zinc-900 dark:text-zinc-100">
               {t.name}
             </div>
             <div className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
@@ -48,7 +57,10 @@ function ToolPage() {
   return (
     <div>
       <div className="mb-6">
-        <h2 className="text-2xl font-bold">{tool.name}</h2>
+        <div className="flex items-center gap-2">
+          <h2 className="text-2xl font-bold">{tool.name}</h2>
+          <StarButton slug={tool.slug} />
+        </div>
         <p className="mt-1 text-zinc-500 dark:text-zinc-400">
           {tool.description}
         </p>

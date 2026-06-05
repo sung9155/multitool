@@ -2,10 +2,13 @@ import type { ComponentType } from "react";
 
 export type ToolCategory =
   | "자동화"
+  | "금융"
+  | "계산"
   | "변환"
+  | "건강"
+  | "일상"
   | "인코딩"
   | "생성"
-  | "계산"
   | "텍스트";
 
 export interface Tool {

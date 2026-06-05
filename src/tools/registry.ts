@@ -16,6 +16,14 @@ import OeeTool from "./OeeTool";
 import PressureTool from "./PressureTool";
 import EncoderTool from "./EncoderTool";
 import PidTool from "./PidTool";
+import NetSalaryTool from "./NetSalaryTool";
+import LoanTool from "./LoanTool";
+import PercentTool from "./PercentTool";
+import UnitConvertTool from "./UnitConvertTool";
+import BmiTool from "./BmiTool";
+import DateCalcTool from "./DateCalcTool";
+import SplitBillTool from "./SplitBillTool";
+import CharCountTool from "./CharCountTool";
 
 /**
  * 새 도구 추가 방법:
@@ -87,6 +95,63 @@ export const tools: Tool[] = [
     description: "MPa · bar · psi · kgf/cm² · mmHg",
     category: "자동화",
     component: PressureTool,
+  },
+  // ───── 금융 / 실무 ─────
+  {
+    slug: "net-salary",
+    name: "연봉 실수령액",
+    description: "4대보험·소득세 공제 → 월 실수령 (공제 표)",
+    category: "금융",
+    component: NetSalaryTool,
+  },
+  {
+    slug: "loan",
+    name: "대출 상환 계산기",
+    description: "원리금균등·원금균등·만기일시 → 월 상환액·총이자 + 잔액 곡선",
+    category: "금융",
+    component: LoanTool,
+  },
+  {
+    slug: "percent",
+    name: "퍼센트 계산기",
+    description: "비율·증감율·할인 등 % 계산",
+    category: "계산",
+    component: PercentTool,
+  },
+  {
+    slug: "unit-convert",
+    name: "단위 변환기",
+    description: "길이·무게·온도·넓이·부피 동시 환산표",
+    category: "변환",
+    component: UnitConvertTool,
+  },
+  {
+    slug: "bmi",
+    name: "BMI 계산기",
+    description: "체질량지수 + 분류 게이지 (아시아 기준)",
+    category: "건강",
+    component: BmiTool,
+  },
+  {
+    slug: "date-calc",
+    name: "날짜 계산기 / D-Day",
+    description: "두 날짜 차이, N일 후·전 날짜",
+    category: "일상",
+    component: DateCalcTool,
+  },
+  {
+    slug: "split-bill",
+    name: "팁 · 더치페이",
+    description: "총액·인원·팁 → 1인당 금액",
+    category: "일상",
+    component: SplitBillTool,
+  },
+  {
+    slug: "char-count",
+    name: "글자수 세기",
+    description: "글자·단어·줄·바이트 수 (문자/SNS 제한 확인)",
+    category: "텍스트",
+    component: CharCountTool,
   },
   // ───── 일반 / 개발 ─────
   {
