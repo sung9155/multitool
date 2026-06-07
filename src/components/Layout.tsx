@@ -5,6 +5,7 @@ import type { ToolCategory } from "../tools/types";
 import { useFavorites } from "./favorites";
 import { useRecent } from "./recent";
 import { LangSwitcher, localizeTool, useLang, useT } from "./i18n";
+import CommandPalette from "./CommandPalette";
 
 const ORDER: ToolCategory[] = [
   "자동화",
@@ -235,12 +236,22 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         </div>
 
         <div className="px-4 pb-3">
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder={t("search")}
-            className="w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm outline-none focus:border-indigo-500 dark:border-zinc-700 dark:bg-zinc-900"
-          />
+          <div className="relative">
+            <input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder={t("search")}
+              className="w-full rounded-md border border-zinc-300 bg-white px-3 py-2 pr-14 text-sm outline-none focus:border-indigo-500 dark:border-zinc-700 dark:bg-zinc-900"
+            />
+            <button
+              type="button"
+              onClick={() => window.dispatchEvent(new CustomEvent("palette:open"))}
+              title={t("paletteOpen")}
+              className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded border border-zinc-300 px-1.5 py-0.5 text-[10px] font-medium text-zinc-500 hover:bg-zinc-100 dark:border-zinc-600 dark:hover:bg-zinc-800"
+            >
+              ⌘K
+            </button>
+          </div>
         </div>
 
         <nav className="flex-1 overflow-y-auto px-2 pb-6">
@@ -283,6 +294,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           {children}
         </div>
       </main>
+
+      <CommandPalette />
     </div>
   );
 }

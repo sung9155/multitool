@@ -28,6 +28,26 @@ import WorldClockTool from "./WorldClockTool";
 import JwtTool from "./JwtTool";
 import RegexTool from "./RegexTool";
 import QrTool from "./QrTool";
+import OhmsLawTool from "./OhmsLawTool";
+import ResistorTool from "./ResistorTool";
+import MotorSizingTool from "./MotorSizingTool";
+import GearRatioTool from "./GearRatioTool";
+import BeltPulleyTool from "./BeltPulleyTool";
+import FlowPipeTool from "./FlowPipeTool";
+import PanelCoolingTool from "./PanelCoolingTool";
+import CrcTool from "./CrcTool";
+import BaseConvertTool from "./BaseConvertTool";
+import CronTool from "./CronTool";
+import DiffTool from "./DiffTool";
+import MarkdownTool from "./MarkdownTool";
+import HtmlJsxTool from "./HtmlJsxTool";
+import JwtSignTool from "./JwtSignTool";
+import AgeTool from "./AgeTool";
+import CalculatorTool from "./CalculatorTool";
+import SavingsTool from "./SavingsTool";
+import InstallmentTool from "./InstallmentTool";
+import CurrencyTool from "./CurrencyTool";
+import TimerTool from "./TimerTool";
 
 /**
  * 새 도구 추가 방법:
@@ -100,7 +120,84 @@ export const tools: Tool[] = [
     category: "자동화",
     component: PressureTool,
   },
+  {
+    slug: "ohms-law",
+    name: "옴의 법칙 계산기",
+    description: "V·I·R·P 중 2개 입력 → 나머지 자동 계산",
+    category: "자동화",
+    component: OhmsLawTool,
+  },
+  {
+    slug: "resistor",
+    name: "저항 컬러코드",
+    description: "4/5밴드 색띠 ↔ 저항값·허용오차·범위",
+    category: "자동화",
+    component: ResistorTool,
+  },
+  {
+    slug: "motor-sizing",
+    name: "모터 용량 선정",
+    description: "부하·관성·가감속 → 필요 토크·출력·정격",
+    category: "자동화",
+    component: MotorSizingTool,
+  },
+  {
+    slug: "gear-ratio",
+    name: "기어비 / 감속기",
+    description: "감속비·효율 → 출력 회전수·토크·동력",
+    category: "자동화",
+    component: GearRatioTool,
+  },
+  {
+    slug: "belt-pulley",
+    name: "벨트 · 풀리",
+    description: "풀리경·축간거리 → 벨트 길이·속도비·벨트속도",
+    category: "자동화",
+    component: BeltPulleyTool,
+  },
+  {
+    slug: "flow-pipe",
+    name: "배관 유속 / 압력손실",
+    description: "유량·관경 → 유속·레이놀즈수·압력손실",
+    category: "자동화",
+    component: FlowPipeTool,
+  },
+  {
+    slug: "panel-cooling",
+    name: "제어반 발열 / 냉각",
+    description: "발열·표면적 → 필요 냉각용량·팬 풍량",
+    category: "자동화",
+    component: PanelCoolingTool,
+  },
+  {
+    slug: "crc",
+    name: "CRC / 체크섬",
+    description: "Modbus CRC16·LRC·XOR·SUM (통신 디버깅)",
+    category: "자동화",
+    component: CrcTool,
+  },
   // ───── 금융 / 실무 ─────
+  {
+    slug: "savings",
+    name: "적금 · 예금 이자",
+    description: "적금/예금 만기 원리금·이자 (세금 옵션)",
+    category: "금융",
+    component: SavingsTool,
+  },
+  {
+    slug: "installment",
+    name: "할부 vs 일시불",
+    description: "할부 수수료 vs 일시불 기회비용 비교",
+    category: "금융",
+    component: InstallmentTool,
+  },
+  {
+    slug: "currency",
+    name: "환율 계산기",
+    description: "환율 직접 입력 → 통화 변환 (오프라인)",
+    category: "금융",
+    component: CurrencyTool,
+  },
   {
     slug: "net-salary",
     name: "연봉 실수령액",
@@ -123,6 +220,13 @@ export const tools: Tool[] = [
     component: PercentTool,
   },
   {
+    slug: "calculator",
+    name: "공학용 계산기",
+    description: "수식·함수(sin·log·sqrt)·거듭제곱 계산",
+    category: "계산",
+    component: CalculatorTool,
+  },
+  {
     slug: "unit-convert",
     name: "단위 변환기",
     description: "길이·무게·온도·넓이·부피 동시 환산표",
@@ -142,6 +246,20 @@ export const tools: Tool[] = [
     description: "두 날짜 차이, N일 후·전 날짜",
     category: "일상",
     component: DateCalcTool,
+  },
+  {
+    slug: "age",
+    name: "나이 / 만나이 계산기",
+    description: "생년월일 → 만 나이·연 나이·살아온 일수",
+    category: "일상",
+    component: AgeTool,
+  },
+  {
+    slug: "timer",
+    name: "타이머 · 뽀모도로",
+    description: "스톱워치·카운트다운·뽀모도로 (정확한 시간)",
+    category: "일상",
+    component: TimerTool,
   },
   {
     slug: "split-bill",
@@ -173,11 +291,53 @@ export const tools: Tool[] = [
     component: JwtTool,
   },
   {
+    slug: "jwt-sign",
+    name: "JWT 서명 생성기",
+    description: "HS256/384/512 서명 JWT 생성 (오프라인)",
+    category: "인코딩",
+    component: JwtSignTool,
+  },
+  {
+    slug: "base-convert",
+    name: "진법 변환",
+    description: "2·8·10·16진수 변환 + 비트 시프트",
+    category: "변환",
+    component: BaseConvertTool,
+  },
+  {
     slug: "regex",
     name: "정규식 테스터",
     description: "패턴 매치 하이라이트 + 그룹 표",
     category: "텍스트",
     component: RegexTool,
+  },
+  {
+    slug: "cron",
+    name: "Cron 표현식 해석기",
+    description: "cron 필드 해석 + 다음 실행 시각 미리보기",
+    category: "텍스트",
+    component: CronTool,
+  },
+  {
+    slug: "diff",
+    name: "텍스트 Diff 비교",
+    description: "두 텍스트 줄 단위 비교 + 추가/삭제 하이라이트",
+    category: "텍스트",
+    component: DiffTool,
+  },
+  {
+    slug: "markdown",
+    name: "Markdown 미리보기",
+    description: "Markdown → 실시간 미리보기 (오프라인)",
+    category: "텍스트",
+    component: MarkdownTool,
+  },
+  {
+    slug: "html-jsx",
+    name: "HTML → JSX 변환",
+    description: "class→className 등 JSX 규칙으로 변환",
+    category: "텍스트",
+    component: HtmlJsxTool,
   },
   {
     slug: "qr",
