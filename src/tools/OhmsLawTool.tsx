@@ -1,6 +1,6 @@
-import { useState } from "react";
 import { Field, TextInput, Stat, ErrorText, fmtNum } from "../components/ui";
 import { useLang } from "../components/i18n";
+import { useToolStateJSON } from "../components/toolState";
 
 const TEXT = {
   ko: {
@@ -11,6 +11,12 @@ const TEXT = {
     power: "전력 P",
     need2: "정확히 2개 값을 입력하세요.",
     bad: "0으로 나눌 수 없습니다 (입력값 확인).",
+    summary: "요약",
+    quantity: "값",
+    valueCol: "결과",
+    source: "구분",
+    input: "입력",
+    computed: "계산됨",
   },
   en: {
     hint: "Enter exactly 2 of the four (V·I·R·P) to compute the rest.",
@@ -20,6 +26,12 @@ const TEXT = {
     power: "Power P",
     need2: "Enter exactly 2 values.",
     bad: "Division by zero (check inputs).",
+    summary: "Summary",
+    quantity: "Quantity",
+    valueCol: "Value",
+    source: "Source",
+    input: "Input",
+    computed: "Computed",
   },
   zh: {
     hint: "在 V·I·R·P 四个值中正好输入 2 个即可计算其余。",
@@ -29,6 +41,12 @@ const TEXT = {
     power: "功率 P",
     need2: "请正好输入 2 个值。",
     bad: "除数为零（请检查输入）。",
+    summary: "汇总",
+    quantity: "量",
+    valueCol: "数值",
+    source: "来源",
+    input: "输入",
+    computed: "计算",
   },
 } as const;
 
@@ -58,7 +76,7 @@ function solve(v: Partial<Record<K, number>>): Record<K, number> | null {
 
 export default function OhmsLawTool() {
   const t = TEXT[useLang()];
-  const [vals, setVals] = useState<Record<K, string>>({ V: "", I: "", R: "", P: "" });
+  const [vals, setVals] = useToolStateJSON<Record<K, string>>("vals", { V: "", I: "", R: "", P: "" });
 
   const parsed: Partial<Record<K, number>> = {};
   (Object.keys(vals) as K[]).forEach((k) => {
@@ -106,6 +124,38 @@ export default function OhmsLawTool() {
             />
           ))}
         </div>
+      )}
+      {res && (
+        <Field label={t.summary}>
+          <div className="overflow-x-auto rounded-md border border-zinc-200 dark:border-zinc-700">
+            <table className="w-full border-collapse text-left text-sm">
+              <thead className="bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
+                <tr>
+                  <th className="px-3 py-1.5 font-medium">{t.quantity}</th>
+                  <th className="px-3 py-1.5 font-medium">{t.valueCol}</th>
+                  <th className="px-3 py-1.5 font-medium">{t.source}</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-zinc-200 dark:divide-zinc-700">
+                {fields.map(([k, label, unit]) => (
+                  <tr key={k}>
+                    <td className="px-3 py-1.5 text-zinc-600 dark:text-zinc-400">{label}</td>
+                    <td className="px-3 py-1.5 font-mono">
+                      {fmtNum(res[k], 4)} {unit}
+                    </td>
+                    <td className="px-3 py-1.5">
+                      {parsed[k] === undefined ? (
+                        <span className="text-indigo-500">{t.computed}</span>
+                      ) : (
+                        <span className="text-zinc-500">{t.input}</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Field>
       )}
     </div>
   );

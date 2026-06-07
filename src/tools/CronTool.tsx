@@ -1,5 +1,5 @@
-import { useState } from "react";
 import { Field, TextInput, Stat } from "../components/ui";
+import { useToolState } from "../components/toolState";
 import { useLang } from "../components/i18n";
 
 const TEXT = {
@@ -11,6 +11,8 @@ const TEXT = {
     invalid: "표현식 형식 오류 (5개 필드 필요)",
     min: "분", hour: "시", dom: "일", mon: "월", dow: "요일",
     every: "매", everyN: "마다", at: "", on: "",
+    grid: "주간 실행 그리드 (요일 × 시)",
+    days: ["일", "월", "화", "수", "목", "금", "토"],
   },
   en: {
     intro: "Standard 5-field cron (min hour dom mon dow). Preview next run times.",
@@ -20,6 +22,8 @@ const TEXT = {
     invalid: "Invalid format (need 5 fields)",
     min: "minute", hour: "hour", dom: "day-of-month", mon: "month", dow: "day-of-week",
     every: "every", everyN: "every", at: "at", on: "on",
+    grid: "Weekly schedule grid (day × hour)",
+    days: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
   },
   zh: {
     intro: "标准 5 字段 cron (分 时 日 月 周)。预览下次执行时间。",
@@ -29,6 +33,8 @@ const TEXT = {
     invalid: "格式错误 (需 5 个字段)",
     min: "分", hour: "时", dom: "日", mon: "月", dow: "周",
     every: "每", everyN: "每", at: "", on: "",
+    grid: "每周执行网格 (周 × 时)",
+    days: ["日", "一", "二", "三", "四", "五", "六"],
   },
 } as const;
 
@@ -99,13 +105,16 @@ function nextRuns(p: NonNullable<ReturnType<typeof parse>>, count: number): Date
 
 export default function CronTool() {
   const t = TEXT[useLang()];
-  const [expr, setExpr] = useState("0 */2 * * 1-5");
+  const [expr, setExpr] = useToolState("expr", "0 */2 * * 1-5");
 
   const p = parse(expr);
   const runs = p ? nextRuns(p, 6) : [];
 
   const fieldDesc = (label: string, raw: string) =>
     raw === "*" ? `${label}: *` : `${label}: ${raw}`;
+
+  // 그리드: 해당 시(hour)에 발화 분이 하나라도 있으면 활성, 요일은 dows 매칭
+  const hourActive = p ? new Set(p.hours) : new Set<number>();
 
   return (
     <div className="space-y-4">
@@ -134,6 +143,43 @@ export default function CronTool() {
                 <li className="px-3 py-2 text-sm text-zinc-500">—</li>
               )}
             </ul>
+          </Field>
+          <Field label={t.grid}>
+            <div className="overflow-x-auto">
+              <table className="border-collapse text-[10px]">
+                <thead>
+                  <tr>
+                    <th className="w-8" />
+                    {Array.from({ length: 24 }, (_, h) => (
+                      <th key={h} className="px-0.5 font-normal text-zinc-400">
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {t.days.map((dayName, dow) => (
+                    <tr key={dow}>
+                      <td className="pr-1 text-right text-zinc-500">{dayName}</td>
+                      {Array.from({ length: 24 }, (_, h) => {
+                        const active = p.dows.includes(dow) && hourActive.has(h);
+                        return (
+                          <td key={h} className="p-px">
+                            <div
+                              className={`h-3 w-3 rounded-sm ${
+                                active
+                                  ? "bg-indigo-500"
+                                  : "bg-zinc-200 dark:bg-zinc-800"
+                              }`}
+                            />
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </Field>
         </>
       )}

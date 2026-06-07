@@ -1,6 +1,7 @@
-import { useState } from "react";
 import { Field, TextInput, Stat } from "../components/ui";
 import { useLang } from "../components/i18n";
+import { useToolState } from "../components/toolState";
+import { Gauge, ChartCard } from "../components/charts";
 
 const TEXT = {
   ko: {
@@ -14,6 +15,7 @@ const TEXT = {
     years: "세",
     day: "일",
     invalid: "날짜를 확인하세요",
+    yearProgress: "올해 생일 주기 진행률",
   },
   en: {
     intro: "Compute international/Korean age and days lived from a birth date.",
@@ -26,6 +28,7 @@ const TEXT = {
     years: "yr",
     day: "d",
     invalid: "Check the date",
+    yearProgress: "Progress through birthday cycle",
   },
   zh: {
     intro: "根据出生日期计算周岁/虚岁和已度过天数。",
@@ -38,6 +41,7 @@ const TEXT = {
     years: "岁",
     day: "天",
     invalid: "请检查日期",
+    yearProgress: "本年生日周期进度",
   },
 } as const;
 
@@ -45,8 +49,8 @@ const todayStr = () => new Date().toISOString().slice(0, 10);
 
 export default function AgeTool() {
   const t = TEXT[useLang()];
-  const [birth, setBirth] = useState("1990-01-01");
-  const [base, setBase] = useState(todayStr());
+  const [birth, setBirth] = useToolState("birth", "1990-01-01");
+  const [base, setBase] = useToolState("base", todayStr());
 
   const b = new Date(birth);
   const n = new Date(base);
@@ -77,12 +81,17 @@ export default function AgeTool() {
       {!valid ? (
         <p className="text-sm text-red-400">{t.invalid}</p>
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <Stat label={t.intl} value={intl} unit={t.years} accent />
-          <Stat label={t.korAge} value={korean} unit={t.years} />
-          <Stat label={t.days} value={days.toLocaleString()} unit={t.day} />
-          <Stat label={t.nextBday} value={nextDays} unit={t.day} accent />
-        </div>
+        <>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <Stat label={t.intl} value={intl} unit={t.years} accent />
+            <Stat label={t.korAge} value={korean} unit={t.years} />
+            <Stat label={t.days} value={days.toLocaleString()} unit={t.day} />
+            <Stat label={t.nextBday} value={nextDays} unit={t.day} accent />
+          </div>
+          <ChartCard title={t.yearProgress}>
+            <Gauge value={((365 - nextDays) / 365) * 100} label={t.nextBday} />
+          </ChartCard>
+        </>
       )}
     </div>
   );

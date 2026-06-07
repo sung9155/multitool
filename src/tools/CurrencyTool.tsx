@@ -1,6 +1,7 @@
-import { useState } from "react";
 import { Field, TextInput, Stat } from "../components/ui";
 import { useLang } from "../components/i18n";
+import { useToolState, useToolStateJSON } from "../components/toolState";
+import { ChartCard } from "../components/charts";
 
 const TEXT = {
   ko: {
@@ -11,6 +12,9 @@ const TEXT = {
     rates: "환율 (1단위 = ? 원)",
     result: "환산 결과",
     rate: "적용 환율",
+    allTable: "전체 통화 환산",
+    currency: "통화",
+    value: "환산 금액",
   },
   en: {
     intro: "Convert with manually entered rates (offline). Set each currency: 1 unit = ? KRW.",
@@ -20,6 +24,9 @@ const TEXT = {
     rates: "Rates (1 unit = ? KRW)",
     result: "Converted",
     rate: "Applied rate",
+    allTable: "All currencies",
+    currency: "Currency",
+    value: "Converted amount",
   },
   zh: {
     intro: "手动输入汇率进行换算（离线）。设置每种货币：1 单位 = ? 元。",
@@ -29,6 +36,9 @@ const TEXT = {
     rates: "汇率 (1 单位 = ? 元)",
     result: "换算结果",
     rate: "适用汇率",
+    allTable: "全部货币换算",
+    currency: "货币",
+    value: "换算金额",
   },
 } as const;
 
@@ -43,12 +53,13 @@ const DEFAULTS: Record<string, number> = {
 
 export default function CurrencyTool() {
   const t = TEXT[useLang()];
-  const [rates, setRates] = useState<Record<string, string>>(
+  const [rates, setRates] = useToolStateJSON<Record<string, string>>(
+    "rates",
     Object.fromEntries(Object.entries(DEFAULTS).map(([k, v]) => [k, String(v)])),
   );
-  const [amount, setAmount] = useState("100");
-  const [from, setFrom] = useState("USD");
-  const [to, setTo] = useState("KRW");
+  const [amount, setAmount] = useToolState("amount", "100");
+  const [from, setFrom] = useToolState("from", "USD");
+  const [to, setTo] = useToolState("to", "KRW");
 
   const codes = Object.keys(DEFAULTS);
   const rFrom = Number(rates[from]);
@@ -100,6 +111,38 @@ export default function CurrencyTool() {
           value={`1 ${from} = ${pairRate.toLocaleString("ko-KR", { maximumFractionDigits: 4 })} ${to}`}
         />
       </div>
+
+      <ChartCard title={t.allTable}>
+        <div className="overflow-hidden rounded-lg border border-zinc-200 dark:border-zinc-800">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-zinc-200 bg-zinc-50 text-left dark:border-zinc-800 dark:bg-zinc-900/40">
+                <th className="px-3 py-2 font-medium text-zinc-500">{t.currency}</th>
+                <th className="px-3 py-2 text-right font-medium text-zinc-500">{t.value}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {codes.map((c) => {
+                const rc = Number(rates[c]);
+                const v = rc > 0 ? krw / rc : 0;
+                return (
+                  <tr
+                    key={c}
+                    className={`border-b border-zinc-100 last:border-0 dark:border-zinc-800/60 ${
+                      c === to ? "bg-indigo-500/10" : ""
+                    }`}
+                  >
+                    <td className="px-3 py-2 font-mono text-zinc-600 dark:text-zinc-300">{c}</td>
+                    <td className="px-3 py-2 text-right font-mono text-zinc-900 dark:text-zinc-100">
+                      {Number.isFinite(v) ? v.toLocaleString("ko-KR", { maximumFractionDigits: 2 }) : "—"}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </ChartCard>
 
       <Field label={t.rates}>
         <div className="grid gap-2 sm:grid-cols-3">

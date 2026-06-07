@@ -1,6 +1,7 @@
-import { useState } from "react";
 import { Field, TextInput, Stat, fmtNum } from "../components/ui";
 import { useLang } from "../components/i18n";
+import { useToolState } from "../components/toolState";
+import { Bars, ChartCard } from "../components/charts";
 
 const TEXT = {
   ko: {
@@ -16,6 +17,7 @@ const TEXT = {
     verdict: "판정",
     okNatural: "자연방열로 충분",
     needFan: "팬/쿨러 필요",
+    heatBalance: "열 수지",
   },
   en: {
     intro: "Estimate required cooling capacity & fan airflow from internal heat and allowed temp rise.",
@@ -30,6 +32,7 @@ const TEXT = {
     verdict: "Verdict",
     okNatural: "Natural cooling is enough",
     needFan: "Fan/cooler required",
+    heatBalance: "Heat balance",
   },
   zh: {
     intro: "根据内部发热和允许温升估算所需冷却容量和风扇风量。",
@@ -44,15 +47,16 @@ const TEXT = {
     verdict: "判定",
     okNatural: "自然散热即可",
     needFan: "需要风扇/冷却器",
+    heatBalance: "热平衡",
   },
 } as const;
 
 export default function PanelCoolingTool() {
   const t = TEXT[useLang()];
-  const [heat, setHeat] = useState("300");
-  const [area, setArea] = useState("2");
-  const [dt, setDt] = useState("15");
-  const [k, setK] = useState("5.5");
+  const [heat, setHeat] = useToolState("heat", "300");
+  const [area, setArea] = useToolState("area", "2");
+  const [dt, setDt] = useToolState("dt", "15");
+  const [k, setK] = useToolState("k", "5.5");
 
   const natural = Number(k) * Number(area) * Number(dt); // W
   const needCool = Math.max(0, Number(heat) - natural);
@@ -83,6 +87,15 @@ export default function PanelCoolingTool() {
         <Stat label={t.needCool} value={fmtNum(needCool, 1)} unit="W" accent />
         <Stat label={t.fanFlow} value={fmtNum(flow_m3h, 1)} unit="m³/h" accent />
       </div>
+      <ChartCard title={t.heatBalance}>
+        <Bars
+          items={[
+            { label: t.natural, value: natural, display: `${fmtNum(natural, 1)} W` },
+            { label: t.heat, value: Number(heat), display: `${fmtNum(Number(heat), 1)} W` },
+            { label: t.needCool, value: needCool, display: `${fmtNum(needCool, 1)} W` },
+          ]}
+        />
+      </ChartCard>
       <div
         className={`rounded-md border p-3 text-sm font-medium ${
           ok

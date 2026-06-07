@@ -1,6 +1,7 @@
-import { useState } from "react";
 import { Field, TextInput, Stat, fmtNum } from "../components/ui";
 import { useLang } from "../components/i18n";
+import { useToolState } from "../components/toolState";
+import { Gauge, ChartCard } from "../components/charts";
 
 const TEXT = {
   ko: {
@@ -18,6 +19,7 @@ const TEXT = {
     laminar: "층류",
     turbulent: "난류",
     trans: "천이",
+    reGauge: "난류 임계 대비 레이놀즈수",
   },
   en: {
     intro: "Estimate velocity, Reynolds number & pressure loss (Darcy-Weisbach) from flow and pipe ID. (water)",
@@ -34,6 +36,7 @@ const TEXT = {
     laminar: "Laminar",
     turbulent: "Turbulent",
     trans: "Transitional",
+    reGauge: "Reynolds vs turbulent threshold",
   },
   zh: {
     intro: "根据流量和管内径估算流速、雷诺数和压力损失（Darcy-Weisbach，以水为准）。",
@@ -50,15 +53,16 @@ const TEXT = {
     laminar: "层流",
     turbulent: "湍流",
     trans: "过渡",
+    reGauge: "雷诺数相对湍流临界值",
   },
 } as const;
 
 export default function FlowPipeTool() {
   const t = TEXT[useLang()];
-  const [q, setQ] = useState("60");
-  const [d, setD] = useState("25");
-  const [len, setLen] = useState("10");
-  const [rough, setRough] = useState("0.045");
+  const [q, setQ] = useToolState("q", "60");
+  const [d, setD] = useToolState("d", "25");
+  const [len, setLen] = useToolState("len", "10");
+  const [rough, setRough] = useToolState("rough", "0.045");
 
   const rho = 998; // kg/m³
   const nu = 1.004e-6; // m²/s @20℃
@@ -107,6 +111,9 @@ export default function FlowPipeTool() {
         <Stat label={t.headloss} value={fmtNum(hf, 3)} unit="m" />
         <Stat label={t.ploss} value={fmtNum(dp / 1000, 2)} unit="kPa" accent />
       </div>
+      <ChartCard title={t.reGauge}>
+        <Gauge value={Math.max(0, Math.min(100, (Re / 4000) * 100))} label={`Re ${fmtNum(Re, 0)} · ${regime}`} />
+      </ChartCard>
     </div>
   );
 }

@@ -1,6 +1,7 @@
-import { useState } from "react";
 import { Field, TextInput, Stat, fmtNum } from "../components/ui";
 import { useLang } from "../components/i18n";
+import { useToolState } from "../components/toolState";
+import { Bars, ChartCard } from "../components/charts";
 
 const TEXT = {
   ko: {
@@ -13,6 +14,10 @@ const TEXT = {
     outTorque: "출력 토크",
     outPower: "출력 동력",
     speedRatio: "속도비",
+    speedCompare: "회전수 비교",
+    torqueCompare: "토크 비교",
+    inputSide: "입력",
+    outputSide: "출력",
   },
   en: {
     intro: "Compute output side from input speed/torque and gear ratio (with efficiency).",
@@ -24,6 +29,10 @@ const TEXT = {
     outTorque: "Output torque",
     outPower: "Output power",
     speedRatio: "Speed ratio",
+    speedCompare: "Speed comparison",
+    torqueCompare: "Torque comparison",
+    inputSide: "Input",
+    outputSide: "Output",
   },
   zh: {
     intro: "根据输入转速/转矩和减速比计算输出侧数值（含效率）。",
@@ -35,15 +44,19 @@ const TEXT = {
     outTorque: "输出转矩",
     outPower: "输出功率",
     speedRatio: "速度比",
+    speedCompare: "转速对比",
+    torqueCompare: "转矩对比",
+    inputSide: "输入",
+    outputSide: "输出",
   },
 } as const;
 
 export default function GearRatioTool() {
   const t = TEXT[useLang()];
-  const [rpm, setRpm] = useState("1800");
-  const [torque, setTorque] = useState("1");
-  const [ratio, setRatio] = useState("10");
-  const [eff, setEff] = useState("95");
+  const [rpm, setRpm] = useToolState("rpm", "1800");
+  const [torque, setTorque] = useToolState("tq", "1");
+  const [ratio, setRatio] = useToolState("i", "10");
+  const [eff, setEff] = useToolState("eff", "95");
 
   const i = Number(ratio);
   const e = Number(eff) / 100;
@@ -74,6 +87,22 @@ export default function GearRatioTool() {
         <Stat label={t.outPower} value={fmtNum(outPower, 1)} unit="W" />
         <Stat label={t.speedRatio} value={`1 : ${fmtNum(i, 3)}`} />
       </div>
+      <ChartCard title={t.speedCompare}>
+        <Bars
+          items={[
+            { label: t.inputSide, value: Number(rpm), display: `${fmtNum(Number(rpm), 1)} rpm` },
+            { label: t.outputSide, value: outRpm, display: `${fmtNum(outRpm, 1)} rpm` },
+          ]}
+        />
+      </ChartCard>
+      <ChartCard title={t.torqueCompare}>
+        <Bars
+          items={[
+            { label: t.inputSide, value: Number(torque), display: `${fmtNum(Number(torque), 3)} N·m` },
+            { label: t.outputSide, value: outTorque, display: `${fmtNum(outTorque, 3)} N·m` },
+          ]}
+        />
+      </ChartCard>
     </div>
   );
 }

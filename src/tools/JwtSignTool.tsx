@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Field, TextArea, TextInput, CopyButton, ErrorText } from "../components/ui";
 import { useLang } from "../components/i18n";
+import { useToolState } from "../components/toolState";
 
 const TEXT = {
   ko: {
@@ -10,6 +11,9 @@ const TEXT = {
     secret: "Secret",
     token: "생성된 JWT",
     badJson: "Payload JSON 형식 오류",
+    header: "헤더",
+    payloadSeg: "Payload",
+    signature: "서명",
   },
   en: {
     intro: "Generate an HMAC(HS256/384/512)-signed JWT. All in-browser (offline).",
@@ -18,6 +22,9 @@ const TEXT = {
     secret: "Secret",
     token: "Generated JWT",
     badJson: "Invalid payload JSON",
+    header: "Header",
+    payloadSeg: "Payload",
+    signature: "Signature",
   },
   zh: {
     intro: "生成 HMAC(HS256/384/512) 签名的 JWT。全部在浏览器处理（离线）。",
@@ -26,6 +33,9 @@ const TEXT = {
     secret: "Secret",
     token: "生成的 JWT",
     badJson: "Payload JSON 格式错误",
+    header: "头部",
+    payloadSeg: "Payload",
+    signature: "签名",
   },
 } as const;
 
@@ -40,9 +50,12 @@ const b64urlStr = (s: string) => b64url(new TextEncoder().encode(s));
 
 export default function JwtSignTool() {
   const t = TEXT[useLang()];
-  const [alg, setAlg] = useState("HS256");
-  const [payload, setPayload] = useState('{\n  "sub": "1234567890",\n  "name": "John Doe",\n  "iat": 1516239022\n}');
-  const [secret, setSecret] = useState("your-256-bit-secret");
+  const [alg, setAlg] = useToolState("alg", "HS256");
+  const [payload, setPayload] = useToolState(
+    "payload",
+    '{\n  "sub": "1234567890",\n  "name": "John Doe",\n  "iat": 1516239022\n}',
+  );
+  const [secret, setSecret] = useToolState("secret", "your-256-bit-secret");
   const [token, setToken] = useState("");
   const [err, setErr] = useState("");
 
@@ -108,9 +121,32 @@ export default function JwtSignTool() {
       {token && (
         <Field label={t.token}>
           <div className="space-y-2">
-            <code className="block break-all rounded-md border border-zinc-200 bg-zinc-100 p-3 font-mono text-sm dark:border-zinc-700 dark:bg-zinc-900">
-              {token}
-            </code>
+            {(() => {
+              const [h, p, s] = token.split(".");
+              return (
+                <code className="block break-all rounded-md border border-zinc-200 bg-zinc-100 p-3 font-mono text-sm dark:border-zinc-700 dark:bg-zinc-900">
+                  <span className="text-rose-500 dark:text-rose-400">{h}</span>
+                  <span className="text-zinc-400">.</span>
+                  <span className="text-indigo-500 dark:text-indigo-400">{p}</span>
+                  <span className="text-zinc-400">.</span>
+                  <span className="text-sky-500 dark:text-sky-400">{s}</span>
+                </code>
+              );
+            })()}
+            <div className="flex flex-wrap gap-3 text-xs text-zinc-600 dark:text-zinc-400">
+              <span className="flex items-center gap-1.5">
+                <span className="inline-block h-2.5 w-2.5 rounded-full bg-rose-500" />
+                {t.header}
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="inline-block h-2.5 w-2.5 rounded-full bg-indigo-500" />
+                {t.payloadSeg}
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="inline-block h-2.5 w-2.5 rounded-full bg-sky-500" />
+                {t.signature}
+              </span>
+            </div>
             <CopyButton value={token} />
           </div>
         </Field>

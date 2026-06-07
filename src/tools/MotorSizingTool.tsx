@@ -1,6 +1,7 @@
-import { useState } from "react";
 import { Field, TextInput, Stat, fmtNum } from "../components/ui";
 import { useLang } from "../components/i18n";
+import { useToolState } from "../components/toolState";
+import { Bars, ChartCard } from "../components/charts";
 
 const TEXT = {
   ko: {
@@ -15,6 +16,7 @@ const TEXT = {
     angAccel: "각가속도",
     power: "필요 출력",
     rated: "추천 정격(안전율 적용)",
+    torqueBreakdown: "토크 구성",
   },
   en: {
     intro: "Sum load torque and accel torque to estimate required motor torque & power.",
@@ -28,6 +30,7 @@ const TEXT = {
     angAccel: "Angular accel",
     power: "Required power",
     rated: "Recommended rating (w/ SF)",
+    torqueBreakdown: "Torque breakdown",
   },
   zh: {
     intro: "将负载转矩与加减速转矩相加，估算所需电机转矩和功率。",
@@ -41,16 +44,17 @@ const TEXT = {
     angAccel: "角加速度",
     power: "所需功率",
     rated: "推荐额定(含安全系数)",
+    torqueBreakdown: "转矩构成",
   },
 } as const;
 
 export default function MotorSizingTool() {
   const t = TEXT[useLang()];
-  const [tl, setTl] = useState("2");
-  const [j, setJ] = useState("0.01");
-  const [rpm, setRpm] = useState("1500");
-  const [ta, setTa] = useState("0.2");
-  const [sf, setSf] = useState("1.5");
+  const [tl, setTl] = useToolState("tl", "2");
+  const [j, setJ] = useToolState("j", "0.01");
+  const [rpm, setRpm] = useToolState("rpm", "1500");
+  const [ta, setTa] = useToolState("ta", "0.2");
+  const [sf, setSf] = useToolState("sf", "1.5");
 
   const n = Number(rpm);
   const omega = (n * 2 * Math.PI) / 60; // rad/s
@@ -88,6 +92,15 @@ export default function MotorSizingTool() {
         <Stat label={t.power} value={fmtNum(power / 1000, 3)} unit="kW" />
         <Stat label={t.rated} value={fmtNum(rated, 1)} unit="W" accent />
       </div>
+      <ChartCard title={t.torqueBreakdown}>
+        <Bars
+          items={[
+            { label: t.loadTorque, value: Number(tl), display: `${fmtNum(Number(tl), 3)} N·m` },
+            { label: t.accelTorque, value: accelTorque, display: `${fmtNum(accelTorque, 3)} N·m` },
+            { label: t.totalTorque, value: total, display: `${fmtNum(total, 3)} N·m` },
+          ]}
+        />
+      </ChartCard>
     </div>
   );
 }

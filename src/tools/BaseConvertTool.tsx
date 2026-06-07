@@ -1,6 +1,6 @@
-import { useState } from "react";
 import { Field, TextInput, Stat, CopyButton } from "../components/ui";
 import { useLang } from "../components/i18n";
+import { useToolState } from "../components/toolState";
 
 const TEXT = {
   ko: {
@@ -16,6 +16,7 @@ const TEXT = {
     dec: "10진수",
     hex: "16진수",
     bits: "비트 표현(32)",
+    grid: "32비트 격자",
     invalid: "해당 진법에 맞지 않는 값",
   },
   en: {
@@ -31,6 +32,7 @@ const TEXT = {
     dec: "Decimal",
     hex: "Hex",
     bits: "Bit view (32)",
+    grid: "32-bit grid",
     invalid: "Value not valid for this base",
   },
   zh: {
@@ -46,6 +48,7 @@ const TEXT = {
     dec: "十进制",
     hex: "十六进制",
     bits: "位表示(32)",
+    grid: "32位网格",
     invalid: "该进制下数值无效",
   },
 } as const;
@@ -59,9 +62,9 @@ const BASES = [
 
 export default function BaseConvertTool() {
   const t = TEXT[useLang()];
-  const [base, setBase] = useState(16);
-  const [value, setValue] = useState("FF");
-  const [shift, setShift] = useState("0");
+  const [base, setBase] = useToolState("base", 16);
+  const [value, setValue] = useToolState("val", "FF");
+  const [shift, setShift] = useToolState("sh", "0");
 
   const spec = BASES.find((b) => b.base === base)!;
   const clean = value.trim();
@@ -131,6 +134,28 @@ export default function BaseConvertTool() {
                 {bits}
               </code>
               <CopyButton value={n.toString(16).toUpperCase()} />
+            </div>
+          </Field>
+          <Field label={t.grid}>
+            <div className="flex flex-wrap gap-2">
+              {[0, 1, 2, 3].map((g) => (
+                <div key={g} className="flex gap-1">
+                  {Array.from({ length: 8 }, (_, j) => {
+                    const bit = 31 - (g * 8 + j);
+                    const on = ((n >>> bit) & 1) === 1;
+                    return (
+                      <div key={bit} className="flex flex-col items-center gap-1">
+                        <div
+                          className={`h-6 w-6 rounded-sm ${
+                            on ? "bg-indigo-500" : "bg-zinc-200 dark:bg-zinc-800"
+                          }`}
+                        />
+                        <span className="text-[10px] text-zinc-400">{bit}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              ))}
             </div>
           </Field>
         </>

@@ -43,6 +43,11 @@ export function LineChart({
   yUnit?: string;
   height?: number;
 }) {
+  // 비유한값(NaN/Infinity) 포인트 제거 — 잘못된 입력에도 SVG 깨지지 않도록
+  series = series.map((s) => ({
+    ...s,
+    points: s.points.filter((p) => Number.isFinite(p.x) && Number.isFinite(p.y)),
+  }));
   const all = series.flatMap((s) => s.points);
   const xs = all.map((p) => p.x);
   const ys = all.map((p) => p.y);
@@ -222,7 +227,7 @@ export function Gauge({
   label?: string;
   color?: string;
 }) {
-  const v = Math.max(0, Math.min(100, value));
+  const v = Number.isFinite(value) ? Math.max(0, Math.min(100, value)) : 0;
   const R = 80;
   const cx = 100;
   const cy = 100;
@@ -253,7 +258,7 @@ export function Gauge({
           textAnchor="middle"
           className="fill-zinc-900 text-[28px] font-bold dark:fill-zinc-100"
         >
-          {value.toFixed(1)}%
+          {v.toFixed(1)}%
         </text>
       </svg>
       {label && (

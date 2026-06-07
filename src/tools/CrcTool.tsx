@@ -1,6 +1,6 @@
-import { useState } from "react";
 import { Field, TextInput, Stat } from "../components/ui";
 import { useLang } from "../components/i18n";
+import { useToolState } from "../components/toolState";
 
 const TEXT = {
   ko: {
@@ -16,6 +16,10 @@ const TEXT = {
     xor8: "XOR 8비트",
     bytes: "바이트 수",
     invalid: "잘못된 16진수 입력",
+    breakdown: "바이트 분해",
+    idx: "#",
+    hexCol: "16진수",
+    decCol: "10진수",
   },
   en: {
     intro: "Checksums for comms debugging. Pick the input format.",
@@ -30,6 +34,10 @@ const TEXT = {
     xor8: "XOR 8-bit",
     bytes: "Byte count",
     invalid: "Invalid hex input",
+    breakdown: "Byte breakdown",
+    idx: "#",
+    hexCol: "Hex",
+    decCol: "Decimal",
   },
   zh: {
     intro: "用于通信调试的校验和。请选择输入格式。",
@@ -44,6 +52,10 @@ const TEXT = {
     xor8: "异或 8位",
     bytes: "字节数",
     invalid: "无效的十六进制输入",
+    breakdown: "字节分解",
+    idx: "#",
+    hexCol: "十六进制",
+    decCol: "十进制",
   },
 } as const;
 
@@ -73,8 +85,8 @@ const hex4 = (n: number) => n.toString(16).toUpperCase().padStart(4, "0");
 
 export default function CrcTool() {
   const t = TEXT[useLang()];
-  const [input, setInput] = useState("01 03 00 00 00 0A");
-  const [fmt, setFmt] = useState<"hex" | "ascii">("hex");
+  const [input, setInput] = useToolState("in", "01 03 00 00 00 0A");
+  const [fmt, setFmt] = useToolState<"hex" | "ascii">("fmt", "hex");
 
   let bytes: number[] | null;
   if (fmt === "hex") bytes = parseHex(input);
@@ -126,6 +138,30 @@ export default function CrcTool() {
           <Stat label={t.xor8} value={`0x${hex2(xor)}`} />
           <Stat label={t.bytes} value={b.length} />
         </div>
+      )}
+      {valid && b.length > 0 && (
+        <Field label={t.breakdown}>
+          <div className="overflow-x-auto rounded-md border border-zinc-200 dark:border-zinc-700">
+            <table className="w-full border-collapse text-left font-mono text-sm">
+              <thead className="bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
+                <tr>
+                  <th className="px-3 py-1.5 font-medium">{t.idx}</th>
+                  <th className="px-3 py-1.5 font-medium">{t.hexCol}</th>
+                  <th className="px-3 py-1.5 font-medium">{t.decCol}</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-zinc-200 dark:divide-zinc-700">
+                {b.map((byte, i) => (
+                  <tr key={i}>
+                    <td className="px-3 py-1.5 text-zinc-500">{i}</td>
+                    <td className="px-3 py-1.5">0x{hex2(byte)}</td>
+                    <td className="px-3 py-1.5">{byte}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Field>
       )}
     </div>
   );

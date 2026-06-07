@@ -1,6 +1,6 @@
-import { useState } from "react";
 import { Field, Stat } from "../components/ui";
 import { useLang } from "../components/i18n";
+import { useToolState } from "../components/toolState";
 
 const TEXT = {
   ko: {
@@ -13,6 +13,10 @@ const TEXT = {
     result: "저항값",
     tolerance: "허용오차",
     range: "범위",
+    decode: "디코딩 분해",
+    band: "밴드",
+    color: "색상",
+    meaning: "의미",
   },
   en: {
     bands: "Bands",
@@ -24,6 +28,10 @@ const TEXT = {
     result: "Resistance",
     tolerance: "Tolerance",
     range: "Range",
+    decode: "Decoded breakdown",
+    band: "Band",
+    color: "Color",
+    meaning: "Meaning",
   },
   zh: {
     bands: "色环数",
@@ -35,6 +43,10 @@ const TEXT = {
     result: "电阻值",
     tolerance: "允许误差",
     range: "范围",
+    decode: "解码分解",
+    band: "色环",
+    color: "颜色",
+    meaning: "含义",
   },
 } as const;
 
@@ -90,12 +102,12 @@ function Swatch({
 
 export default function ResistorTool() {
   const t = TEXT[useLang()];
-  const [bands, setBands] = useState<4 | 5>(4);
-  const [d1, setD1] = useState(1); // brown
-  const [d2, setD2] = useState(0);
-  const [d3, setD3] = useState(0);
-  const [mult, setMult] = useState(2); // red x100
-  const [tol, setTol] = useState(0); // gold (index in tolColors)
+  const [bands, setBands] = useToolState<4 | 5>("bands", 4);
+  const [d1, setD1] = useToolState("d1", 1); // brown
+  const [d2, setD2] = useToolState("d2", 0);
+  const [d3, setD3] = useToolState("d3", 0);
+  const [mult, setMult] = useToolState("mult", 2); // red x100
+  const [tol, setTol] = useToolState("tol", 0); // gold (index in tolColors)
 
   const digits =
     bands === 4
@@ -113,6 +125,29 @@ export default function ResistorTool() {
     ...(bands === 5 ? [digitColors[d3].hex] : []),
     multColors[mult].hex,
     tolColors[tol].hex,
+  ];
+
+  // 디코딩 분해 표
+  const digitRows = (bands === 4 ? [d1, d2] : [d1, d2, d3]).map((idx, i) => ({
+    band: `${t.digit} ${i + 1}`,
+    name: digitColors[idx].name,
+    hex: digitColors[idx].hex,
+    meaning: `${t.digit} = ${digitColors[idx].digit}`,
+  }));
+  const decoded = [
+    ...digitRows,
+    {
+      band: t.mult,
+      name: multColors[mult].name,
+      hex: multColors[mult].hex,
+      meaning: `× ${multColors[mult].mult ?? 1}`,
+    },
+    {
+      band: t.tol,
+      name: tolColors[tol].name,
+      hex: tolColors[tol].hex,
+      meaning: `± ${tolColors[tol].tol ?? 0} %`,
+    },
   ];
 
   return (
@@ -171,6 +206,37 @@ export default function ResistorTool() {
         <Stat label={t.tolerance} value={`±${tolVal}`} unit="%" />
         <Stat label={t.range} value={`${fmtOhm(lo)} ~ ${fmtOhm(hi)}`} />
       </div>
+
+      <Field label={t.decode}>
+        <div className="overflow-x-auto rounded-md border border-zinc-200 dark:border-zinc-700">
+          <table className="w-full border-collapse text-left text-sm">
+            <thead className="bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
+              <tr>
+                <th className="px-3 py-1.5 font-medium">{t.band}</th>
+                <th className="px-3 py-1.5 font-medium">{t.color}</th>
+                <th className="px-3 py-1.5 font-medium">{t.meaning}</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-zinc-200 dark:divide-zinc-700">
+              {decoded.map((row, i) => (
+                <tr key={i}>
+                  <td className="px-3 py-1.5 text-zinc-500">{row.band}</td>
+                  <td className="px-3 py-1.5">
+                    <span className="flex items-center gap-2">
+                      <span
+                        className="inline-block h-3 w-3 rounded-sm border border-zinc-300 dark:border-zinc-600"
+                        style={{ background: row.hex }}
+                      />
+                      {row.name}
+                    </span>
+                  </td>
+                  <td className="px-3 py-1.5 font-mono">{row.meaning}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Field>
     </div>
   );
 }

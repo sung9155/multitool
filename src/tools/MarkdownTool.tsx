@@ -1,5 +1,6 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Field, TextArea } from "../components/ui";
+import { useToolState } from "../components/toolState";
 import { useLang } from "../components/i18n";
 
 const TEXT = {
@@ -120,7 +121,7 @@ const SAMPLE = `# 제목\n\n**굵게** 와 *기울임*, \`코드\`.\n\n- 항목 
 
 export default function MarkdownTool() {
   const t = TEXT[useLang()];
-  const [md, setMd] = useState(SAMPLE);
+  const [md, setMd] = useToolState("md", SAMPLE);
   const html = useMemo(() => render(md), [md]);
 
   return (

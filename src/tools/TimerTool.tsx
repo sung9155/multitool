@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
+import type { ReactNode } from "react";
 import { Field } from "../components/ui";
 import { useLang } from "../components/i18n";
+import { useToolState } from "../components/toolState";
 
 const TEXT = {
   ko: {
@@ -67,9 +69,60 @@ function fmt(ms: number): string {
 
 type Mode = "stopwatch" | "timer" | "pomodoro";
 
+/** 원형 진행 링 (SVG) — 0~1 비율 */
+function Ring({
+  frac,
+  color,
+  children,
+}: {
+  frac: number;
+  color: string;
+  children: ReactNode;
+}) {
+  const f = Math.max(0, Math.min(1, frac));
+  const R = 110;
+  const stroke = 12;
+  const r = R - stroke;
+  const C = 2 * Math.PI * r;
+  return (
+    <div className="relative mx-auto" style={{ width: R * 2, height: R * 2 }}>
+      <svg
+        viewBox={`0 0 ${R * 2} ${R * 2}`}
+        width={R * 2}
+        height={R * 2}
+        className="-rotate-90"
+      >
+        <circle
+          cx={R}
+          cy={R}
+          r={r}
+          fill="none"
+          strokeWidth={stroke}
+          className="stroke-zinc-200 dark:stroke-zinc-800"
+        />
+        <circle
+          cx={R}
+          cy={R}
+          r={r}
+          fill="none"
+          stroke={color}
+          strokeWidth={stroke}
+          strokeLinecap="round"
+          strokeDasharray={C}
+          strokeDashoffset={C * (1 - f)}
+          className="transition-[stroke-dashoffset] duration-100"
+        />
+      </svg>
+      <div className="absolute inset-0 flex items-center justify-center">
+        {children}
+      </div>
+    </div>
+  );
+}
+
 export default function TimerTool() {
   const t = TEXT[useLang()];
-  const [mode, setMode] = useState<Mode>("stopwatch");
+  const [mode, setMode] = useToolState<Mode>("mode", "stopwatch");
 
   // 공통 시간 상태
   const [running, setRunning] = useState(false);
@@ -77,9 +130,9 @@ export default function TimerTool() {
   const startRef = useRef(0);
   const baseRef = useRef(0);
 
-  // 타이머 설정
-  const [tMin, setTMin] = useState("5");
-  const [tSec, setTSec] = useState("0");
+  // 타이머 설정 (자동저장/URL 공유)
+  const [tMin, setTMin] = useToolState("tMin", "5");
+  const [tSec, setTSec] = useToolState("tSec", "0");
   const [laps, setLaps] = useState<number[]>([]);
 
   // 뽀모도로
@@ -133,6 +186,16 @@ export default function TimerTool() {
   }, [running, mode, targetMs, pomoPhase]);
 
   const display = mode === "stopwatch" ? elapsed : Math.max(0, targetMs - elapsed);
+
+  // 원형 진행 비율: 타이머/뽀모도로는 경과/목표, 스톱워치는 현재 분 내 초 진행
+  const ringFrac =
+    mode === "stopwatch"
+      ? (elapsed % 60000) / 60000
+      : targetMs > 0
+      ? Math.min(1, elapsed / targetMs)
+      : 0;
+  const ringColor =
+    mode === "pomodoro" && pomoPhase === "break" ? "#10b981" : "#6366f1";
 
   const toggle = () => {
     if (running) {
@@ -232,12 +295,16 @@ export default function TimerTool() {
       )}
 
       <div className="rounded-lg border border-zinc-200 bg-zinc-50 py-10 text-center dark:border-zinc-700 dark:bg-zinc-900">
-        <div className="font-mono text-5xl font-bold tabular-nums text-zinc-900 dark:text-zinc-100">
-          {fmt(display)}
-        </div>
-        {mode !== "stopwatch" && display <= 0 && !running && (
-          <div className="mt-2 text-sm font-medium text-indigo-500">{t.done}</div>
-        )}
+        <Ring frac={ringFrac} color={ringColor}>
+          <div className="text-center">
+            <div className="font-mono text-4xl font-bold tabular-nums text-zinc-900 dark:text-zinc-100">
+              {fmt(display)}
+            </div>
+            {mode !== "stopwatch" && display <= 0 && !running && (
+              <div className="mt-2 text-sm font-medium text-indigo-500">{t.done}</div>
+            )}
+          </div>
+        </Ring>
       </div>
 
       <div className="flex gap-2">

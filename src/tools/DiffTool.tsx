@@ -1,5 +1,7 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Field, TextArea, Stat } from "../components/ui";
+import { Bars } from "../components/charts";
+import { useToolState } from "../components/toolState";
 import { useLang } from "../components/i18n";
 
 const TEXT = {
@@ -59,9 +61,9 @@ function diffLines(a: string[], b: string[]): Row[] {
 
 export default function DiffTool() {
   const t = TEXT[useLang()];
-  const [left, setLeft] = useState("hello\nworld\nfoo");
-  const [right, setRight] = useState("hello\nworld!\nbar\nbaz");
-  const [ignoreWs, setIgnoreWs] = useState(false);
+  const [left, setLeft] = useToolState("left", "hello\nworld\nfoo");
+  const [right, setRight] = useToolState("right", "hello\nworld!\nbar\nbaz");
+  const [ignoreWs, setIgnoreWs] = useToolState("ws", false);
 
   const rows = useMemo(() => {
     const norm = (s: string) =>
@@ -95,6 +97,13 @@ export default function DiffTool() {
         <Stat label={t.removed} value={`-${removed}`} />
         <Stat label={t.same} value={same} />
       </div>
+      <Bars
+        items={[
+          { label: t.added, value: added },
+          { label: t.removed, value: removed },
+          { label: t.same, value: same },
+        ]}
+      />
       <pre className="overflow-x-auto rounded-md border border-zinc-200 bg-zinc-50 p-3 text-sm leading-6 dark:border-zinc-700 dark:bg-zinc-900">
         {rows.map((r, i) => (
           <div

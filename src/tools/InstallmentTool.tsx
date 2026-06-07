@@ -1,6 +1,7 @@
-import { useState } from "react";
 import { Field, TextInput, Stat } from "../components/ui";
 import { useLang } from "../components/i18n";
+import { useToolState } from "../components/toolState";
+import { Bars, ChartCard } from "../components/charts";
 
 const TEXT = {
   ko: {
@@ -17,6 +18,7 @@ const TEXT = {
     pickInst: "할부가 유리",
     pickLump: "일시불이 유리",
     diff: "차액",
+    compare: "추가 비용 비교",
   },
   en: {
     intro: "Compare installment fees vs lump-sum opportunity cost (deposit interest).",
@@ -32,6 +34,7 @@ const TEXT = {
     pickInst: "Installment wins",
     pickLump: "Lump-sum wins",
     diff: "Difference",
+    compare: "Extra cost comparison",
   },
   zh: {
     intro: "比较分期手续费与一次性付款的机会成本（存款利息）。",
@@ -47,6 +50,7 @@ const TEXT = {
     pickInst: "分期更优",
     pickLump: "一次性更优",
     diff: "差额",
+    compare: "额外成本比较",
   },
 } as const;
 
@@ -54,10 +58,10 @@ const won = (n: number) => (Number.isFinite(n) ? Math.round(n).toLocaleString("k
 
 export default function InstallmentTool() {
   const t = TEXT[useLang()];
-  const [price, setPrice] = useState("1200000");
-  const [months, setMonths] = useState("12");
-  const [apr, setApr] = useState("0");
-  const [save, setSave] = useState("3.5");
+  const [price, setPrice] = useToolState("price", "1200000");
+  const [months, setMonths] = useToolState("months", "12");
+  const [apr, setApr] = useToolState("apr", "0");
+  const [save, setSave] = useToolState("save", "3.5");
 
   const P = Number(price);
   const N = Math.max(1, Math.floor(Number(months)));
@@ -107,6 +111,14 @@ export default function InstallmentTool() {
       >
         {t.verdict}: {instWins ? t.pickInst : t.pickLump} · {t.diff} {won(diff)}원
       </div>
+      <ChartCard title={t.compare}>
+        <Bars
+          items={[
+            { label: t.instFee, value: instFee, display: `${won(instFee)}원`, color: "#6366f1" },
+            { label: t.lumpCost, value: lumpCost, display: `${won(lumpCost)}원`, color: "#10b981" },
+          ]}
+        />
+      </ChartCard>
     </div>
   );
 }
