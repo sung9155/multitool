@@ -64,21 +64,53 @@ function NavGroup({
   items,
   lang,
   pathname,
+  collapsible,
+  collapsed,
+  onToggle,
 }: {
   title: string;
   titleClass: string;
   items: typeof tools;
   lang: import("./i18n").Lang;
   pathname: string;
+  collapsible?: boolean;
+  collapsed?: boolean;
+  onToggle?: () => void;
 }) {
   return (
     <div className="mb-3">
-      <div
-        className={`px-3 py-1 text-xs font-semibold uppercase tracking-wide ${titleClass}`}
-      >
-        {title}
-      </div>
-      {items.map((tool) => {
+      {collapsible ? (
+        <button
+          onClick={onToggle}
+          className={`flex w-full items-center justify-between rounded-md px-3 py-1 text-xs font-semibold uppercase tracking-wide hover:bg-zinc-200/60 dark:hover:bg-zinc-800/60 ${titleClass}`}
+          aria-expanded={!collapsed}
+        >
+          <span>
+            {title}
+            <span className="ml-1.5 font-normal lowercase opacity-60">
+              {items.length}
+            </span>
+          </span>
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            className={`transition-transform ${collapsed ? "-rotate-90" : ""}`}
+          >
+            <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+      ) : (
+        <div
+          className={`px-3 py-1 text-xs font-semibold uppercase tracking-wide ${titleClass}`}
+        >
+          {title}
+        </div>
+      )}
+      {collapsed
+        ? null
+        : items.map((tool) => {
         const active = pathname === `/t/${tool.slug}`;
         return (
           <Link
@@ -135,6 +167,29 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
   const toggleTheme = () =>
     setTheme((t) => (t === "dark" ? "light" : "dark"));
+
+  // 카테고리 접힘 상태 (localStorage 영속)
+  const [collapsed, setCollapsed] = useState<Set<string>>(() => {
+    try {
+      const raw = localStorage.getItem("collapsedCats");
+      if (raw) return new Set(JSON.parse(raw) as string[]);
+    } catch {
+      /* 무시 */
+    }
+    return new Set();
+  });
+  const toggleCat = (cat: string) =>
+    setCollapsed((prev) => {
+      const next = new Set(prev);
+      if (next.has(cat)) next.delete(cat);
+      else next.add(cat);
+      try {
+        localStorage.setItem("collapsedCats", JSON.stringify([...next]));
+      } catch {
+        /* 무시 */
+      }
+      return next;
+    });
 
   const favs = useFavorites();
   const recent = useRecent();
@@ -281,6 +336,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               items={items}
               lang={lang}
               pathname={pathname}
+              collapsible
+              // 검색 중에는 결과가 보이도록 강제 펼침
+              collapsed={q.trim() === "" && collapsed.has(cat)}
+              onToggle={() => toggleCat(cat)}
             />
           ))}
           {grouped.length === 0 && (
