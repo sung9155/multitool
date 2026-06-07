@@ -73,8 +73,13 @@ export default function BaseConvertTool() {
     n = n >>> 0; // unsigned 32
   }
 
+  // 비트 표현: 상단 10진수 값과 동일한 n 기준, 8비트 그룹으로 패딩
   const bits = Number.isFinite(n)
-    ? (n >>> 0).toString(2).padStart(8, "0").replace(/(.{8})/g, "$1 ").trim()
+    ? (() => {
+        const bin = Math.abs(n).toString(2);
+        const padded = bin.padStart(Math.max(8, Math.ceil(bin.length / 8) * 8), "0");
+        return (n < 0 ? "-" : "") + padded.replace(/(.{8})/g, "$1 ").trim();
+      })()
     : "—";
 
   return (

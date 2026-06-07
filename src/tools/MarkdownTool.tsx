@@ -20,7 +20,14 @@ function inline(s: string): string {
     .replace(/`([^`]+)`/g, "<code>$1</code>")
     .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
     .replace(/\*([^*]+)\*/g, "<em>$1</em>")
-    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, text, url) => {
+      // javascript: 등 위험한 스킴 차단 (http/https/mailto/상대경로/앵커만 허용)
+      const raw = url.trim();
+      const allowed = /^(https?:|mailto:|\/|#|\.)/i.test(raw) ? raw : "#";
+      // href 속성 탈출 방지: 따옴표/꺾쇠 인코딩
+      const safe = allowed.replace(/"/g, "%22").replace(/'/g, "%27").replace(/[<>]/g, "");
+      return `<a href="${safe}" target="_blank" rel="noopener noreferrer">${text}</a>`;
+    });
 }
 
 function render(md: string): string {
