@@ -1,7 +1,7 @@
-import { useState } from "react";
 import { Field, Stat, TextInput, fmtNum } from "../components/ui";
 import { Gauge, Bars, PALETTE } from "../components/charts";
 import { useLang } from "../components/i18n";
+import { useToolState } from "../components/toolState";
 
 const TEXT = {
   ko: {
@@ -65,11 +65,11 @@ const TEXT = {
 
 export default function OeeTool() {
   const t = TEXT[useLang()];
-  const [planned, setPlanned] = useState("480"); // 계획 가동시간 min
-  const [downtime, setDowntime] = useState("30"); // 정지시간 min
-  const [idealCt, setIdealCt] = useState("30"); // 이론 CT s/ea
-  const [total, setTotal] = useState("780"); // 총 생산수
-  const [defect, setDefect] = useState("12"); // 불량수
+  const [planned, setPlanned] = useToolState("planned", "480"); // 계획 가동시간 min
+  const [downtime, setDowntime] = useToolState("downtime", "30"); // 정지시간 min
+  const [idealCt, setIdealCt] = useToolState("idealCt", "30"); // 이론 CT s/ea
+  const [total, setTotal] = useToolState("total", "780"); // 총 생산수
+  const [defect, setDefect] = useToolState("defect", "12"); // 불량수
 
   const plan = Number(planned);
   const down = Number(downtime);

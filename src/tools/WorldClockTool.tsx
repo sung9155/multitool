@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useLang } from "../components/i18n";
+import { useToolState } from "../components/toolState";
 
 interface Zone {
   tz: string;
@@ -59,7 +60,7 @@ export default function WorldClockTool() {
   const lang = useLang();
   const t = T[lang];
   const [now, setNow] = useState(() => new Date());
-  const [base, setBase] = useState("Asia/Seoul");
+  const [base, setBase] = useToolState("base", "Asia/Seoul");
 
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 1000);

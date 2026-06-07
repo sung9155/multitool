@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import QRCode from "qrcode";
 import { Field, TextArea } from "../components/ui";
 import { useLang } from "../components/i18n";
+import { useToolState } from "../components/toolState";
 
 const TEXT = {
   ko: {
@@ -34,9 +35,9 @@ const LEVELS = ["L", "M", "Q", "H"] as const;
 
 export default function QrTool() {
   const t = TEXT[useLang()];
-  const [text, setText] = useState("https://github.com");
-  const [size, setSize] = useState(256);
-  const [level, setLevel] = useState<(typeof LEVELS)[number]>("M");
+  const [text, setText] = useToolState("q", "https://github.com");
+  const [size, setSize] = useToolState("size", 256);
+  const [level, setLevel] = useToolState<(typeof LEVELS)[number]>("ec", "M");
   const [url, setUrl] = useState("");
 
   useEffect(() => {
@@ -47,7 +48,7 @@ export default function QrTool() {
     let alive = true;
     QRCode.toDataURL(text, {
       width: size,
-      errorCorrectionLevel: level,
+      errorCorrectionLevel: level as (typeof LEVELS)[number],
       margin: 2,
     })
       .then((d) => {

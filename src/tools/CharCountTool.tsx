@@ -1,6 +1,7 @@
-import { useState } from "react";
 import { Field, Stat, TextArea } from "../components/ui";
 import { useLang } from "../components/i18n";
+import { Bars, ChartCard } from "../components/charts";
+import { useToolState } from "../components/toolState";
 
 const TEXT = {
   ko: {
@@ -14,6 +15,8 @@ const TEXT = {
     unitLine: "줄",
     inputLabel: "텍스트 입력",
     inputHint: "실시간 통계",
+    chartTitle: "통계 시각화",
+    chars: "글자수",
     note: "트위터(280자) · SMS(한글 90바이트 / LMS 2000바이트) 제한 참고용.",
   },
   en: {
@@ -27,6 +30,8 @@ const TEXT = {
     unitLine: "",
     inputLabel: "Text input",
     inputHint: "Live stats",
+    chartTitle: "Stats visualization",
+    chars: "Characters",
     note: "For Twitter (280 chars) · SMS (Korean 90 bytes / LMS 2000 bytes) limits.",
   },
   zh: {
@@ -40,13 +45,16 @@ const TEXT = {
     unitLine: "行",
     inputLabel: "文本输入",
     inputHint: "实时统计",
+    chartTitle: "统计可视化",
+    chars: "字数",
     note: "供 Twitter(280 字) · 短信(韩文 90 字节 / LMS 2000 字节) 限制参考。",
   },
 } as const;
 
 export default function CharCountTool() {
   const t = TEXT[useLang()];
-  const [text, setText] = useState(
+  const [text, setText] = useToolState(
+    "q",
     "안녕하세요. Multitool 글자수 세기 도구입니다.\n여러 줄도 지원합니다.",
   );
 
@@ -84,6 +92,33 @@ export default function CharCountTool() {
           />
         ))}
       </div>
+
+      <ChartCard title={t.chartTitle}>
+        <Bars
+          items={[
+            {
+              label: t.chars,
+              value: withSpaces,
+              display: withSpaces.toLocaleString("en-US"),
+            },
+            {
+              label: t.words,
+              value: words,
+              display: words.toLocaleString("en-US"),
+            },
+            {
+              label: t.lines,
+              value: lines,
+              display: lines.toLocaleString("en-US"),
+            },
+            {
+              label: t.bytes,
+              value: bytes,
+              display: `${bytes.toLocaleString("en-US")} B`,
+            },
+          ]}
+        />
+      </ChartCard>
 
       <p className="text-xs text-zinc-500">{t.note}</p>
     </div>

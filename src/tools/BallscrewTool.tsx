@@ -1,7 +1,7 @@
-import { useState } from "react";
 import { Field, Stat, TextInput, fmtNum } from "../components/ui";
 import { LineChart, PALETTE, type Pt } from "../components/charts";
 import { useLang } from "../components/i18n";
+import { useToolState } from "../components/toolState";
 
 const TEXT = {
   ko: {
@@ -68,10 +68,10 @@ const TEXT = {
 
 export default function BallscrewTool() {
   const t = TEXT[useLang()];
-  const [lead, setLead] = useState("10"); // mm/rev (스크류 1회전 이송)
-  const [ppr, setPpr] = useState("10000"); // 모터 1회전당 지령 펄스
-  const [gear, setGear] = useState("1"); // 기어비 i (모터회전:스크류회전)
-  const [speed, setSpeed] = useState("300"); // 목표 이송속도 mm/s
+  const [lead, setLead] = useToolState("lead", "10"); // mm/rev (스크류 1회전 이송)
+  const [ppr, setPpr] = useToolState("ppr", "10000"); // 모터 1회전당 지령 펄스
+  const [gear, setGear] = useToolState("gear", "1"); // 기어비 i (모터회전:스크류회전)
+  const [speed, setSpeed] = useToolState("speed", "300"); // 목표 이송속도 mm/s
 
   const L = Number(lead);
   const P = Number(ppr);

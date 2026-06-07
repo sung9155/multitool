@@ -1,6 +1,7 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { ErrorText, Field, TextArea, TextInput } from "../components/ui";
 import { useLang } from "../components/i18n";
+import { useToolState } from "../components/toolState";
 
 const TEXT = {
   ko: {
@@ -40,9 +41,10 @@ const TEXT = {
 
 export default function RegexTool() {
   const t = TEXT[useLang()];
-  const [pattern, setPattern] = useState("(\\w+)@(\\w+\\.\\w+)");
-  const [flags, setFlags] = useState("g");
-  const [text, setText] = useState(
+  const [pattern, setPattern] = useToolState("pattern", "(\\w+)@(\\w+\\.\\w+)");
+  const [flags, setFlags] = useToolState("flags", "g");
+  const [text, setText] = useToolState(
+    "text",
     "문의: hong@example.com, support@test.co.kr 로 연락주세요.",
   );
 

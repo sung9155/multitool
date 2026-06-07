@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Field, Stat, TextInput, fmtNum } from "../components/ui";
 import { LineChart, PowerTriangle, PALETTE, type Pt } from "../components/charts";
 import { useLang } from "../components/i18n";
+import { useToolState } from "../components/toolState";
 
 const TEXT = {
   ko: {
@@ -80,11 +81,11 @@ function wave(offsetDeg: number, phase: number): Pt[] {
 
 export default function ThreePhaseTool() {
   const t = TEXT[useLang()];
-  const [mode, setMode] = useState<"i2p" | "p2i">("i2p");
-  const [volt, setVolt] = useState("380"); // 선간전압 V
-  const [pf, setPf] = useState("0.85"); // 역률
-  const [current, setCurrent] = useState("10"); // A
-  const [power, setPower] = useState("5"); // kW
+  const [mode, setMode] = useToolState<"i2p" | "p2i">("mode", "i2p");
+  const [volt, setVolt] = useToolState("volt", "380"); // 선간전압 V
+  const [pf, setPf] = useToolState("pf", "0.85"); // 역률
+  const [current, setCurrent] = useToolState("current", "10"); // A
+  const [power, setPower] = useToolState("power", "5"); // kW
 
   // 파형 애니메이션 위상
   const [phase, setPhase] = useState(0);

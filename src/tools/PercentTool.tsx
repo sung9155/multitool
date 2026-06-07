@@ -1,6 +1,7 @@
-import { useState } from "react";
 import { Field, Stat, TextInput, fmtNum } from "../components/ui";
 import { useLang } from "../components/i18n";
+import { useToolState } from "../components/toolState";
+import { Bars, ChartCard } from "../components/charts";
 
 const TEXT = {
   ko: {
@@ -17,6 +18,12 @@ const TEXT = {
     ofB: "B (퍼센트 %)",
     changeA: "A (이전 값)",
     changeB: "B (이후 값)",
+    chartTitle: "비교",
+    partLabel: "부분 (A)",
+    wholeLabel: "전체 (B)",
+    resultLabelChart: "결과",
+    beforeLabel: "이전 (A)",
+    afterLabel: "이후 (B)",
   },
   en: {
     calcMethod: "Calculation",
@@ -32,6 +39,12 @@ const TEXT = {
     ofB: "B (percent %)",
     changeA: "A (before)",
     changeB: "B (after)",
+    chartTitle: "Comparison",
+    partLabel: "Part (A)",
+    wholeLabel: "Whole (B)",
+    resultLabelChart: "Result",
+    beforeLabel: "Before (A)",
+    afterLabel: "After (B)",
   },
   zh: {
     calcMethod: "计算方式",
@@ -47,6 +60,12 @@ const TEXT = {
     ofB: "B (百分比 %)",
     changeA: "A (之前值)",
     changeB: "B (之后值)",
+    chartTitle: "对比",
+    partLabel: "部分 (A)",
+    wholeLabel: "整体 (B)",
+    resultLabelChart: "结果",
+    beforeLabel: "之前 (A)",
+    afterLabel: "之后 (B)",
   },
 } as const;
 
@@ -54,9 +73,9 @@ type Mode = "ratio" | "of" | "change";
 
 export default function PercentTool() {
   const t = TEXT[useLang()];
-  const [mode, setMode] = useState<Mode>("ratio");
-  const [a, setA] = useState("30");
-  const [b, setB] = useState("200");
+  const [mode, setMode] = useToolState<Mode>("mode", "ratio");
+  const [a, setA] = useToolState("a", "30");
+  const [b, setB] = useToolState("b", "200");
 
   const MODES: [Mode, string][] = [
     ["ratio", t.modeRatio],
@@ -95,6 +114,27 @@ export default function PercentTool() {
     change: [t.changeA, t.changeB],
   };
 
+  const disp = (n: number) => (Number.isFinite(n) ? fmtNum(n, 4) : "—");
+
+  let barItems: { label: string; value: number; display: string }[];
+  if (mode === "ratio") {
+    barItems = [
+      { label: t.partLabel, value: av, display: disp(av) },
+      { label: t.wholeLabel, value: bv, display: disp(bv) },
+    ];
+  } else if (mode === "of") {
+    const part = (av * bv) / 100;
+    barItems = [
+      { label: t.resultLabelChart, value: part, display: disp(part) },
+      { label: t.wholeLabel, value: av, display: disp(av) },
+    ];
+  } else {
+    barItems = [
+      { label: t.beforeLabel, value: av, display: disp(av) },
+      { label: t.afterLabel, value: bv, display: disp(bv) },
+    ];
+  }
+
   return (
     <div className="space-y-4">
       <Field label={t.calcMethod}>
@@ -116,7 +156,7 @@ export default function PercentTool() {
       </Field>
 
       <div className="grid gap-3 sm:grid-cols-2">
-        <Field label={labels[mode][0]}>
+        <Field label={labels[mode as Mode][0]}>
           <TextInput
             mono
             inputMode="decimal"
@@ -124,7 +164,7 @@ export default function PercentTool() {
             onChange={(e) => setA(e.target.value)}
           />
         </Field>
-        <Field label={labels[mode][1]}>
+        <Field label={labels[mode as Mode][1]}>
           <TextInput
             mono
             inputMode="decimal"
@@ -135,6 +175,10 @@ export default function PercentTool() {
       </div>
 
       <Stat label={resultLabel} value={resultValue} unit={resultUnit} accent />
+
+      <ChartCard title={t.chartTitle}>
+        <Bars items={barItems} />
+      </ChartCard>
     </div>
   );
 }

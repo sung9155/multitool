@@ -1,7 +1,7 @@
-import { useState } from "react";
 import { Field, Stat, TextInput, fmtNum } from "../components/ui";
 import { LineChart, PALETTE, type Pt } from "../components/charts";
 import { useLang } from "../components/i18n";
+import { useToolState } from "../components/toolState";
 
 const TEXT = {
   ko: {
@@ -92,10 +92,10 @@ type Method = "equalPI" | "equalP" | "bullet";
 export default function LoanTool() {
   const t = TEXT[useLang()];
   const w = (n: number) => won(n, t.won);
-  const [principal, setPrincipal] = useState("100000000"); // 원금
-  const [rate, setRate] = useState("4.5"); // 연이율 %
-  const [years, setYears] = useState("30"); // 기간(년)
-  const [method, setMethod] = useState<Method>("equalPI");
+  const [principal, setPrincipal] = useToolState("principal", "100000000"); // 원금
+  const [rate, setRate] = useToolState("rate", "4.5"); // 연이율 %
+  const [years, setYears] = useToolState("years", "30"); // 기간(년)
+  const [method, setMethod] = useToolState<Method>("method", "equalPI");
 
   const P = Number(principal);
   const r = Number(rate) / 100 / 12; // 월이율

@@ -1,6 +1,7 @@
-import { useState } from "react";
 import { Field, TextInput } from "../components/ui";
 import { useLang } from "../components/i18n";
+import { useToolState } from "../components/toolState";
+import { Bars, ChartCard } from "../components/charts";
 
 const TEXT = {
   ko: {
@@ -13,6 +14,7 @@ const TEXT = {
     supply: "공급가액",
     vat: "부가세",
     total: "합계금액",
+    chartTitle: "합계 구성",
   },
   en: {
     won: "KRW",
@@ -24,6 +26,7 @@ const TEXT = {
     supply: "Supply value",
     vat: "VAT",
     total: "Total",
+    chartTitle: "Total breakdown",
   },
   zh: {
     won: "元",
@@ -35,6 +38,7 @@ const TEXT = {
     supply: "供应价",
     vat: "增值税",
     total: "合计金额",
+    chartTitle: "合计构成",
   },
 } as const;
 
@@ -44,9 +48,9 @@ const won = (n: number, suffix: string) =>
 export default function VatTool() {
   const t = TEXT[useLang()];
   const w = (n: number) => won(n, t.won);
-  const [amount, setAmount] = useState("1000000");
-  const [rate, setRate] = useState("10");
-  const [mode, setMode] = useState<"supply" | "total">("supply");
+  const [amount, setAmount] = useToolState("amount", "1000000");
+  const [rate, setRate] = useToolState("rate", "10");
+  const [mode, setMode] = useToolState<"supply" | "total">("mode", "supply");
 
   const value = Number(amount.replace(/,/g, ""));
   const r = Number(rate) / 100;
@@ -126,6 +130,23 @@ export default function VatTool() {
           </div>
         ))}
       </div>
+
+      <ChartCard title={t.chartTitle}>
+        <Bars
+          items={[
+            {
+              label: t.supply,
+              value: Number.isFinite(supply) ? supply : 0,
+              display: w(supply),
+            },
+            {
+              label: t.vat,
+              value: Number.isFinite(vat) ? vat : 0,
+              display: w(vat),
+            },
+          ]}
+        />
+      </ChartCard>
     </div>
   );
 }

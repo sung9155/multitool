@@ -1,7 +1,7 @@
-import { useState } from "react";
 import { Field, Stat, TextInput } from "../components/ui";
 import { Bars, PALETTE } from "../components/charts";
 import { useLang } from "../components/i18n";
+import { useToolState } from "../components/toolState";
 
 const TEXT = {
   ko: {
@@ -121,8 +121,8 @@ function estIncomeTax(monthly: number, dependents: number): number {
 export default function NetSalaryTool() {
   const t = TEXT[useLang()];
   const w = (n: number) => won(n, t.won);
-  const [annual, setAnnual] = useState("48000000"); // 연봉
-  const [dependents, setDependents] = useState("1"); // 부양가족(본인 포함)
+  const [annual, setAnnual] = useToolState("annual", "48000000"); // 연봉
+  const [dependents, setDependents] = useToolState("dep", "1"); // 부양가족(본인 포함)
 
   const yearly = Number(annual);
   const monthly = yearly / 12;

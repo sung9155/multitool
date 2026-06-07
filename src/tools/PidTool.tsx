@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Stat, fmtNum } from "../components/ui";
 import { LineChart, PALETTE, type Pt } from "../components/charts";
 import { useLang } from "../components/i18n";
+import { useToolState } from "../components/toolState";
 
 const TEXT = {
   ko: {
@@ -226,15 +227,15 @@ const PRESETS: Record<string, [number, number, number]> = {
 
 export default function PidTool() {
   const t = TEXT[useLang()];
-  const [kp, setKp] = useState(2.5);
-  const [ki, setKi] = useState(1.5);
-  const [kd, setKd] = useState(0.4);
-  const [sp, setSp] = useState(1);
-  const [tau, setTau] = useState(1);
-  const [dead, setDead] = useState(0); // 데드타임 (초)
-  const [order, setOrder] = useState<1 | 2>(1); // 플랜트 차수
-  const [distOn, setDistOn] = useState(false); // 외란 주입
-  const [distMag, setDistMag] = useState(0.5); // 외란 크기
+  const [kp, setKp] = useToolState("kp", 2.5);
+  const [ki, setKi] = useToolState("ki", 1.5);
+  const [kd, setKd] = useToolState("kd", 0.4);
+  const [sp, setSp] = useToolState("sp", 1);
+  const [tau, setTau] = useToolState("tau", 1);
+  const [dead, setDead] = useToolState("dead", 0); // 데드타임 (초)
+  const [order, setOrder] = useToolState<1 | 2>("order", 1); // 플랜트 차수
+  const [distOn, setDistOn] = useToolState("distOn", false); // 외란 주입
+  const [distMag, setDistMag] = useToolState("distMag", 0.5); // 외란 크기
   const DIST_TIME = 7; // 외란 주입 시각 (s)
 
   const sim = useMemo(
@@ -243,7 +244,7 @@ export default function PidTool() {
         K: 1,
         tau,
         deadSteps: Math.round(dead / 0.02),
-        order,
+        order: order as 1 | 2,
         distTime: distOn ? DIST_TIME : -1,
         distMag,
       }),

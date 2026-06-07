@@ -1,6 +1,7 @@
-import { useState } from "react";
 import { Field, Stat, TextInput, fmtNum } from "../components/ui";
 import { useLang } from "../components/i18n";
+import { useToolState } from "../components/toolState";
+import { ChartCard } from "../components/charts";
 
 const TEXT = {
   ko: {
@@ -13,6 +14,8 @@ const TEXT = {
     volume: "부피",
     temp: "온도",
     pyeong: "평",
+    resultTitle: "변환 결과",
+    convertedValue: "변환 값",
   },
   en: {
     category: "Category",
@@ -24,6 +27,8 @@ const TEXT = {
     volume: "Volume",
     temp: "Temperature",
     pyeong: "pyeong",
+    resultTitle: "Conversion results",
+    convertedValue: "Converted value",
   },
   zh: {
     category: "类别",
@@ -35,6 +40,8 @@ const TEXT = {
     volume: "体积",
     temp: "温度",
     pyeong: "坪",
+    resultTitle: "换算结果",
+    convertedValue: "换算值",
   },
 } as const;
 
@@ -95,15 +102,15 @@ function fromCelsius(c: number, unit: string): number {
 
 export default function UnitConvertTool() {
   const t = TEXT[useLang()];
-  const [cat, setCat] = useState<Cat>("length");
+  const [cat, setCat] = useToolState<Cat>("cat", "length");
 
   // 단위 표시명 (키는 유지, "평"만 현지화)
   const unitLabel = (u: string) => (u === "평" ? t.pyeong : u);
-  const [value, setValue] = useState("1");
-  const [unit, setUnit] = useState("m");
+  const [value, setValue] = useToolState("value", "1");
+  const [unit, setUnit] = useToolState("unit", "m");
 
   const units =
-    cat === "temp" ? TEMP_UNITS : Object.keys(FACTORS[cat]);
+    cat === "temp" ? TEMP_UNITS : Object.keys(FACTORS[cat as Exclude<Cat, "temp">]);
 
   // 카테고리 전환 직후 unit 이 목록에 없으면 첫 단위로 폴백 (렌더 중 안전)
   const activeUnit = units.includes(unit) ? unit : units[0];
@@ -183,6 +190,40 @@ export default function UnitConvertTool() {
           />
         ))}
       </div>
+
+      <ChartCard title={t.resultTitle}>
+        <div className="overflow-hidden rounded-lg border border-zinc-200 dark:border-zinc-800">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-zinc-100 text-left text-xs text-zinc-500 dark:bg-zinc-900/60">
+                <th className="px-3 py-2 font-medium">{t.unit}</th>
+                <th className="px-3 py-2 text-right font-medium">
+                  {t.convertedValue}
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {results.map((r) => (
+                <tr
+                  key={r.u}
+                  className={`border-t border-zinc-200 dark:border-zinc-800 ${
+                    r.u === activeUnit
+                      ? "bg-indigo-50 dark:bg-indigo-950/30"
+                      : ""
+                  }`}
+                >
+                  <td className="px-3 py-2 text-zinc-600 dark:text-zinc-400">
+                    {unitLabel(r.u)}
+                  </td>
+                  <td className="px-3 py-2 text-right font-mono text-zinc-900 dark:text-zinc-100">
+                    {Number.isFinite(r.out) ? fmtNum(r.out, 6) : "—"}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </ChartCard>
     </div>
   );
 }

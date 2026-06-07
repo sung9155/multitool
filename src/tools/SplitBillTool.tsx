@@ -1,7 +1,7 @@
-import { useState } from "react";
 import { Field, Stat, TextInput } from "../components/ui";
 import { Bars, PALETTE } from "../components/charts";
 import { useLang } from "../components/i18n";
+import { useToolState } from "../components/toolState";
 
 const TEXT = {
   ko: {
@@ -47,9 +47,9 @@ export default function SplitBillTool() {
   const won = (n: number) =>
     Number.isFinite(n) ? Math.round(n).toLocaleString(t.locale) + t.currency : "—";
 
-  const [total, setTotal] = useState("80000");
-  const [people, setPeople] = useState("4");
-  const [tip, setTip] = useState("10");
+  const [total, setTotal] = useToolState("total", "80000");
+  const [people, setPeople] = useToolState("people", "4");
+  const [tip, setTip] = useToolState("tip", "10");
 
   const totalV = Number(total.replace(/,/g, ""));
   const peopleV = Math.max(1, Math.floor(Number(people)) || 1);

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Field, Stat, TextInput, fmtNum } from "../components/ui";
 import { Bars, PALETTE } from "../components/charts";
 import { useLang } from "../components/i18n";
+import { useToolState } from "../components/toolState";
 
 const TEXT = {
   ko: {
@@ -59,11 +60,11 @@ const TEXT = {
 
 export default function CylinderForceTool() {
   const tr = TEXT[useLang()];
-  const [bore, setBore] = useState("32"); // mm
-  const [rod, setRod] = useState("12"); // mm
-  const [pressure, setPressure] = useState("0.5"); // MPa
-  const [unit, setUnit] = useState<"MPa" | "bar">("MPa");
-  const [eff, setEff] = useState("100"); // 부하율 %
+  const [bore, setBore] = useToolState("bore", "32"); // mm
+  const [rod, setRod] = useToolState("rod", "12"); // mm
+  const [pressure, setPressure] = useToolState("pressure", "0.5"); // MPa
+  const [unit, setUnit] = useToolState<"MPa" | "bar">("unit", "MPa");
+  const [eff, setEff] = useToolState("eff", "100"); // 부하율 %
 
   // 피스톤 왕복 애니메이션 (0=후진, 1=전진)
   const [s, setS] = useState(0);

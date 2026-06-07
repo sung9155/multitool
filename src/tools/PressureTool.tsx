@@ -1,7 +1,7 @@
-import { useState } from "react";
 import { Field, Stat, TextInput, fmtNum } from "../components/ui";
 import { Gauge, PALETTE } from "../components/charts";
 import { useLang } from "../components/i18n";
+import { useToolState } from "../components/toolState";
 
 const TEXT = {
   ko: {
@@ -41,8 +41,8 @@ const UNITS = Object.keys(TO_PA);
 
 export default function PressureTool() {
   const t = TEXT[useLang()];
-  const [value, setValue] = useState("0.5");
-  const [unit, setUnit] = useState("MPa");
+  const [value, setValue] = useToolState("value", "0.5");
+  const [unit, setUnit] = useToolState("unit", "MPa");
 
   const pa = Number(value) * TO_PA[unit];
 

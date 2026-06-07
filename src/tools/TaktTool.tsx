@@ -1,7 +1,7 @@
-import { useState } from "react";
 import { Field, Stat, TextInput, fmtNum } from "../components/ui";
 import { Bars, PALETTE } from "../components/charts";
 import { useLang } from "../components/i18n";
+import { useToolState } from "../components/toolState";
 
 const TEXT = {
   ko: {
@@ -71,10 +71,10 @@ const TEXT = {
 
 export default function TaktTool() {
   const t = TEXT[useLang()];
-  const [ct, setCt] = useState("4.5"); // 사이클타임 s/ea
-  const [hours, setHours] = useState("20"); // 가동시간 h/day
-  const [avail, setAvail] = useState("90"); // 가동률 %
-  const [demand, setDemand] = useState("10000"); // 목표 수량 /day
+  const [ct, setCt] = useToolState("ct", "4.5"); // 사이클타임 s/ea
+  const [hours, setHours] = useToolState("hours", "20"); // 가동시간 h/day
+  const [avail, setAvail] = useToolState("avail", "90"); // 가동률 %
+  const [demand, setDemand] = useToolState("demand", "10000"); // 목표 수량 /day
 
   const CT = Number(ct);
   const H = Number(hours);

@@ -1,6 +1,7 @@
-import { useState } from "react";
 import { Field, Stat, TextInput, fmtNum } from "../components/ui";
 import { useLang } from "../components/i18n";
+import { useToolState } from "../components/toolState";
+import { ChartCard } from "../components/charts";
 
 type Mode = "rotary" | "pulley" | "screw";
 
@@ -27,6 +28,10 @@ const TEXT = {
     maxFreqLabel: "카운터 최대 응답주파수",
     maxFreqHint: "kHz (체배 후 기준)",
     note: "분해능 = PPR × 체배. 각도 = 360 ÷ 분해능. 선형 = 1회전이송 ÷ 분해능. 최대회전수 = 응답주파수 × 60 ÷ 분해능.",
+    summaryTitle: "결과 요약",
+    colItem: "항목",
+    colValue: "값",
+    colUnit: "단위",
   },
   en: {
     pprLabel: "Encoder PPR",
@@ -50,6 +55,10 @@ const TEXT = {
     maxFreqLabel: "Counter max response frequency",
     maxFreqHint: "kHz (after multiplier)",
     note: "Resolution = PPR × multiplier. Angle = 360 ÷ resolution. Linear = travel per rev ÷ resolution. Max speed = response frequency × 60 ÷ resolution.",
+    summaryTitle: "Results summary",
+    colItem: "Item",
+    colValue: "Value",
+    colUnit: "Unit",
   },
   zh: {
     pprLabel: "编码器 PPR",
@@ -73,16 +82,20 @@ const TEXT = {
     maxFreqLabel: "计数器最大响应频率",
     maxFreqHint: "kHz (以倍频后为准)",
     note: "分辨率 = PPR × 倍频。角度 = 360 ÷ 分辨率。线性 = 每转进给 ÷ 分辨率。最大转速 = 响应频率 × 60 ÷ 分辨率。",
+    summaryTitle: "结果摘要",
+    colItem: "项目",
+    colValue: "数值",
+    colUnit: "单位",
   },
 } as const;
 
 export default function EncoderTool() {
   const t = TEXT[useLang()];
-  const [ppr, setPpr] = useState("2500"); // 엔코더 기본 PPR
-  const [mult, setMult] = useState<1 | 2 | 4>(4); // 체배 (A/B 직교 4체배)
-  const [mode, setMode] = useState<Mode>("rotary");
-  const [dim, setDim] = useState("60"); // 풀리경 또는 리드 mm
-  const [maxFreq, setMaxFreq] = useState("200"); // 카운터 최대 응답 kHz
+  const [ppr, setPpr] = useToolState("ppr", "2500"); // 엔코더 기본 PPR
+  const [mult, setMult] = useToolState<1 | 2 | 4>("mult", 4); // 체배 (A/B 직교 4체배)
+  const [mode, setMode] = useToolState<Mode>("mode", "rotary");
+  const [dim, setDim] = useToolState("dim", "60"); // 풀리경 또는 리드 mm
+  const [maxFreq, setMaxFreq] = useToolState("freq", "200"); // 카운터 최대 응답 kHz
 
   const P = Number(ppr);
   const counts = P * mult; // 체배 후 카운트/회전
@@ -97,6 +110,22 @@ export default function EncoderTool() {
   // 최대 회전수: freq = rpm/60 × counts → rpm = freq×60/counts
   const fHz = Number(maxFreq) * 1000;
   const maxRpm = counts === 0 ? 0 : (fHz * 60) / counts;
+
+  const fmtCell = (n: number, d: number) =>
+    Number.isFinite(n) ? fmtNum(n, d) : "—";
+
+  const summaryRows: { item: string; value: string; unit: string }[] = [
+    { item: t.countsResolution, value: fmtCell(counts, 0), unit: t.countsUnit },
+    { item: t.angResolution, value: fmtCell(degPerCount, 5), unit: "°/count" },
+    { item: t.angResolution, value: fmtCell(arcsec, 2), unit: "arc-sec" },
+    { item: t.maxRpm, value: fmtCell(maxRpm, 0), unit: "rpm" },
+  ];
+  if (mode !== "rotary") {
+    summaryRows.push(
+      { item: t.linResolution, value: fmtCell(mmPerCount * 1000, 3), unit: "µm/count" },
+      { item: t.travelPerRev, value: fmtCell(travelPerRev, 3), unit: "mm" },
+    );
+  }
 
   return (
     <div className="space-y-5">
@@ -209,6 +238,36 @@ export default function EncoderTool() {
           />
         </Field>
       </div>
+
+      <ChartCard title={t.summaryTitle}>
+        <div className="overflow-hidden rounded-lg border border-zinc-200 dark:border-zinc-800">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-zinc-100 text-left text-xs text-zinc-500 dark:bg-zinc-900/60">
+                <th className="px-3 py-2 font-medium">{t.colItem}</th>
+                <th className="px-3 py-2 text-right font-medium">{t.colValue}</th>
+                <th className="px-3 py-2 font-medium">{t.colUnit}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {summaryRows.map((row, i) => (
+                <tr
+                  key={i}
+                  className="border-t border-zinc-200 dark:border-zinc-800"
+                >
+                  <td className="px-3 py-2 text-zinc-600 dark:text-zinc-400">
+                    {row.item}
+                  </td>
+                  <td className="px-3 py-2 text-right font-mono text-zinc-900 dark:text-zinc-100">
+                    {row.value}
+                  </td>
+                  <td className="px-3 py-2 text-zinc-500">{row.unit}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </ChartCard>
 
       <p className="text-xs text-zinc-500">{t.note}</p>
     </div>

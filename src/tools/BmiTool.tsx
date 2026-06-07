@@ -1,7 +1,7 @@
-import { useState } from "react";
 import { Field, Stat, TextInput, fmtNum } from "../components/ui";
 import { Gauge, PALETTE } from "../components/charts";
 import { useLang } from "../components/i18n";
+import { useToolState } from "../components/toolState";
 
 const TEXT = {
   ko: {
@@ -77,8 +77,8 @@ function classify(bmi: number) {
 
 export default function BmiTool() {
   const t = TEXT[useLang()];
-  const [height, setHeight] = useState("172"); // cm
-  const [weight, setWeight] = useState("68"); // kg
+  const [height, setHeight] = useToolState("height", "172"); // cm
+  const [weight, setWeight] = useToolState("weight", "68"); // kg
 
   const h = Number(height) / 100;
   const w = Number(weight);

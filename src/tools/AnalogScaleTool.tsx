@@ -1,7 +1,7 @@
-import { useState } from "react";
 import { Field, Stat, TextInput, fmtNum } from "../components/ui";
 import { LineChart, PALETTE } from "../components/charts";
 import { useLang } from "../components/i18n";
+import { useToolState } from "../components/toolState";
 
 const PRESETS: Record<string, [number, number, string]> = {
   "4-20mA": [4, 20, "mA"],
@@ -74,13 +74,13 @@ const TEXT = {
 
 export default function AnalogScaleTool() {
   const t = TEXT[useLang()];
-  const [preset, setPreset] = useState("4-20mA");
-  const [rawMin, setRawMin] = useState("4");
-  const [rawMax, setRawMax] = useState("20");
-  const [euMin, setEuMin] = useState("0");
-  const [euMax, setEuMax] = useState("100");
-  const [signal, setSignal] = useState("12");
-  const [eu, setEu] = useState("");
+  const [preset, setPreset] = useToolState("preset", "4-20mA");
+  const [rawMin, setRawMin] = useToolState("rawMin", "4");
+  const [rawMax, setRawMax] = useToolState("rawMax", "20");
+  const [euMin, setEuMin] = useToolState("euMin", "0");
+  const [euMax, setEuMax] = useToolState("euMax", "100");
+  const [signal, setSignal] = useToolState("signal", "12");
+  const [eu, setEu] = useToolState("eu", "");
 
   function applyPreset(name: string) {
     setPreset(name);

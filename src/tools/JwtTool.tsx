@@ -1,6 +1,6 @@
-import { useState } from "react";
 import { CopyButton, ErrorText, Field, TextArea } from "../components/ui";
 import { useLang } from "../components/i18n";
+import { useToolState } from "../components/toolState";
 
 const TEXT = {
   ko: {
@@ -14,6 +14,8 @@ const TEXT = {
     expired: "만료됨",
     valid: "유효",
     note: "클라이언트에서 디코딩만 — 서명 검증 안 함. 민감 토큰 주의.",
+    segments: "토큰 구조",
+    segSignature: "서명",
   },
   en: {
     input: "JWT Token",
@@ -26,6 +28,8 @@ const TEXT = {
     expired: "Expired",
     valid: "Valid",
     note: "Client-side decode only — signature NOT verified. Mind sensitive tokens.",
+    segments: "Token structure",
+    segSignature: "Signature",
   },
   zh: {
     input: "JWT 令牌",
@@ -38,6 +42,8 @@ const TEXT = {
     expired: "已过期",
     valid: "有效",
     note: "仅客户端解码 — 不验证签名。注意敏感令牌。",
+    segments: "令牌结构",
+    segSignature: "签名",
   },
 } as const;
 
@@ -57,7 +63,7 @@ const SAMPLE =
 
 export default function JwtTool() {
   const t = TEXT[useLang()];
-  const [input, setInput] = useState(SAMPLE);
+  const [input, setInput] = useToolState("jwt", SAMPLE);
 
   let header = "";
   let payload = "";
@@ -86,6 +92,19 @@ export default function JwtTool() {
   const now = Math.floor(Date.now() / 1000);
   const fmtTs = (ts: number) => new Date(ts * 1000).toLocaleString();
 
+  const trimmed = input.trim();
+  const segParts = trimmed === "" ? [] : trimmed.split(".");
+  const segColors = [
+    "text-rose-600 dark:text-rose-400",
+    "text-indigo-600 dark:text-indigo-400",
+    "text-sky-600 dark:text-sky-400",
+  ];
+  const segLegend = [
+    { label: t.header, color: "bg-rose-500" },
+    { label: t.payload, color: "bg-indigo-500" },
+    { label: t.segSignature, color: "bg-sky-500" },
+  ];
+
   return (
     <div className="space-y-4">
       <Field label={t.input}>
@@ -97,6 +116,29 @@ export default function JwtTool() {
         />
       </Field>
       <ErrorText>{error}</ErrorText>
+
+      {segParts.length > 0 && (
+        <Field label={t.segments}>
+          <div className="space-y-2">
+            <code className="block break-all rounded-md border border-zinc-200 bg-zinc-100 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900">
+              {segParts.map((seg, i) => (
+                <span key={i}>
+                  {i > 0 && <span className="text-zinc-400">.</span>}
+                  <span className={segColors[i] ?? "text-zinc-500"}>{seg}</span>
+                </span>
+              ))}
+            </code>
+            <div className="flex flex-wrap gap-3 text-xs text-zinc-600 dark:text-zinc-400">
+              {segLegend.map((l) => (
+                <span key={l.label} className="flex items-center gap-1.5">
+                  <span className={`inline-block h-2.5 w-2.5 rounded-full ${l.color}`} />
+                  {l.label}
+                </span>
+              ))}
+            </div>
+          </div>
+        </Field>
+      )}
 
       {header && (
         <>

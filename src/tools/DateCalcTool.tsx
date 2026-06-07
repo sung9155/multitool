@@ -1,6 +1,6 @@
-import { useState } from "react";
 import { Field, Stat, TextInput } from "../components/ui";
 import { useLang } from "../components/i18n";
+import { useToolState } from "../components/toolState";
 
 const TEXT = {
   ko: {
@@ -21,6 +21,15 @@ const TEXT = {
     daysBefore: (n: number) => `${n}일 전`,
     weekdays: ["일", "월", "화", "수", "목", "금", "토"],
     locale: "ko-KR",
+    breakdown: "차이 분석",
+    metric: "항목",
+    value: "값",
+    totalDays: "총 일수",
+    totalWeeks: "총 주수",
+    ymd: "연/월/일",
+    absDays: "절대 일수",
+    fmtWeeks: (w: number, d: number) => `${w}주 ${d}일`,
+    fmtYmd: (y: number, m: number, d: number) => `${y}년 ${m}개월 ${d}일`,
   },
   en: {
     tabDiff: "Date difference",
@@ -40,6 +49,15 @@ const TEXT = {
     daysBefore: (n: number) => `${n} days before`,
     weekdays: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
     locale: "en-US",
+    breakdown: "Difference breakdown",
+    metric: "Metric",
+    value: "Value",
+    totalDays: "Total days",
+    totalWeeks: "Total weeks",
+    ymd: "Years / Months / Days",
+    absDays: "Absolute days",
+    fmtWeeks: (w: number, d: number) => `${w} wk ${d} d`,
+    fmtYmd: (y: number, m: number, d: number) => `${y} y ${m} mo ${d} d`,
   },
   zh: {
     tabDiff: "两个日期差值",
@@ -59,6 +77,15 @@ const TEXT = {
     daysBefore: (n: number) => `${n}天前`,
     weekdays: ["日", "一", "二", "三", "四", "五", "六"],
     locale: "zh-CN",
+    breakdown: "差值分析",
+    metric: "项目",
+    value: "值",
+    totalDays: "总天数",
+    totalWeeks: "总周数",
+    ymd: "年/月/日",
+    absDays: "绝对天数",
+    fmtWeeks: (w: number, d: number) => `${w}周 ${d}天`,
+    fmtYmd: (y: number, m: number, d: number) => `${y}年 ${m}个月 ${d}天`,
   },
 } as const;
 
@@ -68,15 +95,15 @@ type Tab = "diff" | "offset";
 
 export default function DateCalcTool() {
   const t = TEXT[useLang()];
-  const [tab, setTab] = useState<Tab>("diff");
+  const [tab, setTab] = useToolState<Tab>("tab", "diff");
 
   // 두 날짜 차이
-  const [start, setStart] = useState(today());
-  const [end, setEnd] = useState(today());
+  const [start, setStart] = useToolState("start", today());
+  const [end, setEnd] = useToolState("end", today());
 
   // N일 후/전
-  const [base, setBase] = useState(today());
-  const [days, setDays] = useState("100");
+  const [base, setBase] = useToolState("base", today());
+  const [days, setDays] = useToolState("days", "100");
 
   const msPerDay = 86400000;
 
@@ -96,6 +123,29 @@ export default function DateCalcTool() {
 
   const fmtDate = (d: Date) =>
     `${d.toISOString().slice(0, 10)} (${t.weekdays[d.getUTCDay()]})`;
+
+  // 연/월/일 분해 (시작→종료, 달력 기준)
+  function ymdDiff(a: number, b: number) {
+    if (!Number.isFinite(a) || !Number.isFinite(b)) return null;
+    const lo = new Date(Math.min(a, b));
+    const hi = new Date(Math.max(a, b));
+    let years = hi.getUTCFullYear() - lo.getUTCFullYear();
+    let months = hi.getUTCMonth() - lo.getUTCMonth();
+    let dayDiff = hi.getUTCDate() - lo.getUTCDate();
+    if (dayDiff < 0) {
+      months -= 1;
+      const prevMonth = new Date(
+        Date.UTC(hi.getUTCFullYear(), hi.getUTCMonth(), 0),
+      );
+      dayDiff += prevMonth.getUTCDate();
+    }
+    if (months < 0) {
+      years -= 1;
+      months += 12;
+    }
+    return { years, months, days: dayDiff };
+  }
+  const ymd = ymdDiff(startMs, endMs);
 
   const dday =
     !Number.isFinite(diffDays)
@@ -169,6 +219,59 @@ export default function DateCalcTool() {
               unit={t.unitMonth}
             />
           </div>
+
+          <Field label={t.breakdown}>
+            <table className="w-full border-collapse text-sm">
+              <thead>
+                <tr className="border-b border-zinc-200 text-left text-zinc-500 dark:border-zinc-700">
+                  <th className="py-1.5 pr-3 font-medium">{t.metric}</th>
+                  <th className="py-1.5 font-medium">{t.value}</th>
+                </tr>
+              </thead>
+              <tbody className="text-zinc-800 dark:text-zinc-200">
+                {(
+                  [
+                    [
+                      t.totalDays,
+                      Number.isFinite(diffDays)
+                        ? diffDays.toLocaleString(t.locale)
+                        : "—",
+                    ],
+                    [
+                      t.absDays,
+                      Number.isFinite(diffDays)
+                        ? Math.abs(diffDays).toLocaleString(t.locale)
+                        : "—",
+                    ],
+                    [
+                      t.totalWeeks,
+                      Number.isFinite(diffDays)
+                        ? t.fmtWeeks(
+                            Math.trunc(Math.abs(diffDays) / 7),
+                            Math.abs(diffDays) % 7,
+                          )
+                        : "—",
+                    ],
+                    [
+                      t.ymd,
+                      ymd
+                        ? t.fmtYmd(ymd.years, ymd.months, ymd.days)
+                        : "—",
+                    ],
+                    ["D-Day", dday],
+                  ] as const
+                ).map(([label, v]) => (
+                  <tr
+                    key={label}
+                    className="border-b border-zinc-100 last:border-0 dark:border-zinc-800"
+                  >
+                    <td className="py-1.5 pr-3 text-zinc-500">{label}</td>
+                    <td className="py-1.5 font-mono">{v}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </Field>
         </>
       ) : (
         <>
