@@ -51,10 +51,14 @@ export function LineChart({
   const all = series.flatMap((s) => s.points);
   const xs = all.map((p) => p.x);
   const ys = all.map((p) => p.y);
-  const x0 = xMin ?? Math.min(...xs, 0);
-  const x1 = xMax ?? Math.max(...xs, 1);
+  let x0 = xMin ?? Math.min(...xs, 0);
+  let x1 = xMax ?? Math.max(...xs, 1);
   let y0 = yMin ?? Math.min(...ys);
   let y1 = yMax ?? Math.max(...ys);
+  // 잘못된 입력(빈값/문자)으로 들어온 NaN/Infinity 도메인 방어 — SVG 좌표 NaN 방지
+  if (!Number.isFinite(x0)) x0 = 0;
+  if (!Number.isFinite(x1)) x1 = 1;
+  if (x0 === x1) x1 = x0 + 1;
   if (!Number.isFinite(y0)) y0 = 0;
   if (!Number.isFinite(y1)) y1 = 1;
   if (y0 === y1) {
@@ -64,6 +68,10 @@ export function LineChart({
   const pad = (y1 - y0) * 0.08;
   y0 -= pad;
   y1 += pad;
+  // pad 가산으로 도메인이 ±Infinity 로 오버플로되는 경우(거대 입력) 재방어
+  if (!Number.isFinite(y0)) y0 = 0;
+  if (!Number.isFinite(y1)) y1 = 1;
+  if (y0 === y1) y1 = y0 + 1;
 
   const W = 620;
   const H = 320;
@@ -74,11 +82,20 @@ export function LineChart({
   const pw = W - L - R;
   const ph = H - T - B;
 
-  const sx = (x: number) => L + ((x - x0) / (x1 - x0 || 1)) * pw;
-  const sy = (y: number) => T + (1 - (y - y0) / (y1 - y0 || 1)) * ph;
+  // 좌표 결과가 비유한값이면 안전한 경계값으로 대체 — 거대/0 입력에도 SVG 속성 NaN/Infinity 방지
+  const sx = (x: number) => {
+    const v = L + ((x - x0) / (x1 - x0 || 1)) * pw;
+    return Number.isFinite(v) ? v : L;
+  };
+  const sy = (y: number) => {
+    const v = T + (1 - (y - y0) / (y1 - y0 || 1)) * ph;
+    return Number.isFinite(v) ? v : T + ph;
+  };
 
   const yTicks = 4;
   const xTicks = 5;
+  const mx = markerX != null && Number.isFinite(markerX) ? markerX : null;
+  const safeRefs = refLines?.filter((r) => Number.isFinite(r.x));
 
   return (
     <div className="w-full overflow-hidden rounded-lg border border-zinc-200 bg-white p-2 dark:border-zinc-800 dark:bg-zinc-900/40">
@@ -131,7 +148,7 @@ export function LineChart({
         })}
 
         {/* 정적 기준선 (예: 외란 주입 시각) */}
-        {refLines?.map((r, i) => (
+        {safeRefs?.map((r, i) => (
           <g key={`ref${i}`}>
             <line
               x1={sx(r.x)}
@@ -156,11 +173,11 @@ export function LineChart({
         ))}
 
         {/* 마커 (애니메이션 위치) */}
-        {markerX != null && (
+        {mx != null && (
           <line
-            x1={sx(markerX)}
+            x1={sx(mx)}
             y1={T}
-            x2={sx(markerX)}
+            x2={sx(mx)}
             y2={T + ph}
             className="stroke-zinc-400 dark:stroke-zinc-500"
             strokeWidth={1}
@@ -181,9 +198,9 @@ export function LineChart({
         ))}
 
         {/* 마커 위 점 */}
-        {markerX != null &&
+        {mx != null &&
           series.map((s, i) => {
-            const p = nearest(s.points, markerX);
+            const p = nearest(s.points, mx);
             if (!p) return null;
             return (
               <circle key={i} cx={sx(p.x)} cy={sy(p.y)} r={4} fill={s.color} />
@@ -276,7 +293,10 @@ export function Bars({
 }: {
   items: { label: string; value: number; color?: string; display?: string }[];
 }) {
-  const max = Math.max(...items.map((i) => Math.abs(i.value)), 1e-9);
+  const max = Math.max(
+    ...items.map((i) => (Number.isFinite(i.value) ? Math.abs(i.value) : 0)),
+    1e-9,
+  );
   const colors = [
     PALETTE.indigo,
     PALETTE.emerald,
@@ -298,7 +318,7 @@ export function Bars({
             <div
               className="h-full rounded-full transition-all duration-300"
               style={{
-                width: `${(Math.abs(it.value) / max) * 100}%`,
+                width: `${((Number.isFinite(it.value) ? Math.abs(it.value) : 0) / max) * 100}%`,
                 background: it.color ?? colors[i % colors.length],
               }}
             />
@@ -325,15 +345,19 @@ export function PowerTriangle({
   unitQ?: string;
   unitS?: string;
 }) {
+  // 잘못된 입력(빈값/문자) NaN 방어 — SVG 좌표 NaN 방지
+  const Pf = Number.isFinite(P) ? P : 0;
+  const Qf = Number.isFinite(Q) ? Q : 0;
+  const Sf = Number.isFinite(S) ? S : 0;
   const W = 320;
   const H = 200;
   const ox = 40;
   const oy = H - 30;
-  const maxLen = Math.max(S, 1e-9);
+  const maxLen = Math.max(Math.abs(Sf), Math.abs(Pf), Math.abs(Qf), 1e-9);
   const scale = (W - 90) / maxLen;
-  const px = ox + P * scale;
-  const qy = oy - Q * scale;
-  const deg = ((Math.atan2(Q, P) * 180) / Math.PI).toFixed(1);
+  const px = ox + Pf * scale;
+  const qy = oy - Qf * scale;
+  const deg = ((Math.atan2(Qf, Pf) * 180) / Math.PI).toFixed(1);
   return (
     <div className="rounded-lg border border-zinc-200 bg-white p-3 dark:border-zinc-800 dark:bg-zinc-900/40">
       <svg viewBox={`0 0 ${W} ${H}`} width="100%" height={190}>
@@ -345,13 +369,13 @@ export function PowerTriangle({
         <line x1={ox} y1={oy} x2={px} y2={qy} stroke={PALETTE.rose} strokeWidth={3} />
         <circle cx={ox} cy={oy} r={3} className="fill-zinc-500" />
         <text x={(ox + px) / 2} y={oy + 18} textAnchor="middle" fill={PALETTE.indigo} className="text-[12px] font-medium">
-          P {P.toFixed(2)} {unitP}
+          P {Pf.toFixed(2)} {unitP}
         </text>
         <text x={px + 6} y={(oy + qy) / 2} fill={PALETTE.amber} className="text-[12px] font-medium">
-          Q {Q.toFixed(2)} {unitQ}
+          Q {Qf.toFixed(2)} {unitQ}
         </text>
         <text x={(ox + px) / 2 - 10} y={(oy + qy) / 2 - 6} fill={PALETTE.rose} className="text-[12px] font-medium">
-          S {S.toFixed(2)} {unitS}
+          S {Sf.toFixed(2)} {unitS}
         </text>
         <text x={ox + 26} y={oy - 6} className="fill-zinc-500 text-[11px]">
           θ {deg}°

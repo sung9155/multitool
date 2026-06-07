@@ -99,7 +99,9 @@ export default function LoanTool() {
 
   const P = Number(principal);
   const r = Number(rate) / 100 / 12; // 월이율
-  const n = Math.round(Number(years) * 12); // 개월수
+  // 비정상 입력(1e308 등)으로 인한 무한 루프/메모리 폭발 방지 — 최대 1200개월(100년)
+  const rawN = Math.round(Number(years) * 12);
+  const n = Number.isFinite(rawN) ? Math.min(Math.max(0, rawN), 1200) : 0; // 개월수
 
   // 상환 스케줄 시뮬레이션
   const balCurve: Pt[] = [{ x: 0, y: P }];
