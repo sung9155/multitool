@@ -9,6 +9,8 @@ import BaseballGame from "./BaseballGame";
 import LadderGame from "./LadderGame";
 import WheelGame from "./WheelGame";
 import LoanSim from "./LoanSim";
+import SplitBillSim from "./SplitBillSim";
+import NetSalarySim from "./NetSalarySim";
 
 export interface Game {
   /** URL 경로 (/g/<slug>) 와 고유 키 */
@@ -91,6 +93,40 @@ export const games: Game[] = [
       },
     },
     component: LoanSim,
+  },
+  {
+    slug: "splitbill",
+    name: "더치페이",
+    description: "총액과 인원 넣으면 1인당 부담금 — 회식비 정산 끝",
+    emoji: "🧾",
+    i18n: {
+      en: {
+        name: "Split the Bill",
+        description: "Total and headcount in, per-person share out — dinner settled",
+      },
+      zh: {
+        name: "AA 制",
+        description: "输入总额和人数，算出每人分摊 — 聚餐结账搞定",
+      },
+    },
+    component: SplitBillSim,
+  },
+  {
+    slug: "netsalary",
+    name: "연봉 실수령액",
+    description: "4대보험·소득세 떼고 통장에 찍히는 월급 계산",
+    emoji: "💵",
+    i18n: {
+      en: {
+        name: "Net Salary",
+        description: "Korean take-home pay after social insurance and income tax",
+      },
+      zh: {
+        name: "税后工资",
+        description: "扣除四大保险和所得税后的实际到手月薪",
+      },
+    },
+    component: NetSalarySim,
   },
   {
     slug: "stack",
