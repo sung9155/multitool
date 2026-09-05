@@ -180,4 +180,54 @@ assert.deepEqual(resolveLanding([cyl], 27, 0), {
   away: 1,
 });
 
+// ── 로또 6/45 ────────────────────────────────────────────
+{
+  const { pickUnique, draw, rankOf, simulate, seededRng, PRIZES, TICKET_PRICE } =
+    await import("./lotto.ts");
+
+  // 뽑기: 개수 / 범위 / 중복 없음 / 오름차순
+  const rng = seededRng(42);
+  for (let i = 0; i < 500; i++) {
+    const p = pickUnique(6, rng);
+    assert.equal(p.length, 6);
+    assert.equal(new Set(p).size, 6, "중복 번호");
+    assert.ok(p.every((n) => n >= 1 && n <= 45), "범위 이탈");
+    assert.deepEqual(p, [...p].sort((a, b) => a - b), "정렬 안 됨");
+  }
+  // 500번 뽑는 동안 1~45 전부 등장해야 정상
+  const seen = new Set<number>();
+  const rng2 = seededRng(7);
+  for (let i = 0; i < 500; i++) pickUnique(6, rng2).forEach((n) => seen.add(n));
+  assert.equal(seen.size, 45, "안 나오는 번호 존재");
+
+  // 추첨: 보너스는 당첨 6개와 겹치지 않는다
+  for (let i = 0; i < 200; i++) {
+    const d = draw(rng);
+    assert.equal(d.nums.length, 6);
+    assert.ok(!d.nums.includes(d.bonus), "보너스가 당첨번호와 중복");
+  }
+
+  // 등수 판정
+  const d = { nums: [1, 2, 3, 4, 5, 6], bonus: 7 };
+  assert.equal(rankOf([1, 2, 3, 4, 5, 6], d), 1);
+  assert.equal(rankOf([1, 2, 3, 4, 5, 7], d), 2); // 5개 + 보너스
+  assert.equal(rankOf([1, 2, 3, 4, 5, 8], d), 3); // 5개
+  assert.equal(rankOf([1, 2, 3, 4, 8, 9], d), 4);
+  assert.equal(rankOf([1, 2, 3, 8, 9, 10], d), 5);
+  assert.equal(rankOf([1, 2, 8, 9, 10, 11], d), 0);
+  assert.equal(rankOf([1, 2, 7, 9, 10, 11], d), 0); // 보너스는 2등 판정에만 쓰임
+
+  // 시뮬레이션: 지출 = 티켓 × 가격, 당첨금 = Σ 등수×상금
+  const sim = simulate(520, 5, seededRng(1));
+  assert.equal(sim.tickets, 2600);
+  assert.equal(sim.spent, 2600 * TICKET_PRICE);
+  const expectWon = [1, 2, 3, 4, 5].reduce(
+    (acc, rk) => acc + sim.ranks[rk] * PRIZES[rk],
+    0,
+  );
+  assert.equal(sim.won, expectWon, "당첨금 합계 불일치");
+  // 5등(3개 일치) 확률 ≈ 1/45 → 2600장이면 수십 회는 나온다
+  assert.ok(sim.ranks[5] > 10, "5등이 비정상적으로 적음");
+}
+
 console.log("games logic ok");

@@ -1,25 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { tools } from "../tools/registry";
-import type { ToolCategory } from "../tools/types";
-import { useFavorites } from "./favorites";
-import { useRecent } from "./recent";
-import { LangSwitcher, localizeTool, useLang, useT } from "./i18n";
+import { LangSwitcher, useLang, useT } from "./i18n";
 import CommandPalette from "./CommandPalette";
 import AltoBackdrop from "./AltoBackdrop";
 import { games, localizeGame } from "../games/registry";
-
-const ORDER: ToolCategory[] = [
-  "자동화",
-  "금융",
-  "계산",
-  "변환",
-  "건강",
-  "일상",
-  "인코딩",
-  "생성",
-  "텍스트",
-];
 
 function ThemeToggle({
   theme,
@@ -57,78 +41,6 @@ function ThemeToggle({
         </svg>
       )}
     </button>
-  );
-}
-
-function NavGroup({
-  title,
-  titleClass,
-  items,
-  lang,
-  pathname,
-  collapsible,
-  collapsed,
-  onToggle,
-}: {
-  title: string;
-  titleClass: string;
-  items: typeof tools;
-  lang: import("./i18n").Lang;
-  pathname: string;
-  collapsible?: boolean;
-  collapsed?: boolean;
-  onToggle?: () => void;
-}) {
-  return (
-    <div className="mb-3">
-      {collapsible ? (
-        <button
-          onClick={onToggle}
-          className={`flex w-full items-center justify-between rounded-md px-3 py-1 text-xs font-semibold uppercase tracking-wide hover:bg-zinc-200/60 dark:hover:bg-zinc-800/60 ${titleClass}`}
-          aria-expanded={!collapsed}
-        >
-          <span>
-            {title}
-            <span className="ml-1.5 font-normal lowercase opacity-60">
-              {items.length}
-            </span>
-          </span>
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            className={`transition-transform ${collapsed ? "-rotate-90" : ""}`}
-          >
-            <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </button>
-      ) : (
-        <div
-          className={`px-3 py-1 text-xs font-semibold uppercase tracking-wide ${titleClass}`}
-        >
-          {title}
-        </div>
-      )}
-      {collapsed
-        ? null
-        : items.map((tool) => {
-        const active = pathname === `/t/${tool.slug}`;
-        return (
-          <Link
-            key={tool.slug}
-            to={`/t/${tool.slug}`}
-            className={`block rounded-md px-3 py-2.5 text-sm ${
-              active
-                ? "bg-violet-100 text-violet-700 dark:bg-violet-600/20 dark:text-violet-300"
-                : "text-zinc-700 hover:bg-zinc-200 dark:text-zinc-300 dark:hover:bg-zinc-800"
-            }`}
-          >
-            {localizeTool(tool, lang).name}
-          </Link>
-        );
-      })}
-    </div>
   );
 }
 
@@ -170,45 +82,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const toggleTheme = () =>
     setTheme((t) => (t === "dark" ? "light" : "dark"));
 
-  // 카테고리 접힘 상태 (localStorage 영속)
-  const [collapsed, setCollapsed] = useState<Set<string>>(() => {
-    try {
-      const raw = localStorage.getItem("collapsedCats");
-      if (raw) return new Set(JSON.parse(raw) as string[]);
-    } catch {
-      /* 무시 */
-    }
-    return new Set();
-  });
-  const toggleCat = (cat: string) =>
-    setCollapsed((prev) => {
-      const next = new Set(prev);
-      if (next.has(cat)) next.delete(cat);
-      else next.add(cat);
-      try {
-        localStorage.setItem("collapsedCats", JSON.stringify([...next]));
-      } catch {
-        /* 무시 */
-      }
-      return next;
-    });
-
-  const favs = useFavorites();
-  const recent = useRecent();
   const lang = useLang();
   const t = useT();
-
-  const filtered = useMemo(() => {
-    const query = q.toLowerCase().trim();
-    return tools.filter((tool) => {
-      const loc = localizeTool(tool, lang);
-      return (
-        (tool.name + tool.description + loc.name + loc.description)
-          .toLowerCase()
-          .includes(query)
-      );
-    });
-  }, [q, lang]);
 
   const gameItems = useMemo(() => {
     const query = q.toLowerCase().trim();
@@ -219,22 +94,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         .includes(query);
     });
   }, [q, lang]);
-
-  const grouped = useMemo(() => {
-    const map = new Map<ToolCategory, typeof tools>();
-    for (const tool of filtered) {
-      if (!map.has(tool.category)) map.set(tool.category, []);
-      map.get(tool.category)!.push(tool);
-    }
-    return ORDER.filter((c) => map.has(c)).map((c) => [c, map.get(c)!] as const);
-  }, [filtered]);
-
-  // 즐겨찾기한 도구 (검색 필터 반영, 등록 순서 유지)
-  const favTools = filtered.filter((tool) => favs.includes(tool.slug));
-  // 최근 사용 (최신순, 검색/존재 반영)
-  const recentTools = recent
-    .map((slug) => filtered.find((tool) => tool.slug === slug))
-    .filter((tool): tool is (typeof tools)[number] => Boolean(tool));
 
   return (
     <div className="flex min-h-full text-zinc-900 dark:text-zinc-100">
@@ -323,64 +182,30 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         </div>
 
         <nav className="flex-1 overflow-y-auto px-2 pb-6">
-          {gameItems.length > 0 && (
-            <div className="mb-3">
-              <div className="px-3 py-1 text-xs font-semibold uppercase tracking-wide text-violet-500">
-                {t("nav_games")}
-              </div>
-              {gameItems.map((game) => {
-                const active = pathname === `/g/${game.slug}`;
-                return (
-                  <Link
-                    key={game.slug}
-                    to={`/g/${game.slug}`}
-                    className={`block rounded-md px-3 py-2.5 text-sm ${
-                      active
-                        ? "bg-violet-100 text-violet-700 dark:bg-violet-600/20 dark:text-violet-300"
-                        : "text-zinc-700 hover:bg-zinc-200/70 dark:text-zinc-300 dark:hover:bg-zinc-800/70"
-                    }`}
-                  >
-                    {game.emoji} {localizeGame(game, lang).name}
-                  </Link>
-                );
-              })}
+          <div className="mb-3">
+            <div className="px-3 py-1 text-xs font-semibold uppercase tracking-wide text-violet-500">
+              {t("nav_games")}
             </div>
-          )}
-          {favTools.length > 0 && (
-            <NavGroup
-              title={t("favorites")}
-              titleClass="text-amber-500"
-              items={favTools}
-              lang={lang}
-              pathname={pathname}
-            />
-          )}
-          {recentTools.length > 0 && (
-            <NavGroup
-              title={t("recent")}
-              titleClass="text-zinc-500"
-              items={recentTools}
-              lang={lang}
-              pathname={pathname}
-            />
-          )}
-          {grouped.map(([cat, items]) => (
-            <NavGroup
-              key={cat}
-              title={t(`cat_${cat}`)}
-              titleClass="text-zinc-500"
-              items={items}
-              lang={lang}
-              pathname={pathname}
-              collapsible
-              // 검색 중에는 결과가 보이도록 강제 펼침
-              collapsed={q.trim() === "" && collapsed.has(cat)}
-              onToggle={() => toggleCat(cat)}
-            />
-          ))}
-          {grouped.length === 0 && gameItems.length === 0 && (
-            <p className="px-3 text-sm text-zinc-500">{t("noResult")}</p>
-          )}
+            {gameItems.map((game) => {
+              const active = pathname === `/g/${game.slug}`;
+              return (
+                <Link
+                  key={game.slug}
+                  to={`/g/${game.slug}`}
+                  className={`block rounded-md px-3 py-2.5 text-sm ${
+                    active
+                      ? "bg-violet-100 text-violet-700 dark:bg-violet-600/20 dark:text-violet-300"
+                      : "text-zinc-700 hover:bg-zinc-200/70 dark:text-zinc-300 dark:hover:bg-zinc-800/70"
+                  }`}
+                >
+                  {game.emoji} {localizeGame(game, lang).name}
+                </Link>
+              );
+            })}
+            {gameItems.length === 0 && (
+              <p className="px-3 text-sm text-zinc-500">{t("noResult")}</p>
+            )}
+          </div>
         </nav>
       </aside>
 

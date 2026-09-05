@@ -2,6 +2,7 @@ import type { ComponentType } from "react";
 import type { Lang } from "../components/i18n";
 import StackGame from "./StackGame";
 import JumpGame from "./JumpGame";
+import LottoGame from "./LottoGame";
 
 export interface Game {
   /** URL 경로 (/g/<slug>) 와 고유 키 */
@@ -17,6 +18,23 @@ export interface Game {
 }
 
 export const games: Game[] = [
+  {
+    slug: "lotto",
+    name: "로또 시뮬레이터",
+    description: "로또 6/45 가상 추첨 — 수십 년치 인생 시뮬레이션으로 현실 체험",
+    emoji: "🎱",
+    i18n: {
+      en: {
+        name: "Lotto Simulator",
+        description: "Virtual Lotto 6/45 draws — simulate decades of playing for a reality check",
+      },
+      zh: {
+        name: "乐透模拟器",
+        description: "6/45 乐透虚拟开奖 — 模拟买几十年，体验现实",
+      },
+    },
+    component: LottoGame,
+  },
   {
     slug: "stack",
     name: "스택",

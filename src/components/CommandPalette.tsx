@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { tools } from "../tools/registry";
 import { games, localizeGame } from "../games/registry";
-import { localizeTool, useLang, useT } from "./i18n";
+import { useLang, useT } from "./i18n";
 
 /**
  * Ctrl/Cmd+K 로 열리는 빠른 검색 팔레트.
@@ -47,20 +46,12 @@ export default function CommandPalette() {
 
   const results = useMemo(() => {
     const query = q.toLowerCase().trim();
-    const list = [
-      ...games.map((g) => ({
-        path: `/g/${g.slug}`,
-        raw: g.name + g.description,
-        loc: localizeGame(g, lang),
-        emoji: g.emoji,
-      })),
-      ...tools.map((tool) => ({
-        path: `/t/${tool.slug}`,
-        raw: tool.name + tool.description,
-        loc: localizeTool(tool, lang),
-        emoji: "",
-      })),
-    ];
+    const list = games.map((g) => ({
+      path: `/g/${g.slug}`,
+      raw: g.name + g.description,
+      loc: localizeGame(g, lang),
+      emoji: g.emoji,
+    }));
     if (!query) return list.slice(0, 50);
     return list.filter(({ raw, loc }) =>
       (raw + loc.name + loc.description).toLowerCase().includes(query),
