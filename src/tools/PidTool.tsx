@@ -201,7 +201,7 @@ function Slider({
         <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
           {label}
         </span>
-        <span className="font-mono text-sm text-indigo-600 dark:text-indigo-400">
+        <span className="font-mono text-sm text-violet-600 dark:text-violet-400">
           {value}
         </span>
       </div>
@@ -212,7 +212,7 @@ function Slider({
         step={step}
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="w-full accent-indigo-600"
+        className="w-full accent-violet-600"
       />
     </label>
   );
@@ -312,7 +312,7 @@ export default function PidTool() {
               onClick={() => setOrder(o)}
               className={`rounded-md px-3 py-1.5 text-sm ${
                 o === order
-                  ? "bg-indigo-600 text-white"
+                  ? "bg-violet-600 text-white"
                   : "bg-zinc-200 text-zinc-600 hover:bg-zinc-300 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
               }`}
             >
@@ -348,7 +348,7 @@ export default function PidTool() {
         <div className="ml-auto flex items-center gap-2">
           <button
             onClick={() => setPlaying((p) => !p)}
-            className="rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-500"
+            className="rounded-md bg-violet-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-violet-500"
           >
             {playing ? t.pause : t.play}
           </button>

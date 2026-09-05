@@ -102,7 +102,7 @@ export default function JwtSignTool() {
               onClick={() => setAlg(a)}
               className={`rounded-md px-3 py-1.5 text-sm ${
                 a === alg
-                  ? "bg-indigo-600 text-white"
+                  ? "bg-violet-600 text-white"
                   : "bg-zinc-200 text-zinc-600 hover:bg-zinc-300 dark:bg-zinc-800 dark:text-zinc-300"
               }`}
             >
@@ -127,7 +127,7 @@ export default function JwtSignTool() {
                 <code className="block break-all rounded-md border border-zinc-200 bg-zinc-100 p-3 font-mono text-sm dark:border-zinc-700 dark:bg-zinc-900">
                   <span className="text-rose-500 dark:text-rose-400">{h}</span>
                   <span className="text-zinc-400">.</span>
-                  <span className="text-indigo-500 dark:text-indigo-400">{p}</span>
+                  <span className="text-violet-500 dark:text-violet-400">{p}</span>
                   <span className="text-zinc-400">.</span>
                   <span className="text-sky-500 dark:text-sky-400">{s}</span>
                 </code>
@@ -139,7 +139,7 @@ export default function JwtSignTool() {
                 {t.header}
               </span>
               <span className="flex items-center gap-1.5">
-                <span className="inline-block h-2.5 w-2.5 rounded-full bg-indigo-500" />
+                <span className="inline-block h-2.5 w-2.5 rounded-full bg-violet-500" />
                 {t.payloadSeg}
               </span>
               <span className="flex items-center gap-1.5">

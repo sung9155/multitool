@@ -141,7 +141,7 @@ export default function EncoderTool() {
                 onClick={() => setMult(m)}
                 className={`rounded-md px-4 py-2 text-sm ${
                   m === mult
-                    ? "bg-indigo-600 text-white"
+                    ? "bg-violet-600 text-white"
                     : "bg-zinc-200 text-zinc-600 hover:bg-zinc-300 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
                 }`}
               >
@@ -188,7 +188,7 @@ export default function EncoderTool() {
                 onClick={() => setMode(m)}
                 className={`rounded-md px-3 py-1.5 text-sm ${
                   m === mode
-                    ? "bg-indigo-600 text-white"
+                    ? "bg-violet-600 text-white"
                     : "bg-zinc-200 text-zinc-600 hover:bg-zinc-300 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
                 }`}
               >

@@ -124,7 +124,7 @@ export default function WorldClockTool() {
                   key={z.tz}
                   className={
                     isBase
-                      ? "bg-indigo-50 font-medium text-zinc-900 dark:bg-indigo-600/15 dark:text-zinc-100"
+                      ? "bg-violet-50 font-medium text-zinc-900 dark:bg-violet-600/15 dark:text-zinc-100"
                       : "text-zinc-700 dark:text-zinc-300"
                   }
                 >

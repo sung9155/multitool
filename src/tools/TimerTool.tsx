@@ -242,7 +242,7 @@ export default function TimerTool() {
             onClick={() => switchMode(m)}
             className={`rounded-md px-3 py-1.5 text-sm ${
               m === mode
-                ? "bg-indigo-600 text-white"
+                ? "bg-violet-600 text-white"
                 : "bg-zinc-200 text-zinc-600 hover:bg-zinc-300 dark:bg-zinc-800 dark:text-zinc-300"
             }`}
           >
@@ -260,7 +260,7 @@ export default function TimerTool() {
               value={tMin}
               onChange={(e) => setTMin(e.target.value)}
               disabled={running}
-              className="w-full rounded-md border border-zinc-300 bg-white px-3 py-2 font-mono text-sm outline-none focus:border-indigo-500 dark:border-zinc-700 dark:bg-zinc-900"
+              className="w-full rounded-md border border-zinc-300 bg-white px-3 py-2 font-mono text-sm outline-none focus:border-violet-500 dark:border-zinc-700 dark:bg-zinc-900"
             />
           </Field>
           <Field label={t.sec}>
@@ -271,7 +271,7 @@ export default function TimerTool() {
               value={tSec}
               onChange={(e) => setTSec(e.target.value)}
               disabled={running}
-              className="w-full rounded-md border border-zinc-300 bg-white px-3 py-2 font-mono text-sm outline-none focus:border-indigo-500 dark:border-zinc-700 dark:bg-zinc-900"
+              className="w-full rounded-md border border-zinc-300 bg-white px-3 py-2 font-mono text-sm outline-none focus:border-violet-500 dark:border-zinc-700 dark:bg-zinc-900"
             />
           </Field>
         </div>
@@ -301,7 +301,7 @@ export default function TimerTool() {
               {fmt(display)}
             </div>
             {mode !== "stopwatch" && display <= 0 && !running && (
-              <div className="mt-2 text-sm font-medium text-indigo-500">{t.done}</div>
+              <div className="mt-2 text-sm font-medium text-violet-500">{t.done}</div>
             )}
           </div>
         </Ring>
@@ -310,7 +310,7 @@ export default function TimerTool() {
       <div className="flex gap-2">
         <button
           onClick={toggle}
-          className="flex-1 rounded-md bg-indigo-600 py-2.5 text-sm font-medium text-white hover:bg-indigo-500"
+          className="flex-1 rounded-md bg-violet-600 py-2.5 text-sm font-medium text-white hover:bg-violet-500"
         >
           {running ? t.pause : t.start}
         </button>

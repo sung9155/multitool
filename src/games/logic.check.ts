@@ -1,0 +1,183 @@
+/**
+ * 게임 규칙 자체 점검.
+ *   npm run check:games
+ */
+import assert from "node:assert/strict";
+import {
+  EDGE_TOL,
+  edgeMargin,
+  isCylinder,
+  landOn,
+  resolveLanding,
+  nextPad,
+  sliceBlock,
+  jumpDist,
+  MAX_JUMP,
+  MIN_JUMP,
+  PAD_KINDS,
+  R_MAX,
+  R_MIN,
+  type Pad,
+} from "./logic.ts";
+
+// ── 스택: 겹침 계산 ──────────────────────────────────────
+const base = { x: 100, w: 100 }; // [100,200]
+
+// 오른쪽으로 30 어긋남 → [130,200] 남고 [200,230] 잘림
+assert.deepEqual(sliceBlock(base, { x: 130, w: 100 }), {
+  hit: true,
+  perfect: false,
+  x: 130,
+  w: 70,
+  cut: { x: 200, w: 30 },
+});
+
+// 왼쪽으로 30 어긋남 → [100,170] 남고 [70,100] 잘림
+assert.deepEqual(sliceBlock(base, { x: 70, w: 100 }), {
+  hit: true,
+  perfect: false,
+  x: 100,
+  w: 70,
+  cut: { x: 70, w: 30 },
+});
+
+// 오차 4 미만은 퍼펙트 → 폭 유지, 조각 없음
+assert.deepEqual(sliceBlock(base, { x: 102, w: 100 }), {
+  hit: true,
+  perfect: true,
+  x: 100,
+  w: 100,
+  cut: null,
+});
+
+// 완전히 빗나감 (딱 붙은 경우 포함)
+assert.deepEqual(sliceBlock(base, { x: 250, w: 100 }), { hit: false });
+assert.deepEqual(sliceBlock(base, { x: 200, w: 100 }), { hit: false });
+
+// 자른 폭 + 남은 폭 = 원래 폭 (불변식)
+for (let d = -99; d <= 99; d++) {
+  const r = sliceBlock(base, { x: base.x + d, w: base.w });
+  if (!r.hit || r.perfect) continue;
+  assert.equal(r.w + r.cut!.w, base.w, `d=${d}`);
+  assert.ok(r.x >= base.x && r.x + r.w <= base.x + base.w, `d=${d} 범위 이탈`);
+}
+
+// ── 점프점프: 충전 → 거리 ────────────────────────────────
+assert.equal(jumpDist(0), MIN_JUMP);
+assert.equal(jumpDist(1), MAX_JUMP);
+assert.equal(jumpDist(2), MAX_JUMP); // 클램프
+assert.equal(jumpDist(-1), MIN_JUMP);
+
+// ── 점프점프: 생성된 발판이 항상 도달 가능한가 ────────────
+let cur: Pad = { x: 0, y: 0, r: 34, kind: 0, dir: 0 };
+const dirsSeen = new Set<number>();
+const kindsSeen = new Set<number>();
+for (let seed = 1; seed < 3000; seed++) {
+  const next = nextPad(cur, seed);
+  dirsSeen.add(next.dir);
+  kindsSeen.add(next.kind);
+
+  assert.ok(next.r >= R_MIN && next.r <= R_MAX, `seed=${seed} 반경 범위`);
+  assert.ok(next.kind >= 0 && next.kind < PAD_KINDS, `seed=${seed} 종류 범위`);
+  // 한 축으로만 이동
+  assert.ok(
+    (next.dir === 0 && next.y === cur.y) || (next.dir === 1 && next.x === cur.x),
+    `seed=${seed} 두 축 동시 이동`,
+  );
+
+  // 이동축 기준 중심간 거리
+  const gap = next.dir === 0 ? next.x - cur.x : next.y - cur.y;
+  // 넘어지지 않고 살아있다면 현재 발판 안전지대(±(r-EDGE))에 서 있다.
+  // 거기서 다음 발판 안전지대(±(r-EDGE))까지 항상 닿을 수 있어야 한다.
+  const from = cur.r - EDGE_TOL;
+  const to = next.r - EDGE_TOL;
+  assert.ok(
+    gap - from + to >= MIN_JUMP,
+    `seed=${seed} 최소 점프가 안전지대를 넘어감`,
+  );
+  assert.ok(
+    gap + from - to <= MAX_JUMP,
+    `seed=${seed} 최대 점프로도 안전지대에 못 닿음`,
+  );
+  cur = next;
+}
+assert.equal(dirsSeen.size, 2, "두 방향 모두 나와야 함");
+assert.equal(kindsSeen.size, PAD_KINDS, "발판 종류가 모두 나와야 함");
+
+// ── 점프점프: 착지 판정 (정사각 footprint) ────────────────
+const pads: Pad[] = [
+  { x: 0, y: 0, r: 30, kind: 0, dir: 0 }, // 정육면체
+  { x: 120, y: 0, r: 25, kind: 1, dir: 0 }, // 정육면체
+];
+assert.ok(!isCylinder(0) && !isCylinder(1));
+assert.equal(landOn(pads, 120, 0), 1); // 정중앙
+assert.equal(landOn(pads, 95, 0), 1); // 가까운 모서리
+assert.equal(landOn(pads, 145, 0), 1); // 먼 모서리
+assert.equal(landOn(pads, 94, 0), -1); // 살짝 못 미침
+assert.equal(landOn(pads, 146, 0), -1); // 살짝 지나침
+assert.equal(landOn(pads, 120, 26), -1); // 옆으로 벗어남
+
+// ── 점프점프: 착지 판정 (헛디딤 / 가장자리 / 정중앙) ─────
+const p1 = pads[1]; // x=120, r=25
+
+assert.deepEqual(resolveLanding(pads, 120, 0), {
+  kind: "land",
+  index: 1,
+  centered: true,
+});
+assert.deepEqual(resolveLanding(pads, 132, 0), {
+  kind: "land",
+  index: 1,
+  centered: false,
+});
+// 오른쪽 가장자리(안쪽 5 이내) → 바깥(+)으로 넘어짐
+assert.deepEqual(resolveLanding(pads, p1.x + p1.r - 2, 0), {
+  kind: "topple",
+  index: 1,
+  axis: 0,
+  away: 1,
+});
+// 왼쪽 가장자리 → 바깥(-)으로 넘어짐
+assert.deepEqual(resolveLanding(pads, p1.x - p1.r + 2, 0), {
+  kind: "topple",
+  index: 1,
+  axis: 0,
+  away: -1,
+});
+// 다른 축 가장자리
+assert.deepEqual(resolveLanding(pads, p1.x, p1.r - 1), {
+  kind: "topple",
+  index: 1,
+  axis: 1,
+  away: 1,
+});
+// 가장자리 경계 바로 안쪽은 안전
+assert.equal(
+  resolveLanding(pads, p1.x + p1.r - EDGE_TOL, 0).kind,
+  "land",
+  "EDGE_TOL 경계는 안전해야",
+);
+// 발판을 벗어나면 헛디딤
+assert.deepEqual(resolveLanding(pads, p1.x + p1.r + 1, 0), { kind: "miss" });
+
+// ── 발판 형상: 정육면체는 정사각, 원통은 원형 바닥 ─────────
+const cube: Pad = { x: 0, y: 0, r: 30, kind: 0, dir: 0 };
+const cyl: Pad = { x: 0, y: 0, r: 30, kind: 4, dir: 0 };
+assert.ok(isCylinder(4) && isCylinder(7), "4~7 은 원통");
+// 정사각 모서리 쪽(대각 24,24 → 중심거리 33.9)은 큐브 안 / 원통 밖
+assert.ok(edgeMargin(cube, 24, 24) >= 0, "큐브 모서리는 발판 안");
+assert.ok(edgeMargin(cyl, 24, 24) < 0, "원통 모서리는 발판 밖");
+// 축 위에서는 둘 다 동일
+assert.equal(edgeMargin(cube, 25, 0), 5);
+assert.equal(edgeMargin(cyl, 25, 0), 5);
+assert.equal(landOn([cyl], 24, 24), -1);
+assert.equal(landOn([cube], 24, 24), 0);
+// 원통 가장자리도 넘어진다
+assert.deepEqual(resolveLanding([cyl], 27, 0), {
+  kind: "topple",
+  index: 0,
+  axis: 0,
+  away: 1,
+});
+
+console.log("games logic ok");

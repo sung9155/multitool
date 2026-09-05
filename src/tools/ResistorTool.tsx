@@ -89,7 +89,7 @@ function Swatch({
     <select
       value={value}
       onChange={(e) => onChange(Number(e.target.value))}
-      className="w-full rounded-md border border-zinc-300 bg-white px-2 py-2 text-sm outline-none focus:border-indigo-500 dark:border-zinc-700 dark:bg-zinc-900"
+      className="w-full rounded-md border border-zinc-300 bg-white px-2 py-2 text-sm outline-none focus:border-violet-500 dark:border-zinc-700 dark:bg-zinc-900"
     >
       {options.map((c, i) => (
         <option key={c.name} value={i}>
@@ -160,7 +160,7 @@ export default function ResistorTool() {
               onClick={() => setBands(b)}
               className={`rounded-md px-3 py-1.5 text-sm ${
                 b === bands
-                  ? "bg-indigo-600 text-white"
+                  ? "bg-violet-600 text-white"
                   : "bg-zinc-200 text-zinc-600 hover:bg-zinc-300 dark:bg-zinc-800 dark:text-zinc-300"
               }`}
             >

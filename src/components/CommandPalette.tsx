@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { tools } from "../tools/registry";
+import { games, localizeGame } from "../games/registry";
 import { localizeTool, useLang, useT } from "./i18n";
 
 /**
@@ -46,12 +47,23 @@ export default function CommandPalette() {
 
   const results = useMemo(() => {
     const query = q.toLowerCase().trim();
-    const list = tools.map((tool) => ({ tool, loc: localizeTool(tool, lang) }));
+    const list = [
+      ...games.map((g) => ({
+        path: `/g/${g.slug}`,
+        raw: g.name + g.description,
+        loc: localizeGame(g, lang),
+        emoji: g.emoji,
+      })),
+      ...tools.map((tool) => ({
+        path: `/t/${tool.slug}`,
+        raw: tool.name + tool.description,
+        loc: localizeTool(tool, lang),
+        emoji: "",
+      })),
+    ];
     if (!query) return list.slice(0, 50);
-    return list.filter(({ tool, loc }) =>
-      (tool.name + tool.description + loc.name + loc.description)
-        .toLowerCase()
-        .includes(query),
+    return list.filter(({ raw, loc }) =>
+      (raw + loc.name + loc.description).toLowerCase().includes(query),
     );
   }, [q, lang]);
 
@@ -61,8 +73,8 @@ export default function CommandPalette() {
 
   if (!open) return null;
 
-  const go = (slug: string) => {
-    navigate(`/t/${slug}`);
+  const go = (path: string) => {
+    navigate(path);
     setOpen(false);
   };
 
@@ -76,7 +88,7 @@ export default function CommandPalette() {
     } else if (e.key === "Enter") {
       e.preventDefault();
       const r = results[idx];
-      if (r) go(r.tool.slug);
+      if (r) go(r.path);
     }
   };
 
@@ -101,18 +113,19 @@ export default function CommandPalette() {
           className="w-full border-b border-zinc-200 bg-transparent px-4 py-3 text-sm outline-none dark:border-zinc-700"
         />
         <ul className="max-h-80 overflow-y-auto py-1">
-          {results.map(({ tool, loc }, i) => (
-            <li key={tool.slug}>
+          {results.map(({ path, loc, emoji }, i) => (
+            <li key={path}>
               <button
                 onMouseEnter={() => setIdx(i)}
-                onClick={() => go(tool.slug)}
+                onClick={() => go(path)}
                 className={`flex w-full flex-col items-start px-4 py-2 text-left ${
                   i === idx
-                    ? "bg-indigo-50 dark:bg-indigo-600/20"
+                    ? "bg-violet-50 dark:bg-violet-600/20"
                     : "hover:bg-zinc-100 dark:hover:bg-zinc-800"
                 }`}
               >
                 <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
+                  {emoji && <span className="mr-1">{emoji}</span>}
                   {loc.name}
                 </span>
                 <span className="text-xs text-zinc-500">{loc.description}</span>

@@ -168,7 +168,7 @@ export default function CronTool() {
                             <div
                               className={`h-3 w-3 rounded-sm ${
                                 active
-                                  ? "bg-indigo-500"
+                                  ? "bg-violet-500"
                                   : "bg-zinc-200 dark:bg-zinc-800"
                               }`}
                             />

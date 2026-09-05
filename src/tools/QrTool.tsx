@@ -77,7 +77,7 @@ export default function QrTool() {
                 onClick={() => setLevel(l)}
                 className={`rounded-md px-3 py-1.5 text-sm ${
                   l === level
-                    ? "bg-indigo-600 text-white"
+                    ? "bg-violet-600 text-white"
                     : "bg-zinc-200 text-zinc-600 hover:bg-zinc-300 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
                 }`}
               >
@@ -94,7 +94,7 @@ export default function QrTool() {
             step={32}
             value={size}
             onChange={(e) => setSize(Number(e.target.value))}
-            className="w-40 accent-indigo-600"
+            className="w-40 accent-violet-600"
           />
         </Field>
       </div>
@@ -112,7 +112,7 @@ export default function QrTool() {
             <a
               href={url}
               download="qrcode.png"
-              className="rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-500"
+              className="rounded-md bg-violet-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-violet-500"
             >
               ↓ {t.download}
             </a>

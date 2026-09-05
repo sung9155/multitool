@@ -133,7 +133,7 @@ export default function MarkdownTool() {
         </Field>
         <Field label={t.preview}>
           <div
-            className="prose-sm h-full min-h-[16rem] overflow-auto rounded-md border border-zinc-200 bg-white p-4 text-sm leading-7 [&_a]:text-indigo-500 [&_blockquote]:border-l-4 [&_blockquote]:border-zinc-300 [&_blockquote]:pl-3 [&_blockquote]:text-zinc-500 [&_code]:rounded [&_code]:bg-zinc-100 [&_code]:px-1 [&_h1]:mb-2 [&_h1]:text-2xl [&_h1]:font-bold [&_h2]:mb-2 [&_h2]:text-xl [&_h2]:font-bold [&_h3]:font-semibold [&_hr]:my-3 [&_hr]:border-zinc-300 [&_li]:ml-5 [&_li]:list-disc [&_ol_li]:list-decimal [&_p]:my-2 [&_pre]:overflow-auto [&_pre]:rounded [&_pre]:bg-zinc-100 [&_pre]:p-3 dark:border-zinc-700 dark:bg-zinc-900 dark:[&_code]:bg-zinc-800 dark:[&_pre]:bg-zinc-800"
+            className="prose-sm h-full min-h-[16rem] overflow-auto rounded-md border border-zinc-200 bg-white p-4 text-sm leading-7 [&_a]:text-violet-500 [&_blockquote]:border-l-4 [&_blockquote]:border-zinc-300 [&_blockquote]:pl-3 [&_blockquote]:text-zinc-500 [&_code]:rounded [&_code]:bg-zinc-100 [&_code]:px-1 [&_h1]:mb-2 [&_h1]:text-2xl [&_h1]:font-bold [&_h2]:mb-2 [&_h2]:text-xl [&_h2]:font-bold [&_h3]:font-semibold [&_hr]:my-3 [&_hr]:border-zinc-300 [&_li]:ml-5 [&_li]:list-disc [&_ol_li]:list-decimal [&_p]:my-2 [&_pre]:overflow-auto [&_pre]:rounded [&_pre]:bg-zinc-100 [&_pre]:p-3 dark:border-zinc-700 dark:bg-zinc-900 dark:[&_code]:bg-zinc-800 dark:[&_pre]:bg-zinc-800"
             dangerouslySetInnerHTML={{ __html: html }}
           />
         </Field>

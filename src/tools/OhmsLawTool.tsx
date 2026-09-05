@@ -145,7 +145,7 @@ export default function OhmsLawTool() {
                     </td>
                     <td className="px-3 py-1.5">
                       {parsed[k] === undefined ? (
-                        <span className="text-indigo-500">{t.computed}</span>
+                        <span className="text-violet-500">{t.computed}</span>
                       ) : (
                         <span className="text-zinc-500">{t.input}</span>
                       )}

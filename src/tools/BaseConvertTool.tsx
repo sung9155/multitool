@@ -97,7 +97,7 @@ export default function BaseConvertTool() {
                 onClick={() => setBase(b.base)}
                 className={`rounded-md px-3 py-1.5 text-sm ${
                   b.base === base
-                    ? "bg-indigo-600 text-white"
+                    ? "bg-violet-600 text-white"
                     : "bg-zinc-200 text-zinc-600 hover:bg-zinc-300 dark:bg-zinc-800 dark:text-zinc-300"
                 }`}
               >
@@ -147,7 +147,7 @@ export default function BaseConvertTool() {
                       <div key={bit} className="flex flex-col items-center gap-1">
                         <div
                           className={`h-6 w-6 rounded-sm ${
-                            on ? "bg-indigo-500" : "bg-zinc-200 dark:bg-zinc-800"
+                            on ? "bg-violet-500" : "bg-zinc-200 dark:bg-zinc-800"
                           }`}
                         />
                         <span className="text-[10px] text-zinc-400">{bit}</span>

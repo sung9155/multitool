@@ -86,7 +86,7 @@ export default function SplitBillTool() {
             step={1}
             value={Number.isFinite(tipV) ? tipV : 0}
             onChange={(e) => setTip(e.target.value)}
-            className="w-full accent-indigo-600"
+            className="w-full accent-violet-600"
           />
         </Field>
       </div>

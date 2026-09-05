@@ -15,7 +15,7 @@ export function Button({
     "inline-flex items-center gap-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors";
   const styles =
     variant === "primary"
-      ? "bg-indigo-600 text-white hover:bg-indigo-500"
+      ? "bg-violet-600 text-white hover:bg-violet-500"
       : "bg-zinc-200 text-zinc-700 hover:bg-zinc-300 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700";
   return (
     <button type={type} onClick={onClick} className={`${base} ${styles}`}>
@@ -70,7 +70,7 @@ export function TextArea(
   return (
     <textarea
       spellCheck={false}
-      className={`w-full resize-y rounded-md border border-zinc-300 bg-white p-3 text-sm text-zinc-900 outline-none focus:border-indigo-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 ${
+      className={`w-full resize-y rounded-md border border-zinc-300 bg-white p-3 text-sm text-zinc-900 outline-none focus:border-violet-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 ${
         mono ? "font-mono" : ""
       } ${className ?? ""}`}
       {...rest}
@@ -85,7 +85,7 @@ export function TextInput(
   return (
     <input
       spellCheck={false}
-      className={`w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-indigo-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 ${
+      className={`w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-violet-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 ${
         mono ? "font-mono" : ""
       } ${className ?? ""}`}
       {...rest}
@@ -114,7 +114,7 @@ export function Stat({
     <div
       className={`rounded-md border p-3 ${
         accent
-          ? "border-indigo-500/40 bg-indigo-500/10 dark:bg-indigo-600/10"
+          ? "border-violet-500/40 bg-violet-500/10 dark:bg-violet-600/10"
           : "border-zinc-200 bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-900"
       }`}
     >

@@ -6,6 +6,8 @@ import { useFavorites } from "./favorites";
 import { useRecent } from "./recent";
 import { LangSwitcher, localizeTool, useLang, useT } from "./i18n";
 import CommandPalette from "./CommandPalette";
+import AltoBackdrop from "./AltoBackdrop";
+import { games, localizeGame } from "../games/registry";
 
 const ORDER: ToolCategory[] = [
   "자동화",
@@ -118,7 +120,7 @@ function NavGroup({
             to={`/t/${tool.slug}`}
             className={`block rounded-md px-3 py-2.5 text-sm ${
               active
-                ? "bg-indigo-100 text-indigo-700 dark:bg-indigo-600/20 dark:text-indigo-300"
+                ? "bg-violet-100 text-violet-700 dark:bg-violet-600/20 dark:text-violet-300"
                 : "text-zinc-700 hover:bg-zinc-200 dark:text-zinc-300 dark:hover:bg-zinc-800"
             }`}
           >
@@ -208,6 +210,16 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     });
   }, [q, lang]);
 
+  const gameItems = useMemo(() => {
+    const query = q.toLowerCase().trim();
+    return games.filter((g) => {
+      const loc = localizeGame(g, lang);
+      return (g.name + g.description + loc.name + loc.description)
+        .toLowerCase()
+        .includes(query);
+    });
+  }, [q, lang]);
+
   const grouped = useMemo(() => {
     const map = new Map<ToolCategory, typeof tools>();
     for (const tool of filtered) {
@@ -225,9 +237,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     .filter((tool): tool is (typeof tools)[number] => Boolean(tool));
 
   return (
-    <div className="flex min-h-full bg-zinc-50 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100">
+    <div className="flex min-h-full text-zinc-900 dark:text-zinc-100">
+      <AltoBackdrop />
       {/* 모바일 상단바 */}
-      <header className="fixed inset-x-0 top-0 z-30 flex h-14 items-center gap-3 border-b border-zinc-200 bg-white/95 px-4 backdrop-blur md:hidden dark:border-zinc-800 dark:bg-zinc-950/95">
+      <header className="fixed inset-x-0 top-0 z-30 flex h-14 items-center gap-3 border-b border-white/40 bg-white/50 px-4 backdrop-blur-md md:hidden dark:border-white/10 dark:bg-zinc-950/50">
         <button
           aria-label="메뉴 열기"
           onClick={() => setOpen(true)}
@@ -243,7 +256,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           </svg>
         </button>
         <Link to="/" className="font-bold">
-          🧰 Multitool
+          🏔️ Multitool
         </Link>
         <div className="ml-auto flex items-center gap-1">
           <LangSwitcher />
@@ -261,13 +274,13 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
       {/* 사이드바 — 모바일: 슬라이드 드로어 / md↑: 고정 */}
       <aside
-        className={`fixed inset-y-0 left-0 z-40 flex w-72 max-w-[85vw] transform flex-col border-r border-zinc-200 bg-white transition-transform duration-200 md:static md:z-auto md:translate-x-0 md:bg-zinc-100/60 dark:border-zinc-800 dark:bg-zinc-900 dark:md:bg-zinc-900/40 ${
+        className={`fixed inset-y-0 left-0 z-40 flex w-72 max-w-[85vw] transform flex-col border-r border-white/40 bg-white/80 backdrop-blur-md transition-transform duration-200 md:static md:z-auto md:translate-x-0 md:bg-white/35 dark:border-white/10 dark:bg-zinc-950/80 dark:md:bg-zinc-950/35 ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}
       >
         <div className="flex items-center justify-between px-5 py-4">
           <Link to="/" className="block">
-            <h1 className="text-lg font-bold">🧰 Multitool</h1>
+            <h1 className="text-lg font-bold">🏔️ Multitool</h1>
             <p className="text-xs text-zinc-500">{t("subtitle")}</p>
           </Link>
           <div className="flex items-center gap-1">
@@ -296,7 +309,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder={t("search")}
-              className="w-full rounded-md border border-zinc-300 bg-white px-3 py-2 pr-14 text-sm outline-none focus:border-indigo-500 dark:border-zinc-700 dark:bg-zinc-900"
+              className="w-full rounded-md border border-white/60 bg-white/70 px-3 py-2 pr-14 text-sm outline-none focus:border-violet-500 dark:border-white/10 dark:bg-zinc-900/60"
             />
             <button
               type="button"
@@ -310,6 +323,29 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         </div>
 
         <nav className="flex-1 overflow-y-auto px-2 pb-6">
+          {gameItems.length > 0 && (
+            <div className="mb-3">
+              <div className="px-3 py-1 text-xs font-semibold uppercase tracking-wide text-violet-500">
+                {t("nav_games")}
+              </div>
+              {gameItems.map((game) => {
+                const active = pathname === `/g/${game.slug}`;
+                return (
+                  <Link
+                    key={game.slug}
+                    to={`/g/${game.slug}`}
+                    className={`block rounded-md px-3 py-2.5 text-sm ${
+                      active
+                        ? "bg-violet-100 text-violet-700 dark:bg-violet-600/20 dark:text-violet-300"
+                        : "text-zinc-700 hover:bg-zinc-200/70 dark:text-zinc-300 dark:hover:bg-zinc-800/70"
+                    }`}
+                  >
+                    {game.emoji} {localizeGame(game, lang).name}
+                  </Link>
+                );
+              })}
+            </div>
+          )}
           {favTools.length > 0 && (
             <NavGroup
               title={t("favorites")}
@@ -342,7 +378,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               onToggle={() => toggleCat(cat)}
             />
           ))}
-          {grouped.length === 0 && (
+          {grouped.length === 0 && gameItems.length === 0 && (
             <p className="px-3 text-sm text-zinc-500">{t("noResult")}</p>
           )}
         </nav>

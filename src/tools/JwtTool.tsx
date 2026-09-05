@@ -96,12 +96,12 @@ export default function JwtTool() {
   const segParts = trimmed === "" ? [] : trimmed.split(".");
   const segColors = [
     "text-rose-600 dark:text-rose-400",
-    "text-indigo-600 dark:text-indigo-400",
+    "text-violet-600 dark:text-violet-400",
     "text-sky-600 dark:text-sky-400",
   ];
   const segLegend = [
     { label: t.header, color: "bg-rose-500" },
-    { label: t.payload, color: "bg-indigo-500" },
+    { label: t.payload, color: "bg-violet-500" },
     { label: t.segSignature, color: "bg-sky-500" },
   ];
 

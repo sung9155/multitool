@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "check:games": "node --experimental-strip-types src/games/logic.check.ts"
   },
   "dependencies": {
     "qrcode": "^1.5.4",

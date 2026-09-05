@@ -122,7 +122,7 @@ export default function SavingsTool() {
               onClick={() => setType(m)}
               className={`rounded-md px-3 py-1.5 text-sm ${
                 m === type
-                  ? "bg-indigo-600 text-white"
+                  ? "bg-violet-600 text-white"
                   : "bg-zinc-200 text-zinc-600 hover:bg-zinc-300 dark:bg-zinc-800 dark:text-zinc-300"
               }`}
             >

@@ -142,7 +142,7 @@ export default function UnitConvertTool() {
               }}
               className={`rounded-md px-3 py-1.5 text-sm ${
                 c === cat
-                  ? "bg-indigo-600 text-white"
+                  ? "bg-violet-600 text-white"
                   : "bg-zinc-200 text-zinc-600 hover:bg-zinc-300 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
               }`}
             >
@@ -169,7 +169,7 @@ export default function UnitConvertTool() {
                 onClick={() => setUnit(u)}
                 className={`rounded-md px-3 py-1.5 text-sm ${
                   u === activeUnit
-                    ? "bg-indigo-600 text-white"
+                    ? "bg-violet-600 text-white"
                     : "bg-zinc-200 text-zinc-600 hover:bg-zinc-300 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
                 }`}
               >
@@ -208,7 +208,7 @@ export default function UnitConvertTool() {
                   key={r.u}
                   className={`border-t border-zinc-200 dark:border-zinc-800 ${
                     r.u === activeUnit
-                      ? "bg-indigo-50 dark:bg-indigo-950/30"
+                      ? "bg-violet-50 dark:bg-violet-950/30"
                       : ""
                   }`}
                 >

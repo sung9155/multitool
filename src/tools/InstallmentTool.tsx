@@ -105,7 +105,7 @@ export default function InstallmentTool() {
       <div
         className={`rounded-md border p-3 text-sm font-medium ${
           instWins
-            ? "border-indigo-500/40 bg-indigo-500/10 text-indigo-600 dark:text-indigo-300"
+            ? "border-violet-500/40 bg-violet-500/10 text-violet-600 dark:text-violet-300"
             : "border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
         }`}
       >

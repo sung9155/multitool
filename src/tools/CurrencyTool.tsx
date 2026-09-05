@@ -79,7 +79,7 @@ export default function CurrencyTool() {
           <select
             value={from}
             onChange={(e) => setFrom(e.target.value)}
-            className="w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm outline-none focus:border-indigo-500 dark:border-zinc-700 dark:bg-zinc-900"
+            className="w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm outline-none focus:border-violet-500 dark:border-zinc-700 dark:bg-zinc-900"
           >
             {codes.map((c) => (
               <option key={c} value={c}>{c}</option>
@@ -90,7 +90,7 @@ export default function CurrencyTool() {
           <select
             value={to}
             onChange={(e) => setTo(e.target.value)}
-            className="w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm outline-none focus:border-indigo-500 dark:border-zinc-700 dark:bg-zinc-900"
+            className="w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm outline-none focus:border-violet-500 dark:border-zinc-700 dark:bg-zinc-900"
           >
             {codes.map((c) => (
               <option key={c} value={c}>{c}</option>
@@ -129,7 +129,7 @@ export default function CurrencyTool() {
                   <tr
                     key={c}
                     className={`border-b border-zinc-100 last:border-0 dark:border-zinc-800/60 ${
-                      c === to ? "bg-indigo-500/10" : ""
+                      c === to ? "bg-violet-500/10" : ""
                     }`}
                   >
                     <td className="px-3 py-2 font-mono text-zinc-600 dark:text-zinc-300">{c}</td>
