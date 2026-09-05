@@ -230,4 +230,85 @@ assert.deepEqual(resolveLanding([cyl], 27, 0), {
   assert.ok(sim.ranks[5] > 10, "5등이 비정상적으로 적음");
 }
 
+// ── 2048 ─────────────────────────────────────────────────
+{
+  const { slideRow, moveBoard, addTile, canMove } = await import("./arcade.ts");
+
+  // 병합: 한 타일은 한 번만 합쳐진다
+  assert.deepEqual(slideRow([2, 2, 2, 2]), { row: [4, 4, 0, 0], gained: 8 });
+  assert.deepEqual(slideRow([2, 0, 2, 4]), { row: [4, 4, 0, 0], gained: 4 });
+  assert.deepEqual(slideRow([4, 2, 2, 0]), { row: [4, 4, 0, 0], gained: 4 });
+  assert.deepEqual(slideRow([2, 4, 2, 4]), { row: [2, 4, 2, 4], gained: 0 });
+  assert.deepEqual(slideRow([0, 0, 0, 0]), { row: [0, 0, 0, 0], gained: 0 });
+
+  // 방향 이동: 오른쪽/위/아래가 왼쪽 정규화와 일치하는가
+  const b = [
+    [2, 0, 0, 2],
+    [0, 4, 4, 0],
+    [2, 0, 0, 0],
+    [0, 0, 0, 2],
+  ];
+  assert.deepEqual(moveBoard(b, "right").board, [
+    [0, 0, 0, 4],
+    [0, 0, 0, 8],
+    [0, 0, 0, 2],
+    [0, 0, 0, 2],
+  ]);
+  assert.deepEqual(moveBoard(b, "up").board, [
+    [4, 4, 4, 4],
+    [0, 0, 0, 0],
+    [0, 0, 0, 0],
+    [0, 0, 0, 0],
+  ]);
+  assert.deepEqual(moveBoard(b, "down").board, [
+    [0, 0, 0, 0],
+    [0, 0, 0, 0],
+    [0, 0, 0, 0],
+    [4, 4, 4, 4],
+  ]);
+  assert.equal(moveBoard(b, "left").gained, 12); // 4 + 8
+
+  // 안 움직이는 이동은 moved=false
+  const full = [
+    [2, 4, 2, 4],
+    [4, 2, 4, 2],
+    [2, 4, 2, 4],
+    [4, 2, 4, 2],
+  ];
+  assert.equal(moveBoard(full, "left").moved, false);
+  assert.equal(canMove(full), false, "체커보드는 게임 오버");
+  assert.equal(canMove(b), true);
+
+  // addTile: 빈 칸 하나 채움, 값은 2 또는 4, 가득 차면 그대로
+  const added = addTile(b, () => 0.5);
+  const diff: number[] = [];
+  added.forEach((row, r) =>
+    row.forEach((v, c) => {
+      if (v !== b[r][c]) diff.push(v);
+    }),
+  );
+  assert.equal(diff.length, 1);
+  assert.ok(diff[0] === 2 || diff[0] === 4);
+  assert.deepEqual(addTile(full), full);
+}
+
+// ── 숫자야구 ─────────────────────────────────────────────
+{
+  const { secretDigits, judge } = await import("./arcade.ts");
+  const { seededRng } = await import("./lotto.ts");
+
+  const rng = seededRng(3);
+  for (let i = 0; i < 300; i++) {
+    const s = secretDigits(rng);
+    assert.equal(new Set(s).size, 3, "중복 숫자");
+    assert.ok(s.every((n) => n >= 1 && n <= 9), "범위 이탈");
+  }
+
+  assert.deepEqual(judge([1, 2, 3], [1, 2, 3]), { s: 3, b: 0 });
+  assert.deepEqual(judge([1, 2, 3], [3, 2, 1]), { s: 1, b: 2 });
+  assert.deepEqual(judge([1, 2, 3], [2, 3, 1]), { s: 0, b: 3 });
+  assert.deepEqual(judge([1, 2, 3], [4, 5, 6]), { s: 0, b: 0 });
+  assert.deepEqual(judge([1, 2, 3], [1, 5, 2]), { s: 1, b: 1 });
+}
+
 console.log("games logic ok");
