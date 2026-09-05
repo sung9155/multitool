@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useLang, type Lang } from "../components/i18n";
 import { makeLadder, traceLadder } from "./arcade";
 
@@ -63,7 +63,15 @@ export default function LadderGame() {
   const [namesRaw, setNamesRaw] = useState("A, B, C, D");
   const [prizesRaw, setPrizesRaw] = useState(() => L10N[lang].coffee);
   const [seed, setSeed] = useState(0); // 섞기 트리거
-  const [revealed, setRevealed] = useState<number[]>([]); // 공개된 시작 기둥
+  const [revealed, setRevealed] = useState<number[]>([]); // 경로 애니메이션 시작된 기둥
+  const [done, setDone] = useState<number[]>([]); // 애니메이션까지 끝나 결과 공개된 기둥
+  const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  const clearTimers = () => {
+    timers.current.forEach(clearTimeout);
+    timers.current = [];
+  };
+  useEffect(() => clearTimers, []);
 
   const names = parseList(namesRaw);
   const cols = Math.max(names.length, 2);
@@ -86,13 +94,25 @@ export default function LadderGame() {
     [rungs, cols],
   );
 
+  const TRACE_MS = 1100;
+
   const reshuffle = () => {
+    clearTimers();
     setSeed((x) => x + 1);
     setRevealed([]);
+    setDone([]);
   };
 
-  const reveal = (i: number) =>
+  const reveal = (i: number) => {
+    if (revealed.includes(i)) return;
     setRevealed((r) => (r.includes(i) ? r : [...r, i]));
+    timers.current.push(
+      setTimeout(
+        () => setDone((d) => (d.includes(i) ? d : [...d, i])),
+        TRACE_MS,
+      ),
+    );
+  };
 
   const W = PAD * 2 + (cols - 1) * COL_W;
   const H = PAD * 2 + ROWS * ROW_H;
@@ -110,7 +130,9 @@ export default function LadderGame() {
             value={namesRaw}
             onChange={(e) => {
               setNamesRaw(e.target.value);
+              clearTimers();
               setRevealed([]);
+              setDone([]);
             }}
             className="mt-1 w-full rounded-md border border-zinc-300 bg-white/70 px-3 py-2 outline-none focus:border-violet-500 dark:border-zinc-600 dark:bg-zinc-900/60"
           />
@@ -121,7 +143,9 @@ export default function LadderGame() {
             value={prizesRaw}
             onChange={(e) => {
               setPrizesRaw(e.target.value);
+              clearTimers();
               setRevealed([]);
+              setDone([]);
             }}
             className="mt-1 w-full rounded-md border border-zinc-300 bg-white/70 px-3 py-2 outline-none focus:border-violet-500 dark:border-zinc-600 dark:bg-zinc-900/60"
           />
@@ -134,7 +158,7 @@ export default function LadderGame() {
             {s("shuffle")}
           </button>
           <button
-            onClick={() => setRevealed(names.map((_, i) => i))}
+            onClick={() => names.forEach((_, i) => reveal(i))}
             className="rounded-md border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-100 dark:border-zinc-600 dark:hover:bg-zinc-800"
           >
             {s("revealAll")}
@@ -230,7 +254,7 @@ export default function LadderGame() {
           {/* 결과 */}
           <div className="relative h-8" style={{ width: W }}>
             {prizes.map((p, i) => {
-              const winner = revealed.find((st) => traces[st].end === i);
+              const winner = done.find((st) => traces[st].end === i);
               return (
                 <span
                   key={i}
@@ -254,9 +278,9 @@ export default function LadderGame() {
       </div>
 
       {/* 공개된 매칭 요약 */}
-      {revealed.length > 0 && (
+      {done.length > 0 && (
         <ul className="mt-4 flex flex-wrap gap-2 text-sm">
-          {revealed.map((st) => (
+          {done.map((st) => (
             <li
               key={st}
               className="rounded-full px-3 py-1 font-medium text-white"

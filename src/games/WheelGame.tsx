@@ -56,7 +56,7 @@ export default function WheelGame() {
   const lang = useLang();
   const s = (k: string) => L10N[lang][k] ?? L10N.ko[k] ?? k;
 
-  const [raw, setRaw] = useState("철수, 영희, 민수, 지영");
+  const [raw, setRaw] = useState("🐶 강아지, 🐱 고양이, 🐰 토끼, 🦊 여우, 🐻 곰, 🐼 판다");
   const [rotation, setRotation] = useState(0);
   const [spinning, setSpinning] = useState(false);
   const [winner, setWinner] = useState<number | null>(null);
