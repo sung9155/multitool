@@ -6,6 +6,9 @@ import LottoGame from "./LottoGame";
 import Game2048 from "./Game2048";
 import ReactionGame from "./ReactionGame";
 import BaseballGame from "./BaseballGame";
+import LadderGame from "./LadderGame";
+import WheelGame from "./WheelGame";
+import LoanSim from "./LoanSim";
 
 export interface Game {
   /** URL 경로 (/g/<slug>) 와 고유 키 */
@@ -37,6 +40,57 @@ export const games: Game[] = [
       },
     },
     component: LottoGame,
+  },
+  {
+    slug: "ladder",
+    name: "사다리타기",
+    description: "커피 내기 필수템 — 참가자와 결과를 넣고 사다리 타기",
+    emoji: "🪜",
+    i18n: {
+      en: {
+        name: "Ladder Game",
+        description: "The coffee-bet classic — add players and outcomes, ride the ladder",
+      },
+      zh: {
+        name: "画鬼脚",
+        description: "请咖啡必备 — 填上名字和结果，顺梯子往下走",
+      },
+    },
+    component: LadderGame,
+  },
+  {
+    slug: "wheel",
+    name: "돌림판",
+    description: "이름 넣고 돌리면 한 명 당첨 — 점심 메뉴·커피 쏘기 랜덤 뽑기",
+    emoji: "🎡",
+    i18n: {
+      en: {
+        name: "Spin the Wheel",
+        description: "Add names and spin — random picker for lunch or coffee duty",
+      },
+      zh: {
+        name: "转盘",
+        description: "填上名字转一转 — 午餐、请咖啡随机抽选",
+      },
+    },
+    component: WheelGame,
+  },
+  {
+    slug: "loan",
+    name: "대출 이자",
+    description: "원리금균등·원금균등·만기일시 비교 — 월 상환액과 총 이자, 잔액 추이",
+    emoji: "💰",
+    i18n: {
+      en: {
+        name: "Loan Interest",
+        description: "Compare repayment methods — monthly payment, total interest, balance curve",
+      },
+      zh: {
+        name: "贷款利息",
+        description: "对比还款方式 — 月供、总利息与余额走势",
+      },
+    },
+    component: LoanSim,
   },
   {
     slug: "stack",

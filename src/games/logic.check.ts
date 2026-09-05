@@ -311,4 +311,54 @@ assert.deepEqual(resolveLanding([cyl], 27, 0), {
   assert.deepEqual(judge([1, 2, 3], [1, 5, 2]), { s: 1, b: 1 });
 }
 
+// ── 사다리타기 · 돌림판 ──────────────────────────────────
+{
+  const { makeLadder, traceLadder, wheelWinner } = await import("./arcade.ts");
+  const { seededRng } = await import("./lotto.ts");
+
+  const rng = seededRng(9);
+  for (let cols = 2; cols <= 8; cols++) {
+    for (let i = 0; i < 50; i++) {
+      const rungs = makeLadder(cols, 10, rng);
+      // 같은 줄에 인접 가로대 금지
+      for (const row of rungs) {
+        const sorted = [...row].sort((a, b) => a - b);
+        for (let k = 1; k < sorted.length; k++) {
+          assert.ok(sorted[k] - sorted[k - 1] >= 2, "인접 가로대 발생");
+        }
+      }
+      // 모든 기둥 사이에 가로대 최소 1개
+      for (let c = 0; c < cols - 1; c++) {
+        assert.ok(
+          rungs.some((row) => row.includes(c)),
+          `기둥 ${c} 사이 가로대 없음`,
+        );
+      }
+      // 결과는 항상 순열 (겹침/누락 없음)
+      const ends = Array.from(
+        { length: cols },
+        (_, st) => traceLadder(rungs, st).end,
+      );
+      assert.deepEqual(
+        [...ends].sort((a, b) => a - b),
+        Array.from({ length: cols }, (_, k) => k),
+        "순열 아님",
+      );
+    }
+  }
+
+  // 돌림판: 회전 0 이면 조각 0 이 12시… 살짝 돌리면 마지막 조각
+  assert.equal(wheelWinner(0, 4), 0);
+  assert.equal(wheelWinner(10, 4), 3);
+  assert.equal(wheelWinner(90, 4), 3);
+  assert.equal(wheelWinner(91, 4), 2);
+  assert.equal(wheelWinner(360, 4), 0);
+  assert.equal(wheelWinner(45, 4), 3);
+  // 전 구간에서 유효한 인덱스
+  for (let a = 0; a < 720; a += 7) {
+    const w = wheelWinner(a, 6);
+    assert.ok(w >= 0 && w < 6, `angle=${a}`);
+  }
+}
+
 console.log("games logic ok");
