@@ -187,15 +187,52 @@ export default function LottoGame() {
   const [sel, setSel] = useState<number[]>([]);
   const [result, setResult] = useState<Draw | null>(null);
   const [revealed, setRevealed] = useState(0); // 0~7 (7 = 보너스까지)
-  const [sim, setSim] = useState<{ years: number; r: SimResult } | null>(null);
+  const [sim, setSim] = useState<{
+    years: number;
+    r: SimResult;
+    running: boolean;
+  } | null>(null);
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
+  const simTimer = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(
     () => () => {
       if (timer.current) clearInterval(timer.current);
+      if (simTimer.current) clearInterval(simTimer.current);
     },
     [],
   );
+
+  /** 현실 체험: 회차를 잘게 쪼개 실제로 돌리면서 숫자가 실시간으로 차오르게 */
+  const runSim = (years: number) => {
+    if (simTimer.current) clearInterval(simTimer.current);
+    const totalRounds = 52 * years;
+    const chunk = Math.max(1, Math.ceil(totalRounds / 90)); // 약 2.7초 분량
+    const acc: SimResult = {
+      rounds: 0,
+      tickets: 0,
+      spent: 0,
+      won: 0,
+      ranks: [0, 0, 0, 0, 0, 0],
+    };
+    setSim({ years, r: { ...acc, ranks: [...acc.ranks] }, running: true });
+    simTimer.current = setInterval(() => {
+      const step = Math.min(chunk, totalRounds - acc.rounds);
+      const part = simulate(step, 5);
+      acc.rounds += part.rounds;
+      acc.tickets += part.tickets;
+      acc.spent += part.spent;
+      acc.won += part.won;
+      for (let k = 1; k <= 5; k++) acc.ranks[k] += part.ranks[k];
+      const finished = acc.rounds >= totalRounds;
+      if (finished && simTimer.current) clearInterval(simTimer.current);
+      setSim({
+        years,
+        r: { ...acc, ranks: [...acc.ranks] },
+        running: !finished,
+      });
+    }, 30);
+  };
 
   const drawing = result !== null && revealed < 7;
   const done = result !== null && revealed >= 7;
@@ -427,14 +464,16 @@ export default function LottoGame() {
             <button
               key={y}
               className={`${BTN2} ${sim?.years === y ? "border-violet-500 text-violet-600 dark:text-violet-300" : ""}`}
-              onClick={() => setSim({ years: y, r: simulate(52 * y, 5) })}
+              disabled={sim?.running}
+              onClick={() => runSim(y)}
             >
               {y}
               {s("years")}
             </button>
           ))}
           {sim && (
-            <span className="self-center text-sm text-zinc-500">
+            <span className="self-center text-sm tabular-nums text-zinc-500">
+              {sim.running && <span className="mr-1 animate-pulse">⏳</span>}
               {fmt(sim.r.rounds)}
               {s("simRounds")} · {fmt(sim.r.tickets)}
               {s("simTickets")}
@@ -446,13 +485,15 @@ export default function LottoGame() {
             <div className="grid gap-3 sm:grid-cols-3">
               <div className="rounded-lg bg-zinc-100 p-4 dark:bg-zinc-800/60">
                 <div className="text-xs text-zinc-500">{s("simSpent")}</div>
-                <div className="mt-1 text-2xl font-bold">₩{fmt(sim.r.spent)}</div>
+                <div className="mt-1 text-2xl font-bold tabular-nums">
+                  ₩{fmt(sim.r.spent)}
+                </div>
               </div>
               <div className="rounded-lg bg-violet-100 p-4 dark:bg-violet-600/20">
                 <div className="text-xs text-violet-600 dark:text-violet-300">
                   {s("simWon")}
                 </div>
-                <div className="mt-1 text-2xl font-bold text-violet-700 dark:text-violet-300">
+                <div className="mt-1 text-2xl font-bold tabular-nums text-violet-700 dark:text-violet-300">
                   ₩{fmt(sim.r.won)}
                 </div>
               </div>
@@ -473,7 +514,7 @@ export default function LottoGame() {
                   {s("simNet")}
                 </div>
                 <div
-                  className={`mt-1 text-2xl font-bold ${
+                  className={`mt-1 text-2xl font-bold tabular-nums ${
                     sim.r.won - sim.r.spent >= 0
                       ? "text-emerald-700 dark:text-emerald-300"
                       : "text-red-600 dark:text-red-300"

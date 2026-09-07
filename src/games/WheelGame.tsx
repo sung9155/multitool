@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLang, type Lang } from "../components/i18n";
 import { wheelWinner } from "./arcade";
 
@@ -60,7 +60,11 @@ export default function WheelGame() {
   const [rotation, setRotation] = useState(0);
   const [spinning, setSpinning] = useState(false);
   const [winner, setWinner] = useState<number | null>(null);
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const wheelRef = useRef<SVGSVGElement>(null);
+  const pointerRef = useRef<HTMLDivElement>(null);
+  const raf = useRef(0);
+
+  useEffect(() => () => cancelAnimationFrame(raf.current), []);
 
   const names = raw
     .split(",")
@@ -68,21 +72,51 @@ export default function WheelGame() {
     .filter(Boolean)
     .slice(0, 10);
   const n = names.length;
+  const step = 360 / Math.max(n, 1);
+
+  /** 조각 경계를 지날 때마다 화살표가 턱 걸렸다 튕겨 돌아온다 */
+  const kickPointer = () => {
+    const el = pointerRef.current;
+    if (!el) return;
+    el.style.transition = "none";
+    el.style.transform = "rotate(26deg)";
+    requestAnimationFrame(() => {
+      el.style.transition = "transform 130ms cubic-bezier(.2, 2.2, .4, 1)";
+      el.style.transform = "rotate(0deg)";
+    });
+  };
 
   const spin = () => {
     if (spinning || n < 2) return;
     setWinner(null);
     setSpinning(true);
-    const target = rotation + 5 * 360 + Math.random() * 360;
-    setRotation(target);
-    if (timer.current) clearTimeout(timer.current);
-    timer.current = setTimeout(() => {
-      setSpinning(false);
-      setWinner(wheelWinner(target % 360, n));
-    }, SPIN_MS + 100);
-  };
+    cancelAnimationFrame(raf.current);
 
-  const step = 360 / Math.max(n, 1);
+    const start = rotation;
+    const target = start + 5 * 360 + Math.random() * 360;
+    const t0 = performance.now();
+    let lastNotch = Math.floor(start / step);
+
+    const frame = (now: number) => {
+      const p = Math.min(1, (now - t0) / SPIN_MS);
+      const rot = start + (target - start) * (1 - Math.pow(1 - p, 3)); // ease-out
+      if (wheelRef.current)
+        wheelRef.current.style.transform = `rotate(${rot}deg)`;
+      const notch = Math.floor(rot / step);
+      if (notch !== lastNotch) {
+        lastNotch = notch;
+        kickPointer();
+      }
+      if (p < 1) {
+        raf.current = requestAnimationFrame(frame);
+      } else {
+        setRotation(target);
+        setSpinning(false);
+        setWinner(wheelWinner(target % 360, n));
+      }
+    };
+    raf.current = requestAnimationFrame(frame);
+  };
 
   return (
     <div className="mx-auto max-w-sm text-center">
@@ -99,19 +133,21 @@ export default function WheelGame() {
       </label>
 
       <div className="relative mx-auto w-fit">
-        {/* 12시 포인터 */}
-        <div className="absolute -top-1 left-1/2 z-10 -translate-x-1/2 text-2xl">
-          🔻
+        {/* 12시 포인터 (조각 경계에 턱턱 걸리는 플리퍼) */}
+        <div className="absolute -top-1 left-1/2 z-10 -translate-x-1/2">
+          <div
+            ref={pointerRef}
+            className="text-2xl"
+            style={{ transformOrigin: "50% 25%" }}
+          >
+            🔻
+          </div>
         </div>
         <svg
+          ref={wheelRef}
           viewBox="-100 -100 200 200"
           className="h-72 w-72"
-          style={{
-            transform: `rotate(${rotation}deg)`,
-            transition: spinning
-              ? `transform ${SPIN_MS}ms cubic-bezier(0.2, 0.8, 0.2, 1)`
-              : "none",
-          }}
+          style={{ transform: `rotate(${rotation}deg)` }}
         >
           {names.map((name, i) => {
             const mid = i * step + step / 2 - 90;
