@@ -38,19 +38,27 @@ const COLORS = [
 
 const SPIN_MS = 4000;
 
+const R_SLICE = 90; // 조각 반경
+const R_PEG = 84; // 페그(핀) 줄 반경 — 플리퍼가 여기 걸린다
+const R_BAND = 97; // 금색 림 중심 반경
+
 /** 조각 i (i*step ~ (i+1)*step, 12시부터 시계방향) 의 부채꼴 path */
 function slicePath(i: number, n: number): string {
   const step = (2 * Math.PI) / n;
   const a0 = i * step - Math.PI / 2;
   const a1 = a0 + step;
-  const R = 96;
-  const x0 = R * Math.cos(a0);
-  const y0 = R * Math.sin(a0);
-  const x1 = R * Math.cos(a1);
-  const y1 = R * Math.sin(a1);
+  const x0 = R_SLICE * Math.cos(a0);
+  const y0 = R_SLICE * Math.sin(a0);
+  const x1 = R_SLICE * Math.cos(a1);
+  const y1 = R_SLICE * Math.sin(a1);
   const large = step > Math.PI ? 1 : 0;
-  return `M0,0 L${x0},${y0} A${R},${R} 0 ${large} 1 ${x1},${y1} Z`;
+  return `M0,0 L${x0},${y0} A${R_SLICE},${R_SLICE} 0 ${large} 1 ${x1},${y1} Z`;
 }
+
+const deg2xy = (deg: number, r: number): [number, number] => {
+  const a = ((deg - 90) * Math.PI) / 180;
+  return [r * Math.cos(a), r * Math.sin(a)];
+};
 
 export default function WheelGame() {
   const lang = useLang();
@@ -73,15 +81,18 @@ export default function WheelGame() {
     .slice(0, 10);
   const n = names.length;
   const step = 360 / Math.max(n, 1);
+  // 실물 카니발 휠처럼 페그는 조각 경계보다 촘촘하게 (조각당 3개, 최소 24개)
+  const pegCount = Math.max(24, n * 3);
+  const pegStep = 360 / pegCount;
 
   /** 조각 경계를 지날 때마다 화살표가 턱 걸렸다 튕겨 돌아온다 */
   const kickPointer = () => {
     const el = pointerRef.current;
     if (!el) return;
     el.style.transition = "none";
-    el.style.transform = "rotate(26deg)";
+    el.style.transform = "rotate(20deg)";
     requestAnimationFrame(() => {
-      el.style.transition = "transform 130ms cubic-bezier(.2, 2.2, .4, 1)";
+      el.style.transition = "transform 100ms cubic-bezier(.2, 2.2, .4, 1)";
       el.style.transform = "rotate(0deg)";
     });
   };
@@ -95,14 +106,14 @@ export default function WheelGame() {
     const start = rotation;
     const target = start + 5 * 360 + Math.random() * 360;
     const t0 = performance.now();
-    let lastNotch = Math.floor(start / step);
+    let lastNotch = Math.floor(start / pegStep);
 
     const frame = (now: number) => {
       const p = Math.min(1, (now - t0) / SPIN_MS);
       const rot = start + (target - start) * (1 - Math.pow(1 - p, 3)); // ease-out
       if (wheelRef.current)
         wheelRef.current.style.transform = `rotate(${rot}deg)`;
-      const notch = Math.floor(rot / step);
+      const notch = Math.floor(rot / pegStep);
       if (notch !== lastNotch) {
         lastNotch = notch;
         kickPointer();
@@ -119,7 +130,8 @@ export default function WheelGame() {
   };
 
   return (
-    <div className="mx-auto max-w-sm text-center">
+    <div className="mx-auto max-w-xl text-center">
+      <style>{`@keyframes wheel-twinkle { 50% { opacity: .25; } }`}</style>
       <label className="mb-4 block text-left text-sm">
         <span className="text-zinc-500">{s("players")}</span>
         <input
@@ -133,39 +145,43 @@ export default function WheelGame() {
       </label>
 
       <div className="relative mx-auto w-fit">
-        {/* 12시 플리퍼 — 림의 페그에 걸렸다 튕겨 돌아온다 */}
+        {/* 12시 플리퍼 — 페그에 걸렸다 튕겨 돌아온다 */}
         <div className="absolute -top-2 left-1/2 z-10 -translate-x-1/2">
-          <div ref={pointerRef} style={{ transformOrigin: "50% 22%" }}>
-            <svg width="26" height="42" viewBox="0 0 26 42">
+          <div ref={pointerRef} style={{ transformOrigin: "50% 20%" }}>
+            <svg width="30" height="56" viewBox="0 0 30 56">
               <path
-                d="M13 41 L3.5 11 A10 10 0 1 1 22.5 11 Z"
+                d="M15 55 L4 13 A11.5 11.5 0 1 1 26 13 Z"
                 fill="#ef4444"
                 stroke="#991b1b"
-                strokeWidth="1.5"
+                strokeWidth="2"
               />
-              <circle cx="13" cy="10" r="3.5" fill="#fecaca" />
+              <circle cx="15" cy="11.5" r="4" fill="#fecaca" />
             </svg>
           </div>
         </div>
         <svg
           ref={wheelRef}
-          viewBox="-104 -104 208 208"
-          className="h-72 w-72"
+          viewBox="-112 -112 224 224"
+          className="h-80 w-80 drop-shadow-xl sm:h-[26rem] sm:w-[26rem]"
           style={{ transform: `rotate(${rotation}deg)` }}
         >
+          {/* 바깥 테두리 + 금색 림 */}
+          <circle r="108" fill="#78350f" />
+          <circle r={R_BAND} fill="none" stroke="#d97706" strokeWidth="15" />
+          {/* 조각 */}
           {names.map((name, i) => {
             const mid = i * step + step / 2 - 90;
             return (
               <g key={i}>
                 {n === 1 ? (
-                  <circle r="96" fill={COLORS[0]} />
+                  <circle r={R_SLICE} fill={COLORS[0]} />
                 ) : (
                   <path d={slicePath(i, n)} fill={COLORS[i % COLORS.length]} />
                 )}
                 <text
                   x="0"
                   y="0"
-                  transform={`rotate(${mid}) translate(60 0) rotate(90)`}
+                  transform={`rotate(${mid}) translate(56 0) rotate(90)`}
                   textAnchor="middle"
                   dominantBaseline="middle"
                   fill="#fff"
@@ -177,27 +193,55 @@ export default function WheelGame() {
               </g>
             );
           })}
-          {/* 림 (테두리 막대) */}
-          <circle r="98" fill="none" stroke="#3f3f46" strokeWidth="5" />
-          {/* 페그 — 조각 경계마다 박힌 핀, 플리퍼가 여기 걸린다 */}
+          {/* 조각 구분선 */}
           {n >= 2 &&
             names.map((_, i) => {
-              const a = ((i * step - 90) * Math.PI) / 180;
+              const [x2, y2] = deg2xy(i * step, R_SLICE);
               return (
-                <circle
-                  key={`peg-${i}`}
-                  cx={98 * Math.cos(a)}
-                  cy={98 * Math.sin(a)}
-                  r="4.5"
-                  fill="#f4f4f5"
-                  stroke="#52525b"
+                <line
+                  key={`sep-${i}`}
+                  x1="0"
+                  y1="0"
+                  x2={x2}
+                  y2={y2}
+                  stroke="#fff"
+                  strokeOpacity="0.7"
                   strokeWidth="1.5"
                 />
               );
             })}
+          {/* 림 위 전구 장식 (반짝임) */}
+          {n >= 2 &&
+            Array.from({ length: n * 2 }, (_, i) => {
+              const [cx, cy] = deg2xy((i * step) / 2, R_BAND);
+              return (
+                <circle
+                  key={`bulb-${i}`}
+                  cx={cx}
+                  cy={cy}
+                  r="3"
+                  fill="#fef3c7"
+                  stroke="#b45309"
+                  strokeWidth="1"
+                  style={{
+                    animation: `wheel-twinkle 1.2s ease-in-out ${i % 2 ? 0.6 : 0}s infinite`,
+                  }}
+                />
+              );
+            })}
+          {/* 페그 — 촘촘한 핀 줄, 플리퍼가 여기 걸린다 */}
+          {Array.from({ length: pegCount }, (_, i) => {
+            const [cx, cy] = deg2xy(i * pegStep, R_PEG);
+            return (
+              <g key={`peg-${i}`}>
+                <circle cx={cx} cy={cy} r="3.2" fill="#e4e4e7" stroke="#52525b" strokeWidth="1.2" />
+                <circle cx={cx - 0.8} cy={cy - 0.8} r="1" fill="#fff" />
+              </g>
+            );
+          })}
           {/* 중심 허브 */}
-          <circle r="15" fill="#fafafa" stroke="#a1a1aa" strokeWidth="2" />
-          <circle r="5" fill="#71717a" />
+          <circle r="17" fill="#f59e0b" stroke="#b45309" strokeWidth="3" />
+          <circle r="6" fill="#7c2d12" />
         </svg>
       </div>
 
