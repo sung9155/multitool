@@ -30,7 +30,7 @@ function Home() {
         <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
           {t("homeGamesSub")}
         </p>
-        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {games.map((game) => {
             const loc = localizeGame(game, lang);
             return (
