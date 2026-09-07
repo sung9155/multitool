@@ -133,19 +133,23 @@ export default function WheelGame() {
       </label>
 
       <div className="relative mx-auto w-fit">
-        {/* 12시 포인터 (조각 경계에 턱턱 걸리는 플리퍼) */}
-        <div className="absolute -top-1 left-1/2 z-10 -translate-x-1/2">
-          <div
-            ref={pointerRef}
-            className="text-2xl"
-            style={{ transformOrigin: "50% 25%" }}
-          >
-            🔻
+        {/* 12시 플리퍼 — 림의 페그에 걸렸다 튕겨 돌아온다 */}
+        <div className="absolute -top-2 left-1/2 z-10 -translate-x-1/2">
+          <div ref={pointerRef} style={{ transformOrigin: "50% 22%" }}>
+            <svg width="26" height="42" viewBox="0 0 26 42">
+              <path
+                d="M13 41 L3.5 11 A10 10 0 1 1 22.5 11 Z"
+                fill="#ef4444"
+                stroke="#991b1b"
+                strokeWidth="1.5"
+              />
+              <circle cx="13" cy="10" r="3.5" fill="#fecaca" />
+            </svg>
           </div>
         </div>
         <svg
           ref={wheelRef}
-          viewBox="-100 -100 200 200"
+          viewBox="-104 -104 208 208"
           className="h-72 w-72"
           style={{ transform: `rotate(${rotation}deg)` }}
         >
@@ -173,7 +177,27 @@ export default function WheelGame() {
               </g>
             );
           })}
-          <circle r="14" fill="white" className="dark:opacity-90" />
+          {/* 림 (테두리 막대) */}
+          <circle r="98" fill="none" stroke="#3f3f46" strokeWidth="5" />
+          {/* 페그 — 조각 경계마다 박힌 핀, 플리퍼가 여기 걸린다 */}
+          {n >= 2 &&
+            names.map((_, i) => {
+              const a = ((i * step - 90) * Math.PI) / 180;
+              return (
+                <circle
+                  key={`peg-${i}`}
+                  cx={98 * Math.cos(a)}
+                  cy={98 * Math.sin(a)}
+                  r="4.5"
+                  fill="#f4f4f5"
+                  stroke="#52525b"
+                  strokeWidth="1.5"
+                />
+              );
+            })}
+          {/* 중심 허브 */}
+          <circle r="15" fill="#fafafa" stroke="#a1a1aa" strokeWidth="2" />
+          <circle r="5" fill="#71717a" />
         </svg>
       </div>
 
