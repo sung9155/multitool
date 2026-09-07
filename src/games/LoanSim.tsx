@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Field, Stat, TextInput, fmtNum } from "../components/ui";
 import { LineChart, PALETTE, type Pt } from "../components/charts";
 import { useLang } from "../components/i18n";
@@ -29,6 +30,15 @@ const TEXT = {
     interestRatio: "이자 비율",
     interestRatioUnit: "% (원금 대비)",
     note: "원리금균등: 매월 동일 납부. 원금균등: 원금 일정, 이자 감소(초기 부담↑). 만기일시: 매월 이자만, 만기에 원금 일시상환. 거치기간·중도상환 미반영.",
+    schedule: "납입 스케줄",
+    viewYear: "연 단위",
+    viewMonth: "월 단위",
+    colPeriod: "회차",
+    colPay: "납입액",
+    colInterest: "이자",
+    colPrincipal: "원금",
+    colBalance: "잔액",
+    yearRow: "년차",
   },
   en: {
     won: "KRW",
@@ -55,6 +65,15 @@ const TEXT = {
     interestRatio: "Interest ratio",
     interestRatioUnit: "% (of principal)",
     note: "Equal payment: same amount each month. Equal principal: fixed principal, decreasing interest (higher early burden). Bullet: interest only each month, principal repaid at maturity. Grace period and prepayment not reflected.",
+    schedule: "Payment schedule",
+    viewYear: "Yearly",
+    viewMonth: "Monthly",
+    colPeriod: "#",
+    colPay: "Payment",
+    colInterest: "Interest",
+    colPrincipal: "Principal",
+    colBalance: "Balance",
+    yearRow: "yr",
   },
   zh: {
     won: "元",
@@ -81,6 +100,15 @@ const TEXT = {
     interestRatio: "利息比例",
     interestRatioUnit: "% (相对本金)",
     note: "等额本息: 每月还款相同。等额本金: 本金固定, 利息递减(前期负担↑)。到期一次性: 每月仅付利息, 到期一次性偿还本金。未含宽限期·提前还款。",
+    schedule: "还款计划表",
+    viewYear: "按年",
+    viewMonth: "按月",
+    colPeriod: "期",
+    colPay: "还款额",
+    colInterest: "利息",
+    colPrincipal: "本金",
+    colBalance: "余额",
+    yearRow: "年",
   },
 } as const;
 
@@ -96,6 +124,7 @@ export default function LoanTool() {
   const [rate, setRate] = useToolState("rate", "4.5"); // 연이율 %
   const [years, setYears] = useToolState("years", "30"); // 기간(년)
   const [method, setMethod] = useToolState<Method>("method", "equalPI");
+  const [view, setView] = useState<"year" | "month">("year");
 
   const P = Number(principal);
   const r = Number(rate) / 100 / 12; // 월이율
@@ -105,6 +134,14 @@ export default function LoanTool() {
 
   // 상환 스케줄 시뮬레이션
   const balCurve: Pt[] = [{ x: 0, y: P }];
+  interface Row {
+    m: number;
+    pay: number;
+    interest: number;
+    principalPaid: number;
+    bal: number;
+  }
+  const rows: Row[] = [];
   let totalInterest = 0;
   let firstPay = 0;
   let lastPay = 0;
@@ -130,6 +167,7 @@ export default function LoanTool() {
     }
     totalInterest += interest;
     bal -= principalPaid;
+    rows.push({ m, pay, interest, principalPaid, bal: Math.max(0, bal) });
     if (m === 1) firstPay = pay;
     if (m === n) lastPay = pay;
     if (m % Math.max(1, Math.floor(n / 60)) === 0 || m === n)
@@ -137,6 +175,22 @@ export default function LoanTool() {
   }
 
   const totalPay = P + totalInterest;
+
+  // 연 단위 집계 (12개월 합, 잔액은 연말 기준)
+  const yearRows: Row[] = [];
+  for (let i = 0; i < rows.length; i += 12) {
+    const chunk = rows.slice(i, i + 12);
+    yearRows.push({
+      m: Math.floor(i / 12) + 1,
+      pay: chunk.reduce((a, r2) => a + r2.pay, 0),
+      interest: chunk.reduce((a, r2) => a + r2.interest, 0),
+      principalPaid: chunk.reduce((a, r2) => a + r2.principalPaid, 0),
+      bal: chunk[chunk.length - 1].bal,
+    });
+  }
+
+  const tableRows = view === "year" ? yearRows : rows;
+  const num = (v: number) => Math.round(v).toLocaleString("ko-KR");
 
   return (
     <div className="space-y-5">
@@ -208,6 +262,67 @@ export default function LoanTool() {
           height={220}
         />
       </div>
+
+      {rows.length > 0 && (
+        <div>
+          <div className="mb-2 flex items-center gap-2">
+            <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">
+              {t.schedule}
+            </span>
+            <div className="ml-auto flex gap-1">
+              {(
+                [
+                  ["year", t.viewYear],
+                  ["month", t.viewMonth],
+                ] as const
+              ).map(([v, label]) => (
+                <button
+                  key={v}
+                  onClick={() => setView(v)}
+                  className={`rounded-md px-2.5 py-1 text-xs ${
+                    view === v
+                      ? "bg-violet-600 text-white"
+                      : "bg-zinc-200 text-zinc-600 hover:bg-zinc-300 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="max-h-96 overflow-auto rounded-lg border border-zinc-200 dark:border-zinc-700">
+            <table className="w-full text-right text-sm tabular-nums">
+              <thead className="sticky top-0 bg-zinc-100 text-xs text-zinc-500 dark:bg-zinc-800">
+                <tr>
+                  <th className="px-3 py-2 text-left font-medium">
+                    {t.colPeriod}
+                  </th>
+                  <th className="px-3 py-2 font-medium">{t.colPay}</th>
+                  <th className="px-3 py-2 font-medium">{t.colInterest}</th>
+                  <th className="px-3 py-2 font-medium">{t.colPrincipal}</th>
+                  <th className="px-3 py-2 font-medium">{t.colBalance}</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+                {tableRows.map((r2) => (
+                  <tr key={r2.m} className="bg-white/50 dark:bg-zinc-900/40">
+                    <td className="px-3 py-1.5 text-left text-zinc-500">
+                      {r2.m}
+                      {view === "year" ? t.yearRow : ""}
+                    </td>
+                    <td className="px-3 py-1.5 font-medium">{num(r2.pay)}</td>
+                    <td className="px-3 py-1.5 text-red-500/80 dark:text-red-400/80">
+                      {num(r2.interest)}
+                    </td>
+                    <td className="px-3 py-1.5">{num(r2.principalPaid)}</td>
+                    <td className="px-3 py-1.5 text-zinc-500">{num(r2.bal)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       <div className="grid gap-3 sm:grid-cols-2">
         <Stat label={t.principal} value={w(P)} />
