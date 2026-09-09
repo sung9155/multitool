@@ -387,6 +387,13 @@ assert.deepEqual(resolveLanding([cyl], 27, 0), {
     );
   }
   assert.ok(RECIPES.length >= 150, `레시피 수 ${RECIPES.length}`);
+
+  // 사진: 모든 레시피에 정적 사진 URL (scripts/findPhotos.mjs 로 생성)
+  const { PHOTOS } = await import("./photos.ts");
+  const noPhoto = RECIPES.filter((x) => !PHOTOS[x.name]).map((x) => x.name);
+  assert.deepEqual(noPhoto, [], "사진 없는 레시피");
+  for (const u of Object.values(PHOTOS))
+    assert.ok(/^https:\/\/(upload|thumb)\.wikimedia\.org\//.test(u), u);
   for (const c of CUISINES)
     assert.ok(RECIPES.some((x) => x.cuisine === c), `${c} 레시피 없음`);
 

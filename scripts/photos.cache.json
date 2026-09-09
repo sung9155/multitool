@@ -1,0 +1,722 @@
+{
+ "김치찌개": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/db/Korean_stew_dish_-_Kimchi-jjigae_Kimchi_Stew_2019_%2801%29.jpg/500px-Korean_stew_dish_-_Kimchi-jjigae_Kimchi_Stew_2019_%2801%29.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "참치김치찌개": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/db/Korean_stew_dish_-_Kimchi-jjigae_Kimchi_Stew_2019_%2801%29.jpg/500px-Korean_stew_dish_-_Kimchi-jjigae_Kimchi_Stew_2019_%2801%29.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "된장찌개": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a5/Doenjang_jjigae.jpg/500px-Doenjang_jjigae.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "순두부찌개": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/1a/Korean.food-Sundubu.jjigae-01.jpg/500px-Korean.food-Sundubu.jjigae-01.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "미역국": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/36/Miyeok-guk.jpg/500px-Miyeok-guk.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "콩나물국": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/27/Kongnamul_gukbap_20230408_003.jpg/500px-Kongnamul_gukbap_20230408_003.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-search"
+ },
+ "부대찌개": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/82/Budae_jjigae_%2828587380901%29.jpg/500px-Budae_jjigae_%2828587380901%29.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "어묵탕": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/81/Assorted_Eomuk.jpg/500px-Assorted_Eomuk.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-search"
+ },
+ "떡국": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/0e/Tteokguk.jpg/500px-Tteokguk.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "만둣국": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/af/Jaha-Manduguk.jpg/500px-Jaha-Manduguk.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "김치찜": {
+  "src": "https://upload.wikimedia.org/wikipedia/commons/9/9d/%EA%B9%80%EC%B9%98%EC%B0%9C.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+  "how": "ko-page"
+ },
+ "수제비": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a4/Sujebi.jpg/500px-Sujebi.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "고등어조림": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/36/Korean.cuisine-Godeungeo.jorim-01.jpg/500px-Korean.cuisine-Godeungeo.jorim-01.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "닭죽": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/8b/Dakjuk.jpg/500px-Dakjuk.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "김치볶음밥": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/cd/Kimchi-bokkeum-bap.jpg/500px-Kimchi-bokkeum-bap.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "비빔밥": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/44/Dolsot-bibimbap.jpg/500px-Dolsot-bibimbap.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "카레라이스": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/3b/Beef_curry_rice_003.jpg/500px-Beef_curry_rice_003.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "짜장밥": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/76/Jajang-bap.jpg/500px-Jajang-bap.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "how": "commons-ko"
+ },
+ "오므라이스": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/0d/Omurice_by_Taimeiken.jpg/500px-Omurice_by_Taimeiken.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "김밥": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/0e/Gimbap_%28pixabay%29.jpg/500px-Gimbap_%28pixabay%29.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "콩나물밥": {
+  "src": "https://upload.wikimedia.org/wikipedia/commons/d/dd/Kongnamulbap.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+  "how": "ko-page"
+ },
+ "잔치국수": {
+  "src": "https://upload.wikimedia.org/wikipedia/commons/5/55/Janchiguksu.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+  "how": "ko-page"
+ },
+ "제육볶음": {
+  "src": "https://upload.wikimedia.org/wikipedia/commons/6/65/%EC%A0%9C%EC%9C%A1_%EB%B3%B6%EC%9D%8C.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+  "how": "ko-page"
+ },
+ "불고기": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/ce/Bulgogi_2.jpg/500px-Bulgogi_2.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "닭볶음탕": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/1b/Korean.food-Dakbokemtang-01.jpg/500px-Korean.food-Dakbokemtang-01.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "닭갈비": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/32/Korean_cuisine-Dakgalbi-01.jpg/500px-Korean_cuisine-Dakgalbi-01.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "오징어볶음": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/42/%EC%98%A4%EC%A7%95%EC%96%B4%EB%B3%B6%EC%9D%8C01.jpg/500px-%EC%98%A4%EC%A7%95%EC%96%B4%EB%B3%B6%EC%9D%8C01.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "삼겹살구이": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/67/Korean_barbecue-Samgyeopsal-08.jpg/500px-Korean_barbecue-Samgyeopsal-08.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "고등어구이": {
+  "src": "https://upload.wikimedia.org/wikipedia/commons/3/3e/Scomber_japonicus.png?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+  "how": "ko-page"
+ },
+ "두부김치": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/22/Korean.food-Dubukimchi-01.jpg/500px-Korean.food-Dubukimchi-01.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "동그랑땡": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/60/Donggeurang-ttaeng.jpg/500px-Donggeurang-ttaeng.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "계란말이": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/23/Gyeran-mari.jpg/500px-Gyeran-mari.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "계란찜": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/20/Gyeranjjim.jpg/500px-Gyeranjjim.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "계란장조림": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/bf/Jangjorim.jpg/500px-Jangjorim.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-search"
+ },
+ "두부조림": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/8c/Dubu-jorim.jpg/500px-Dubu-jorim.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "두부부침": {
+  "src": "https://upload.wikimedia.org/wikipedia/commons/4/4c/%EB%91%90%EB%B6%80_%EB%B6%80%EC%B9%A8.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+  "how": "ko-page"
+ },
+ "감자볶음": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/c1/Bratkartoffeln_P.jpg/500px-Bratkartoffeln_P.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "어묵볶음": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/fe/Eomuk-bokkeum.jpg/500px-Eomuk-bokkeum.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "how": "commons-ko"
+ },
+ "콩나물무침": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/7d/Kongnamul_muchim_%28soybean_sprouts%29.jpg/500px-Kongnamul_muchim_%28soybean_sprouts%29.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "무생채": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/02/Musaengchae_Namul1.jpg/500px-Musaengchae_Namul1.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "how": "commons-ko"
+ },
+ "잡채": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/c8/Polish_Korean_Cuisine_and_Culture_Exchanges_Gradmother%E2%80%99s_Recipes_05.jpg/500px-Polish_Korean_Cuisine_and_Culture_Exchanges_Gradmother%E2%80%99s_Recipes_05.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "떡볶이": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/4d/Tteokbokki.JPG/500px-Tteokbokki.JPG?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "라볶이": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/5b/Ra-bokki.jpg/500px-Ra-bokki.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "떡꼬치": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/fd/Tteok-kkochi.jpg/500px-Tteok-kkochi.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "김치전": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/e/ea/Korean_pancake-Kimchijeon-01.jpg/500px-Korean_pancake-Kimchijeon-01.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "감자전": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a2/Korean_potato_pancake-Gamjajeon-01.jpg/500px-Korean_potato_pancake-Gamjajeon-01.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "호박전": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/af/Hobak-jeon.jpg/500px-Hobak-jeon.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "how": "commons"
+ },
+ "짜장면": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/78/Jajangmyeon.jpg/500px-Jajangmyeon.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "짬뽕": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/44/Jjampong.JPG/500px-Jjampong.JPG?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "마파두부": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a5/Billyfoodmabodofu3.jpg/500px-Billyfoodmabodofu3.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "계란탕": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/e/e7/5-Minute_Egg_Drop_Soup-5_%2832079790121%29.jpg/500px-5-Minute_Egg_Drop_Soup-5_%2832079790121%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "en-page"
+ },
+ "토마토계란볶음": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/60/%E7%95%AA%E8%8C%84%E7%82%92%E8%9B%8B2.PNG/500px-%E7%95%AA%E8%8C%84%E7%82%92%E8%9B%8B2.PNG?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "en-page"
+ },
+ "깐풍기": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/c5/Kkanpunggi.jpg/500px-Kkanpunggi.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "유린기": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/9a/You-lin-ji_Japan.jpg/500px-You-lin-ji_Japan.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "탕수육": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/4d/Tangsuyuk_%28Korean_Chinese_sweet_and_sour_pork%29.jpg/500px-Tangsuyuk_%28Korean_Chinese_sweet_and_sour_pork%29.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "어향가지": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/20/Yuxiangqiezi.jpg/500px-Yuxiangqiezi.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "가지볶음": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/61/Gaji-bokkeum.jpg/500px-Gaji-bokkeum.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "how": "commons"
+ },
+ "고추잡채": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/9d/Pepper_steak.jpg/500px-Pepper_steak.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "숙주볶음": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/d7/Fried_Pork_Bean_Sprout.jpg/500px-Fried_Pork_Bean_Sprout.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "how": "commons-ko"
+ },
+ "계란볶음면": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a6/Homemade_Chow_mein_with_shrimps_and_meat_with_a_choy_and_Choung.jpg/500px-Homemade_Chow_mein_with_shrimps_and_meat_with_a_choy_and_Choung.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "en-page"
+ },
+ "군만두": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/0c/%EB%A7%8C%EB%91%90.jpg/500px-%EB%A7%8C%EB%91%90.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "새우칠리": {
+  "src": "https://upload.wikimedia.org/wikipedia/commons/d/d6/Ebi_chili.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+  "how": "en-page"
+ },
+ "중국식 오이무침": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/38/Pine_and_Crane_DTLA_-_smashed_cucumber_salad.jpg/500px-Pine_and_Crane_DTLA_-_smashed_cucumber_salad.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "how": "commons"
+ },
+ "규동": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/9a/Gyuu-don_003.jpg/500px-Gyuu-don_003.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "오야코동": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/29/Oyakodon_003.jpg/500px-Oyakodon_003.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "돈가스": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/d5/Tonkatsu_of_Kimukatsu.jpg/500px-Tonkatsu_of_Kimukatsu.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "가츠동": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/ad/Katsudon_001.jpg/500px-Katsudon_001.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "연어덮밥": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/04/Gyudon_by_jetalone_in_Higashi-Ginza%2C_Tokyo.jpg/500px-Gyudon_by_jetalone_in_Higashi-Ginza%2C_Tokyo.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "en-page"
+ },
+ "연어구이": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/4e/Sashimi_-_Maguro_Restaurant%2C_Bangna%2C_Bangkok_%2844856596864%29.jpg/500px-Sashimi_-_Maguro_Restaurant%2C_Bangna%2C_Bangkok_%2844856596864%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "en-page"
+ },
+ "오니기리": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/22/Japanese_rice_balls_%28onigiri%29.jpg/500px-Japanese_rice_balls_%28onigiri%29.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "오차즈케": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/b0/Sake_chazuke_by_matsukawa1971.jpg/500px-Sake_chazuke_by_matsukawa1971.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "미소국": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/e/e8/Miso_Soup_001.jpg/500px-Miso_Soup_001.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "야키소바": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/b4/Yakisoba_in_Kyoto.jpg/500px-Yakisoba_in_Kyoto.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "볶음우동": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/94/%E9%B6%8F%E5%A4%A9%E3%81%AE%E3%81%86%E3%81%A9%E3%82%93.jpg/500px-%E9%B6%8F%E5%A4%A9%E3%81%AE%E3%81%86%E3%81%A9%E3%82%93.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "en-page"
+ },
+ "우동": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/97/Kakeudon.jpg/500px-Kakeudon.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "카레우동": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/94/%E9%B6%8F%E5%A4%A9%E3%81%AE%E3%81%86%E3%81%A9%E3%82%93.jpg/500px-%E9%B6%8F%E5%A4%A9%E3%81%AE%E3%81%86%E3%81%A9%E3%82%93.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "en-search"
+ },
+ "냉소바": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/9a/Dried_soba_noodles_by_FotoosVanRobin.jpg/500px-Dried_soba_noodles_by_FotoosVanRobin.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "오코노미야키": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/59/Okonomiyaki_001.jpg/500px-Okonomiyaki_001.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "나베": {
+  "src": "https://upload.wikimedia.org/wikipedia/commons/5/50/Cookingsukiyaki.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+  "how": "en-page"
+ },
+ "스키야키": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/32/Sukiyaki_01.jpg/500px-Sukiyaki_01.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "가라아게": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/37/Chicken_karaage_20080129.jpg/500px-Chicken_karaage_20080129.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "에비후라이": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/76/Saeu-twigim.jpg/500px-Saeu-twigim.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "니쿠자가": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/ac/Braised_pork_and_potatoes_%283089327692%29.jpg/500px-Braised_pork_and_potatoes_%283089327692%29.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "야키토리": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/4b/Cooking_yakitori.jpg/500px-Cooking_yakitori.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "명란파스타": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/f7/Alaska_pollack_liver_roe_milt.jpg/500px-Alaska_pollack_liver_roe_milt.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "en-page"
+ },
+ "타마고산도": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/ff/Egg_Sandwich.jpg/500px-Egg_Sandwich.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "en-page"
+ },
+ "알리오 올리오": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/6f/Aglio_e_olio.jpg/500px-Aglio_e_olio.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "카르보나라": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/33/Espaguetis_carbonara.jpg/500px-Espaguetis_carbonara.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "크림파스타": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/91/Fettuccine_Alfredo_originals.jpg/500px-Fettuccine_Alfredo_originals.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "en-page"
+ },
+ "토마토파스타": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/33/Spaghettata.JPG/500px-Spaghettata.JPG?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "en-page"
+ },
+ "로제파스타": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/3f/%28Pasta%29_by_David_Adam_Kess_%28pic.2%29.jpg/500px-%28Pasta%29_by_David_Adam_Kess_%28pic.2%29.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "볼로네제": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/e/e2/Sauce_Bolognese_%28CC%29_%2810141064186%29.jpg/500px-Sauce_Bolognese_%28CC%29_%2810141064186%29.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "봉골레": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/59/Spaghetti_vongole_2.jpg/500px-Spaghetti_vongole_2.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "마카로니치즈": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/44/Original_Mac_n_Cheese_.jpg/500px-Original_Mac_n_Cheese_.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "en-page"
+ },
+ "감바스": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/0d/Gambas_al_ajillo_en_madrid.jpg/500px-Gambas_al_ajillo_en_madrid.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "en-page"
+ },
+ "레몬버터새우": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/b9/Palaemon_serratus_Croazia.jpg/500px-Palaemon_serratus_Croazia.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "en-page"
+ },
+ "스테이크": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/2b/Beef_fillet_steak_with_mushrooms.jpg/500px-Beef_fillet_steak_with_mushrooms.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "치킨스테이크": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/57/Chickens_in_market.jpg/500px-Chickens_in_market.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "en-page"
+ },
+ "미트볼": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/e/e4/Kottbullar.jpg/500px-Kottbullar.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "피쉬앤칩스": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/ff/Fish_and_chips_blackpool.jpg/500px-Fish_and_chips_blackpool.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "라따뚜이": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/bd/13289_Manchester_-_Flickr_-_megabus13601.jpg/500px-13289_Manchester_-_Flickr_-_megabus13601.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "감자그라탱": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/2a/Gratin_dauphinois.jpg/500px-Gratin_dauphinois.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "en-page"
+ },
+ "매쉬드포테이토": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/51/Sous_vide_mashed_potatoes.jpg/500px-Sous_vide_mashed_potatoes.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "en-page"
+ },
+ "프리타타": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/03/Frittata.jpg/500px-Frittata.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "오믈렛": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/b1/FoodOmelete.jpg/500px-FoodOmelete.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "스크램블에그": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/20/Scrambed_eggs.jpg/500px-Scrambed_eggs.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "en-page"
+ },
+ "베이컨에그": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a4/Full_English_with_Hash_Browns.jpg/500px-Full_English_with_Hash_Browns.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "리조또": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/cf/Risotto_Alla_Marinara.jpg/500px-Risotto_Alla_Marinara.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "토마토수프": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/b5/Tomato_soup.jpg/500px-Tomato_soup.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "양송이수프": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/98/Cream_mushroom_soup_3.jpg/500px-Cream_mushroom_soup_3.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "en-page"
+ },
+ "샌드위치": {
+  "src": "https://upload.wikimedia.org/wikipedia/commons/2/24/Bologna_sandwich.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+  "how": "ko-page"
+ },
+ "에그마요샌드위치": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/ff/Egg_Sandwich.jpg/500px-Egg_Sandwich.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "en-page"
+ },
+ "햄버거": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/0b/RedDot_Burger.jpg/500px-RedDot_Burger.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "브루스케타": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/0f/Bruschetta_02_schinken.jpg/500px-Bruschetta_02_schinken.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "토르티야피자": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/91/Pizza-3007395.jpg/500px-Pizza-3007395.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "en-page"
+ },
+ "팬케이크": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/43/Blueberry_pancakes_%283%29.jpg/500px-Blueberry_pancakes_%283%29.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "프렌치토스트": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/42/FrenchToast.JPG/500px-FrenchToast.JPG?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "치즈토스트": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/75/Cheese-on-toast.JPG/500px-Cheese-on-toast.JPG?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "치킨샐러드": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/42/Flickr_sa_ku_ra_10556400--Chicken_salad.jpg/500px-Flickr_sa_ku_ra_10556400--Chicken_salad.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "시저샐러드": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/23/Caesar_salad_%282%29.jpg/500px-Caesar_salad_%282%29.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "코울슬로": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/29/2015-12-20_Spitzkohlsalat_mit_M%C3%B6hren_anagoria.JPG/500px-2015-12-20_Spitzkohlsalat_mit_M%C3%B6hren_anagoria.JPG?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "감자샐러드": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/cc/Kartoffelsalat_with_mayonnaise.jpg/500px-Kartoffelsalat_with_mayonnaise.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "카프레제": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/b1/Caprese-1_%28tigher_crop%29.jpg/500px-Caprese-1_%28tigher_crop%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "en-page"
+ },
+ "요거트볼": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/b8/Joghurt.jpg/500px-Joghurt.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "en-page"
+ },
+ "토르티야 데 파타타": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/49/Tortilla_de_patata_-_San_Sebasti%C3%A1n.jpg/500px-Tortilla_de_patata_-_San_Sebasti%C3%A1n.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "en-page"
+ },
+ "타코": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/73/001_Tacos_de_carnitas%2C_carne_asada_y_al_pastor.jpg/500px-001_Tacos_de_carnitas%2C_carne_asada_y_al_pastor.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "부리또": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/46/Burrito_with_rice.jpg/500px-Burrito_with_rice.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "퀘사디아": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/48/Chicken_Quesadilla_dish_at_Latin_Bistro_restaurant_Summit_NJ.JPG/500px-Chicken_Quesadilla_dish_at_Latin_Bistro_restaurant_Summit_NJ.JPG?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "나초": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/87/Nachos-cheese.jpg/500px-Nachos-cheese.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "과카몰리": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/b9/El_tango_guacamole.jpg/500px-El_tango_guacamole.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "살사": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/9c/Various_salsas.jpg/500px-Various_salsas.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "en-page"
+ },
+ "파히타": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/f9/Flickr_elisart_324248450--Beef_and_chicken_fajitas.jpg/500px-Flickr_elisart_324248450--Beef_and_chicken_fajitas.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "칠리콘카르네": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/16/Pot_of_Chili.jpg/500px-Pot_of_Chili.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "엔칠라다": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/e/ec/Enchilada_Rice_Beans.jpg/500px-Enchilada_Rice_Beans.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "세비체": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/43/Ceviche.png/500px-Ceviche.png?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "아로스 콘 포요": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/39/Arroz-con-Pollo.jpg/500px-Arroz-con-Pollo.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "피카디요": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/e/e2/Picadillo_and_rice.jpg/500px-Picadillo_and_rice.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "페이조아다": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/90/Feijoada_%C3%A0_transmontada.jpg/500px-Feijoada_%C3%A0_transmontada.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "엠파나다": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/9e/Mar_de_Empanadas_%28Madrid%29.JPG/500px-Mar_de_Empanadas_%28Madrid%29.JPG?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "후에보스 란체로스": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/57/Mmm...huevos_rancheros.jpg/500px-Mmm...huevos_rancheros.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "en-page"
+ },
+ "츄러스": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/85/Chocolate_with_churros.jpg/500px-Chocolate_with_churros.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "옥수수샐러드": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/f5/CookedCornOnTheCob.JPG/500px-CookedCornOnTheCob.JPG?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "en-page"
+ },
+ "쌀국수": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/52/Bowl_of_Meatball_pho.jpg/500px-Bowl_of_Meatball_pho.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "en-page"
+ },
+ "팟타이": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/39/Phat_Thai_kung_Chang_Khien_street_stall.jpg/500px-Phat_Thai_kung_Chang_Khien_street_stall.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "월남쌈": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/10/Sommerrolle_mit_Hoisin-Sauce_170305_AW.jpg/500px-Sommerrolle_mit_Hoisin-Sauce_170305_AW.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "분짜": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/06/Bun_cha.jpg/500px-Bun_cha.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "반미": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/0c/B%C3%A1nh_m%C3%AC_th%E1%BB%8Bt_n%C6%B0%E1%BB%9Bng.png/500px-B%C3%A1nh_m%C3%AC_th%E1%BB%8Bt_n%C6%B0%E1%BB%9Bng.png?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "en-page"
+ },
+ "나시고렝": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/3e/Nasi_goreng_indonesia.jpg/500px-Nasi_goreng_indonesia.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "미고렝": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/f0/Mi_Goreng_GM.jpg/500px-Mi_Goreng_GM.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "코코넛치킨커리": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/e/e2/Red_roast_duck_curry.jpg/500px-Red_roast_duck_curry.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "en-page"
+ },
+ "똠얌 스타일 새우탕": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/93/Tom_yam_kung_1.jpg/500px-Tom_yam_kung_1.jpg?utm_source=ko.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "ko-page"
+ },
+ "파인애플 없는 태국식 볶음밥": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/50/Thaifriedrice.jpg/500px-Thaifriedrice.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "en-page"
+ },
+ "사테 스타일 닭꼬치": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/24/Sate_Udang.JPG/500px-Sate_Udang.JPG?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "how": "en-page"
+ },
+ "계란국": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/df/Egg_Soup-Gyeranguk-_%286084411125%29.jpg/500px-Egg_Soup-Gyeranguk-_%286084411125%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "how": "commons:korean egg soup"
+ },
+ "소고기무국": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/c9/Soegogimuguk_%28beef_radish_soup%29.jpg/500px-Soegogimuguk_%28beef_radish_soup%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "how": "commons:beef radish soup korean"
+ },
+ "감자국": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/c9/Gamja-ongsimi.jpg/500px-Gamja-ongsimi.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "how": "commons:gamja-guk"
+ },
+ "스팸계란덮밥": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/f7/Spam_and_egg_musubi.jpg/500px-Spam_and_egg_musubi.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "how": "commons:spam egg rice"
+ },
+ "버섯볶음": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/e/e0/Neutaribokkeum_%28stir-fried_oyster_mushrooms%29.jpg/500px-Neutaribokkeum_%28stir-fried_oyster_mushrooms%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "how": "commons:stir-fried mushrooms"
+ },
+ "부추전": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/e/e7/Buchujeon%28garlic_chive_pancake%29.jpg/500px-Buchujeon%28garlic_chive_pancake%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "how": "commons:buchujeon"
+ },
+ "청경채볶음": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/65/Stir_Fried_Bok_Choy%2C_Aug_2025.jpg/500px-Stir_Fried_Bok_Choy%2C_Aug_2025.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "how": "commons:stir-fried bok choy"
+ },
+ "마늘새우볶음": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/bb/Stir-fried_shrimp_with_garlic_and_vinegar_-_panoramio.jpg/500px-Stir-fried_shrimp_with_garlic_and_vinegar_-_panoramio.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "how": "commons:garlic shrimp stir fry"
+ },
+ "계란볶음밥": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/30/Fried_rice_with_chicken_and_egg.jpg/500px-Fried_rice_with_chicken_and_egg.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "how": "commons:egg fried rice"
+ },
+ "새우볶음밥": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/ab/Shrimp_Paste_Fried_Rice.jpg/500px-Shrimp_Paste_Fried_Rice.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "how": "commons:shrimp fried rice"
+ },
+ "비빔국수": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/88/Bibim-guksu.jpg/500px-Bibim-guksu.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "how": "commons:bibim-guksu"
+ },
+ "감자조림": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/e/eb/Gamja_jorim_Korean.jpg/500px-Gamja_jorim_Korean.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "how": "commons:gamja-jorim"
+ },
+ "멸치볶음": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/55/Myeolchi-bokkeum_2.jpg/500px-Myeolchi-bokkeum_2.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "how": "commons:myeolchi-bokkeum"
+ },
+ "시금치나물": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/d5/Sigeumchi-namul_2.jpg/500px-Sigeumchi-namul_2.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "how": "commons:sigeumchi-namul"
+ },
+ "오이무침": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/f0/Oi_Muchim_%EC%98%A4%EC%9D%B4%EB%AC%B4%EC%B9%A81.jpg/500px-Oi_Muchim_%EC%98%A4%EC%9D%B4%EB%AC%B4%EC%B9%A81.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "how": "commons:oi-muchim"
+ },
+ "감자수프": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/14/Cheesy_cream_of_potato_soup.jpg/500px-Cheesy_cream_of_potato_soup.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "how": "commons:cream of potato soup"
+ },
+ "계란죽": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/5c/Korean_rice_porridge_Vegetable_juk.jpg/500px-Korean_rice_porridge_Vegetable_juk.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "how": "commons:korean rice porridge juk"
+ },
+ "참치마요덮밥": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/7d/Maguro-don_%28raw_tuna_fish_bowl%29%2C_Chiyoda-ward%2C_Tokyo_%28%E3%81%BE%E3%81%90%E3%82%8D%E4%B8%BC%2C_%E5%8D%83%E4%BB%A3%E7%94%B0%E5%8C%BA%29_%282011-05-10_13.26.07_by_yuiseki_aoba%29.jpg/500px-Maguro-don_%28raw_tuna_fish_bowl%29%2C_Chiyoda-ward%2C_Tokyo_%28%E3%81%BE%E3%81%90%E3%82%8D%E4%B8%BC%2C_%E5%8D%83%E4%BB%A3%E7%94%B0%E5%8C%BA%29_%282011-05-10_13.26.07_by_yuiseki_aoba%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "how": "commons:tuna donburi"
+ },
+ "참치주먹밥": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/3e/Jumeok-bap.jpg/500px-Jumeok-bap.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "how": "commons:jumeokbap"
+ },
+ "애호박볶음": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a9/Saeu-aehobak-bokkeum.jpg/500px-Saeu-aehobak-bokkeum.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "how": "commons:aehobak-bokkeum"
+ },
+ "브로콜리무침": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/b7/Broccoli_salad_with_signage.jpg/500px-Broccoli_salad_with_signage.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "how": "commons:broccoli salad"
+ },
+ "계란라면": {
+  "src": "https://upload.wikimedia.org/wikipedia/commons/9/96/Ramyeon.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
+  "how": "commons:ramyeon"
+ },
+ "배추볶음": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/6f/Stir_Fried_Cabbage_and_Bacon_%E5%9F%B9%E6%A0%B9%E9%AB%98%E4%B8%BD%E8%8F%9C.jpg/500px-Stir_Fried_Cabbage_and_Bacon_%E5%9F%B9%E6%A0%B9%E9%AB%98%E4%B8%BD%E8%8F%9C.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "how": "commons:stir-fried cabbage"
+ },
+ "스팸김치볶음": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/9e/Fried_Spam_and_egg.JPG/500px-Fried_Spam_and_egg.JPG?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "how": "commons:spam fried"
+ },
+ "소시지야채볶음": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/64/Sausage%2C_fried_red_potato%2C_and_frozen_mixed_vegetables_%285010050320%29.jpg/500px-Sausage%2C_fried_red_potato%2C_and_frozen_mixed_vegetables_%285010050320%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "how": "commons:fried sausages vegetables"
+ },
+ "가지나물": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/bc/A_plate_of_avocado%2C_steamed_scarlet_eggplants_and_butter_beans.jpg/500px-A_plate_of_avocado%2C_steamed_scarlet_eggplants_and_butter_beans.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "how": "commons:steamed eggplant"
+ },
+ "감자채볶음": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/35/Beef_in_ginger_sauce%2C_chicken%2C_shrimp%2C_bell_peppers%2C_carrots%2C_and_celery%2C_atop_fried_shredded_potato_-_Massachusetts.jpg/500px-Beef_in_ginger_sauce%2C_chicken%2C_shrimp%2C_bell_peppers%2C_carrots%2C_and_celery%2C_atop_fried_shredded_potato_-_Massachusetts.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "how": "commons:Chinese shredded potato"
+ }
+}

@@ -14,6 +14,7 @@ import {
   type Recipe,
   type RecipeCat,
 } from "./recipes";
+import { PHOTOS } from "./photos";
 
 const L10N: Record<Lang, Record<string, string>> = {
   ko: {
@@ -157,10 +158,14 @@ async function fetchThumb(host: string, title: string): Promise<string> {
   return first?.thumbnail?.source ?? "";
 }
 
-/** 위키백과 대표 이미지 — ko 먼저, 없으면 en. localStorage 캐시, 없으면 null */
-function useWikiThumb(ko: string, en?: string): string | null | undefined {
+/**
+ * 요리 사진 — 빌드 시 수집한 PHOTOS 정적 매핑 우선.
+ * 없으면 위키백과 대표 이미지(ko → en)를 런타임 조회해 localStorage 캐시.
+ */
+function useWikiThumb(ko: string, en?: string, preset?: string): string | null | undefined {
   const key = `wthumb:${ko}`;
   const [url, setUrl] = useState<string | null | undefined>(() => {
+    if (preset) return preset;
     try {
       const c = localStorage.getItem(key);
       if (c !== null) return c || null;
@@ -195,7 +200,7 @@ function useWikiThumb(ko: string, en?: string): string | null | undefined {
 }
 
 function Thumb({ recipe }: { recipe: Recipe }) {
-  const url = useWikiThumb(recipe.wiki ?? recipe.name, recipe.en);
+  const url = useWikiThumb(recipe.wiki ?? recipe.name, recipe.en, PHOTOS[recipe.name]);
   return (
     <div className="flex aspect-[4/3] w-full items-center justify-center overflow-hidden bg-gradient-to-br from-amber-100 to-orange-200 text-5xl dark:from-zinc-800 dark:to-zinc-700">
       {url ? (
