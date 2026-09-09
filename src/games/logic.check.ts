@@ -361,4 +361,44 @@ assert.deepEqual(resolveLanding([cyl], 27, 0), {
   }
 }
 
+// ── 냉장고 요리 ──────────────────────────────────────────
+{
+  const { INGREDIENTS, RECIPES, STAPLES, matchRecipes } = await import("./recipes.ts");
+
+  // 데이터 무결성: 레시피 재료는 전부 카탈로그에 있어야 하고, 기본 양념은 적지 않는다
+  const ids = new Set(INGREDIENTS.map((i) => i.id));
+  assert.equal(ids.size, INGREDIENTS.length, "재료 카탈로그 중복");
+  const names = new Set<string>();
+  for (const rc of RECIPES) {
+    assert.ok(!names.has(rc.name), `레시피 중복: ${rc.name}`);
+    names.add(rc.name);
+    assert.ok(rc.min > 0 && rc.serves > 0 && rc.steps.length > 0, rc.name);
+    for (const i of [...rc.req, ...rc.opt]) {
+      assert.ok(ids.has(i), `${rc.name}: 카탈로그에 없는 재료 "${i}"`);
+      assert.ok(!STAPLES.includes(i), `${rc.name}: 기본 양념 "${i}" 는 적지 않음`);
+    }
+    assert.ok(rc.req.length > 0, `${rc.name}: 필수 재료 없음`);
+  }
+
+  // 매칭: 필수 재료 다 있으면 missing 0, 정렬은 부족 수 → 시간
+  const m = matchRecipes(["계란", "대파"]);
+  const gukmul = m.find((x) => x.recipe.name === "계란국")!;
+  assert.deepEqual(gukmul.missing, []);
+  const mari = m.find((x) => x.recipe.name === "계란말이")!;
+  assert.deepEqual(mari.missing, []);
+  assert.deepEqual(mari.optHave, ["대파"]);
+  for (let i = 1; i < m.length; i++) {
+    const a = m[i - 1];
+    const b = m[i];
+    assert.ok(
+      a.missing.length < b.missing.length ||
+        (a.missing.length === b.missing.length && a.recipe.min <= b.recipe.min),
+      "정렬 깨짐",
+    );
+  }
+  // 아무것도 없으면 필수 재료 전부 부족, 기본 양념은 부족으로 세지 않음
+  const empty = matchRecipes([]);
+  for (const x of empty) assert.equal(x.missing.length, x.recipe.req.length);
+}
+
 console.log("games logic ok");

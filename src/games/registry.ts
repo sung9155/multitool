@@ -11,6 +11,7 @@ import WheelGame from "./WheelGame";
 import LoanSim from "./LoanSim";
 import SplitBillSim from "./SplitBillSim";
 import NetSalarySim from "./NetSalarySim";
+import FridgeGame from "./FridgeGame";
 
 export interface Game {
   /** URL 경로 (/g/<slug>) 와 고유 키 */
@@ -26,6 +27,23 @@ export interface Game {
 }
 
 export const games: Game[] = [
+  {
+    slug: "fridge",
+    name: "냉장고 요리",
+    description: "가진 재료를 체크하면 만들 수 있는 가정식 추천 — 조리시간·사진·만드는 법",
+    emoji: "🥘",
+    i18n: {
+      en: {
+        name: "Fridge Cook",
+        description: "Check what you have, get home-cooking ideas — time, photos, steps",
+      },
+      zh: {
+        name: "冰箱做饭",
+        description: "勾选现有食材，推荐能做的家常菜 — 时间、图片、做法",
+      },
+    },
+    component: FridgeGame,
+  },
   {
     slug: "lotto",
     name: "로또 시뮬레이터",
