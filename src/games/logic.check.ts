@@ -363,7 +363,8 @@ assert.deepEqual(resolveLanding([cyl], 27, 0), {
 
 // ── 냉장고 요리 ──────────────────────────────────────────
 {
-  const { INGREDIENTS, RECIPES, STAPLES, matchRecipes } = await import("./recipes.ts");
+  const { INGREDIENTS, RECIPES, STAPLES, CUISINES, SEASONAL, matchRecipes, seasonalOf } =
+    await import("./recipes.ts");
 
   // 데이터 무결성: 레시피 재료는 전부 카탈로그에 있어야 하고, 기본 양념은 적지 않는다
   const ids = new Set(INGREDIENTS.map((i) => i.id));
@@ -372,13 +373,39 @@ assert.deepEqual(resolveLanding([cyl], 27, 0), {
   for (const rc of RECIPES) {
     assert.ok(!names.has(rc.name), `레시피 중복: ${rc.name}`);
     names.add(rc.name);
+    assert.ok(CUISINES.includes(rc.cuisine), `${rc.name}: 종류 "${rc.cuisine}"`);
     assert.ok(rc.min > 0 && rc.serves > 0 && rc.steps.length > 0, rc.name);
     for (const i of [...rc.req, ...rc.opt]) {
       assert.ok(ids.has(i), `${rc.name}: 카탈로그에 없는 재료 "${i}"`);
       assert.ok(!STAPLES.includes(i), `${rc.name}: 기본 양념 "${i}" 는 적지 않음`);
     }
     assert.ok(rc.req.length > 0, `${rc.name}: 필수 재료 없음`);
+    assert.equal(
+      new Set([...rc.req, ...rc.opt]).size,
+      rc.req.length + rc.opt.length,
+      `${rc.name}: 필수/선택 재료 중복`,
+    );
   }
+  assert.ok(RECIPES.length >= 150, `레시피 수 ${RECIPES.length}`);
+  for (const c of CUISINES)
+    assert.ok(RECIPES.some((x) => x.cuisine === c), `${c} 레시피 없음`);
+
+  // 제철표: 12개월 전부, 카탈로그에 있는 재료만
+  for (let mo = 1; mo <= 12; mo++) {
+    assert.ok(SEASONAL[mo]?.length > 0, `${mo}월 제철 없음`);
+    for (const i of SEASONAL[mo]) assert.ok(ids.has(i), `${mo}월 제철 "${i}" 카탈로그 없음`);
+  }
+  // 제철 우선 정렬: 같은 부족 수 안에서 제철 재료 많은 순
+  const sept = matchRecipes([], { month: 9, seasonFirst: true });
+  for (let i = 1; i < sept.length; i++) {
+    const a = sept[i - 1];
+    const b = sept[i];
+    if (a.missing.length === b.missing.length)
+      assert.ok(a.seasonal.length >= b.seasonal.length, "제철 우선 정렬 깨짐");
+  }
+  const gogu = RECIPES.find((x) => x.name === "고구마" || x.req.includes("고구마"))!;
+  assert.ok(seasonalOf(gogu, 9).includes("고구마"));
+  assert.ok(!seasonalOf(gogu, 3).includes("고구마"));
 
   // 매칭: 필수 재료 다 있으면 missing 0, 정렬은 부족 수 → 시간
   const m = matchRecipes(["계란", "대파"]);
