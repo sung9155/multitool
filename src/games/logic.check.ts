@@ -19,6 +19,18 @@ import {
   R_MIN,
   type Pad,
 } from "./logic.ts";
+import {
+  effectiveLayout,
+  engineName,
+  firingPattern,
+  gearRatios,
+  idleRpm,
+  newSim,
+  shift,
+  stepSim,
+  torqueShape,
+  type Setup,
+} from "./engine.ts";
 
 // ── 스택: 겹침 계산 ──────────────────────────────────────
 const base = { x: 100, w: 100 }; // [100,200]
@@ -433,6 +445,113 @@ assert.deepEqual(resolveLanding([cyl], 27, 0), {
   // 아무것도 없으면 필수 재료 전부 부족, 기본 양념은 부족으로 세지 않음
   const empty = matchRecipes([]);
   for (const x of empty) assert.equal(x.missing.length, x.recipe.req.length);
+}
+
+// ── 엔진 시뮬레이터 ──────────────────────────────────────
+{
+  // 점화 패턴
+  const i4 = firingPattern(4, "inline");
+  assert.deepEqual(i4.map((f) => f.a), [0, 180, 360, 540]);
+  assert.ok(i4.every((f) => f.b === 0));
+  assert.deepEqual(firingPattern(8, "vee", "cross").map((f) => f.b), [0, 1, 1, 0, 1, 0, 0, 1]);
+  assert.deepEqual(firingPattern(8, "vee", "flat").map((f) => f.b), [0, 1, 0, 1, 0, 1, 0, 1]);
+  assert.deepEqual(firingPattern(2, "vee").map((f) => f.a), [0, 270]);
+  assert.equal(effectiveLayout(3, "vee"), "inline");
+  assert.ok(firingPattern(5, "flat").every((f) => f.b === 0), "홀수 기통은 직렬 강제");
+  assert.deepEqual(firingPattern(4, "flat").map((f) => f.a), [0, 200, 360, 560], "수평대향 2번 뱅크 20° 지연");
+  for (let n = 1; n <= 12; n++)
+    for (const lay of ["inline", "vee", "flat"] as const) {
+      const p = firingPattern(n, lay);
+      assert.equal(p.length, n);
+      assert.ok(p.every((f) => f.a >= 0 && f.a < 720 && (f.b === 0 || f.b === 1)));
+    }
+  assert.equal(engineName(8, "vee"), "V8");
+  assert.equal(engineName(3, "vee"), "I3");
+
+  // 기어비 단조 감소, 양끝 고정
+  const r = gearRatios(6);
+  for (let i = 1; i < 6; i++) assert.ok(r[i] < r[i - 1]);
+  assert.ok(Math.abs(r[0] - 3.6) < 1e-9 && Math.abs(r[5] - 0.65) < 1e-9);
+
+  // 1단 풀스로틀 10초: 가속되고 리미터(+150) 못 넘음
+  const set: Setup = { cyl: 4, redline: 7000, trans: "mt", lcOn: false, lcRpm: 4000 };
+  const s = newSim();
+  s.rpm = 900;
+  assert.ok(shift(s, 1, set));
+  s.shiftT = 0;
+  let maxRpm = 0;
+  for (let i = 0; i < 600; i++) {
+    stepSim(s, { thr: 1, brake: false }, set, 1 / 60);
+    maxRpm = Math.max(maxRpm, s.rpm);
+  }
+  assert.ok(s.v > 10, "가속 안 됨");
+  assert.ok(maxRpm <= 7150 + 1e-6, "리미터 초과");
+  assert.ok(s.rpm > 6500, "10초 후 1단은 리미터 근처여야");
+
+  // 브레이크 → 정지, 아이들 복귀
+  for (let i = 0; i < 1200; i++) stepSim(s, { thr: 0, brake: true }, set, 1 / 60);
+  assert.equal(s.v, 0);
+  assert.equal(s.rpm, idleRpm(4));
+
+  // 오버레브 다운시프트 거부 (50 m/s: 6→5 허용, 5→4 거부)
+  s.gear = 6;
+  s.v = 50;
+  s.shiftT = 0;
+  assert.equal(shift(s, -1, set), true);
+  s.shiftT = 0;
+  assert.equal(shift(s, -1, set), false);
+  assert.equal(s.gear, 5);
+
+  // 중립 풀스로틀 → 리미터에서 컷 반복 (바운스)
+  const n = newSim();
+  n.rpm = 900;
+  let cuts = 0;
+  for (let i = 0; i < 300; i++) {
+    stepSim(n, { thr: 1, brake: false }, set, 1 / 60);
+    if (n.cut) cuts++;
+  }
+  assert.ok(cuts > 5 && cuts < 300, `리미터 바운스 없음 (${cuts})`);
+  assert.ok(n.rpm <= 7150 && n.rpm > 6000);
+  // 놓으면 아이들로
+  for (let i = 0; i < 600; i++) stepSim(n, { thr: 0, brake: false }, set, 1 / 60);
+  assert.equal(n.rpm, idleRpm(4));
+
+  // 런치컨트롤: 브레이크+엑셀 정지 → lcRpm(+150) 에서 제한, 차는 안 움직임
+  const lset: Setup = { ...set, lcOn: true, lcRpm: 4000 };
+  const l = newSim();
+  l.rpm = 900;
+  shift(l, 1, lset);
+  l.shiftT = 0;
+  let mx = 0;
+  for (let i = 0; i < 300; i++) {
+    stepSim(l, { thr: 1, brake: true }, lset, 1 / 60);
+    mx = Math.max(mx, l.rpm);
+  }
+  assert.ok(l.lc && mx <= 4150 + 1e-6 && mx > 3500, `런치 rpm ${mx}`);
+  assert.equal(l.v, 0);
+  // 브레이크 떼면 출발
+  for (let i = 0; i < 120; i++) stepSim(l, { thr: 1, brake: false }, lset, 1 / 60);
+  assert.ok(!l.lc && l.v > 3);
+
+  // 자동변속(DCT) 풀스로틀 20초 → 기어 올라가고 레드라인 안 넘음
+  const aset: Setup = { ...set, trans: "dct" };
+  const a = newSim();
+  a.rpm = 900;
+  shift(a, 1, aset);
+  let amax = 0;
+  for (let i = 0; i < 1200; i++) {
+    stepSim(a, { thr: 1, brake: false }, aset, 1 / 60);
+    amax = Math.max(amax, a.rpm);
+  }
+  assert.ok(a.gear >= 3, `자동 변속 안 됨 (gear ${a.gear})`);
+  assert.ok(amax <= 7150 + 1e-6);
+  // 코스팅으로 감속하면 다운시프트
+  for (let i = 0; i < 3600; i++) stepSim(a, { thr: 0, brake: true }, aset, 1 / 60);
+  assert.equal(a.v, 0);
+  assert.equal(a.gear, 1);
+
+  // 토크 곡선 형태
+  assert.ok(torqueShape(0.6) === 1 && torqueShape(0.1) < torqueShape(0.6) && torqueShape(1) < 1);
 }
 
 console.log("games logic ok");

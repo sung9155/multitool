@@ -12,6 +12,7 @@ import LoanSim from "./LoanSim";
 import SplitBillSim from "./SplitBillSim";
 import NetSalarySim from "./NetSalarySim";
 import FridgeGame from "./FridgeGame";
+import EngineSim from "./EngineSim";
 
 export interface Game {
   /** URL 경로 (/g/<slug>) 와 고유 키 */
@@ -27,6 +28,23 @@ export interface Game {
 }
 
 export const games: Game[] = [
+  {
+    slug: "engine",
+    name: "엔진 시뮬레이터",
+    description: "기통수·배치·배기·미션 고르고 시동 — 엑셀·브레이크·변속으로 사운드 체험 (팝앤뱅 · 런치컨트롤)",
+    emoji: "🏎️",
+    i18n: {
+      en: {
+        name: "Engine Simulator",
+        description: "Pick cylinders, layout, exhaust and gearbox, then start it — throttle, brake, shift (pops & bangs, launch control)",
+      },
+      zh: {
+        name: "引擎模拟器",
+        description: "选气缸数、布局、排气与变速箱后点火 — 油门、刹车、换挡（回火爆响、弹射起步）",
+      },
+    },
+    component: EngineSim,
+  },
   {
     slug: "fridge",
     name: "냉장고 요리",
