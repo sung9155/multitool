@@ -50,7 +50,7 @@ const L10N: Record<Lang, Record<string, string>> = {
     vol: "볼륨",
     gas: "⛽ 엑셀",
     brake: "🛑 브레이크",
-    keys: "키보드: Space/↑ 엑셀 · ↓ 브레이크 · ← − · → +",
+    keys: "엑셀 패드는 위쪽을 누를수록 개도 큼(드래그 조절) · 키보드: Space/↑ 엑셀 · ↓ 브레이크 · ← − · → +",
     lcHint: "런치: 브레이크 + 엑셀 동시에 → 런치 RPM 유지, 브레이크 떼면 출발",
     noAudio: "이 브라우저는 AudioWorklet 을 지원하지 않아 소리 없이 시뮬레이션합니다",
     mapTitle: "맵핑 패턴 참고",
@@ -92,7 +92,7 @@ const L10N: Record<Lang, Record<string, string>> = {
     vol: "Volume",
     gas: "⛽ Throttle",
     brake: "🛑 Brake",
-    keys: "Keys: Space/↑ throttle · ↓ brake · ← − · → +",
+    keys: "Throttle pad: press higher for more opening (drag to adjust) · Keys: Space/↑ throttle · ↓ brake · ← − · → +",
     lcHint: "Launch: hold brake + throttle → holds launch RPM, release brake to go",
     noAudio: "AudioWorklet unsupported here — simulating without sound",
     mapTitle: "Common mapping patterns",
@@ -134,7 +134,7 @@ const L10N: Record<Lang, Record<string, string>> = {
     vol: "音量",
     gas: "⛽ 油门",
     brake: "🛑 刹车",
-    keys: "键盘: Space/↑ 油门 · ↓ 刹车 · ← − · → +",
+    keys: "油门板按得越靠上开度越大(可拖动) · 键盘: Space/↑ 油门 · ↓ 刹车 · ← − · → +",
     lcHint: "弹射: 刹车 + 油门同时按 → 保持弹射转速，松刹车起步",
     noAudio: "此浏览器不支持 AudioWorklet，无声模拟",
     mapTitle: "常见调校模式",
@@ -304,9 +304,6 @@ function Tach({
   );
 }
 
-const PEDAL =
-  "flex h-24 select-none touch-none items-center justify-center rounded-2xl text-lg font-bold transition-colors sm:h-28";
-
 export default function EngineSim() {
   const lang = useLang();
   const s = (k: string) => L10N[lang][k] ?? L10N.ko[k] ?? k;
@@ -331,10 +328,10 @@ export default function EngineSim() {
   const [running, setRunning] = useState(false);
   const [noAudio, setNoAudio] = useState(false);
   const [view, setView] = useState({ rpm: 0, kmh: 0, gear: 0, cut: false, lc: false, shifting: false, cranking: false });
-  const [pressed, setPressed] = useState({ gas: false, brake: false });
+  const [pressed, setPressed] = useState({ gas: 0, brake: false });
 
   const simRef = useRef(newSim());
-  const inputRef = useRef({ gas: false, brake: false, thr: 0 });
+  const inputRef = useRef({ gas: 0, brake: false, thr: 0 }); // gas: 목표 개도 0~1
   const audioRef = useRef<Audio | null>(null);
   const setupRef = useRef<Setup & { exhaust: ExhaustKind; pop: boolean }>({ cyl, redline, trans, lcOn, lcRpm, exhaust, pop: popOn });
   setupRef.current = { cyl, redline, trans, lcOn, lcRpm, exhaust, pop: popOn };
@@ -408,6 +405,8 @@ export default function EngineSim() {
     let last = performance.now();
     const startAt = last + 500; // 크랭킹
     const sim = simRef.current;
+    let liftAt = -1e9; // 엑셀 뗀 시각 — 직후 0.7초는 팝이 잦다 (미연소 연료 배출)
+    let prevThr = 0;
     const loop = (now: number) => {
       const dt = Math.min(0.05, (now - last) / 1000);
       last = now;
@@ -417,21 +416,28 @@ export default function EngineSim() {
       const cranking = now < startAt;
       if (!cranking) {
         if (sim.rpm === 0) sim.rpm = idleRpm(set.cyl) + 700; // 시동 플레어
-        const tgt = inp.gas ? 1 : 0;
-        inp.thr += Math.max(-dt * 10, Math.min(dt * 6, tgt - inp.thr));
+        inp.thr += Math.max(-dt * 10, Math.min(dt * 6, inp.gas - inp.thr));
         stepSim(sim, { thr: inp.thr, brake: inp.brake }, set, dt);
       }
-      const cut = !cranking && (sim.cut || (sim.shiftT > 0 && tr.cutOnShift));
-      const overrun = inp.thr < 0.1 && sim.rpm > 2800 ? 0.3 * Math.min(1, (sim.rpm - 2800) / 2500) : 0;
-      const pop = set.pop ? EXHAUST[set.exhaust].popMul * (cut ? 0.5 : overrun) : 0;
+      if (prevThr > 0.4 && inp.thr < 0.1) liftAt = now;
+      prevThr = inp.thr;
+      const loaded = inp.thr > 0.2;
+      // 변속컷은 부하 걸린 채 변속(플랫시프트)할 때만 — N→1 같은 무부하 변속엔 컷/팝 없음
+      const cut = !cranking && (sim.cut || (sim.shiftT > 0 && tr.cutOnShift && loaded));
+      const overrun =
+        inp.thr < 0.1 && sim.rpm > 2500
+          ? (0.25 + 0.55 * Math.min(1, (sim.rpm - 2500) / 3000)) * (now - liftAt < 700 ? 1.6 : 1)
+          : 0;
+      const pop = set.pop && !cranking ? EXHAUST[set.exhaust].popMul * (cut ? (loaded ? 0.7 : 0) : overrun) : 0;
+      const thrA = sim.blipT > 0 ? Math.max(inp.thr, 0.7) : inp.thr; // 다운시프트 레브매칭 블립
       const a = audioRef.current;
       if (a) {
         const t = a.ctx.currentTime;
         a.p.rpm.setTargetAtTime(cranking ? 250 : sim.rpm, t, 0.02);
-        a.p.thr.setTargetAtTime(inp.thr, t, 0.03);
+        a.p.thr.setTargetAtTime(thrA, t, 0.03);
         a.p.cut.setValueAtTime(cut ? 1 : 0, t);
         a.p.pop.setValueAtTime(Math.min(1, pop), t);
-        a.lp.frequency.setTargetAtTime(EXHAUST[set.exhaust].lp * (0.55 + 0.45 * inp.thr), t, 0.05);
+        a.lp.frequency.setTargetAtTime(EXHAUST[set.exhaust].lp * (0.55 + 0.45 * thrA), t, 0.05);
       }
       setView({
         rpm: cranking ? 250 : sim.rpm,
@@ -459,7 +465,7 @@ export default function EngineSim() {
         case "Space":
         case "ArrowUp":
         case "KeyW":
-          inputRef.current.gas = down;
+          inputRef.current.gas = down ? 1 : 0;
           break;
         case "ArrowDown":
         case "KeyS":
@@ -493,18 +499,59 @@ export default function EngineSim() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [running]);
 
-  const pedal = (k: "gas" | "brake", down: boolean) => {
-    inputRef.current[k] = down;
-    setPressed({ gas: inputRef.current.gas, brake: inputRef.current.brake });
+  const syncPressed = () => setPressed({ gas: inputRef.current.gas, brake: inputRef.current.brake });
+  // 포인터 캡처: 누른 채 손가락이 버튼 밖으로 나가도 유지, 놓으면 해제. 멀티터치는 포인터별이라 엑셀 누른 채 변속 가능
+  const capture = (e: React.PointerEvent<HTMLElement>) => {
+    e.preventDefault();
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {
+      /* 무시 */
+    }
   };
-  const pedalProps = (k: "gas" | "brake") => ({
-    onPointerDown: (e: React.PointerEvent) => {
-      e.preventDefault();
-      pedal(k, true);
+  /** 엑셀 패드: 누른 세로 위치가 개도 — 위쪽 100%, 아래쪽 10%. 누른 채 드래그로 조절 */
+  const gasFrom = (e: React.PointerEvent<HTMLElement>) => {
+    const r = e.currentTarget.getBoundingClientRect();
+    const y = (e.clientY - r.top) / Math.max(1, r.height);
+    inputRef.current.gas = Math.max(0.1, Math.min(1, 1.08 - y));
+    syncPressed();
+  };
+  const gasRelease = () => {
+    inputRef.current.gas = 0;
+    syncPressed();
+  };
+  const gasProps = {
+    onPointerDown: (e: React.PointerEvent<HTMLElement>) => {
+      capture(e);
+      gasFrom(e);
     },
-    onPointerUp: () => pedal(k, false),
-    onPointerLeave: () => pedal(k, false),
-    onPointerCancel: () => pedal(k, false),
+    onPointerMove: (e: React.PointerEvent<HTMLElement>) => {
+      if (e.currentTarget.hasPointerCapture(e.pointerId)) gasFrom(e);
+    },
+    onPointerUp: gasRelease,
+    onPointerCancel: gasRelease,
+    onLostPointerCapture: gasRelease,
+    onContextMenu: (e: React.MouseEvent) => e.preventDefault(),
+  };
+  const brakeSet = (down: boolean) => {
+    inputRef.current.brake = down;
+    syncPressed();
+  };
+  const brakeProps = {
+    onPointerDown: (e: React.PointerEvent<HTMLElement>) => {
+      capture(e);
+      brakeSet(true);
+    },
+    onPointerUp: () => brakeSet(false),
+    onPointerCancel: () => brakeSet(false),
+    onLostPointerCapture: () => brakeSet(false),
+    onContextMenu: (e: React.MouseEvent) => e.preventDefault(),
+  };
+  const shiftBtn = (dir: 1 | -1) => ({
+    onPointerDown: (e: React.PointerEvent<HTMLElement>) => {
+      e.preventDefault();
+      doShift(dir);
+    },
     onContextMenu: (e: React.MouseEvent) => e.preventDefault(),
   });
 
@@ -528,42 +575,59 @@ export default function EngineSim() {
           ]}
         />
 
-        <div className="mt-2 grid grid-cols-[1fr_auto_auto_auto_1fr] items-stretch gap-2">
-          <button
-            type="button"
-            disabled={!running}
-            className={`${PEDAL} ${pressed.brake ? "bg-red-500 text-white" : "bg-zinc-800 text-zinc-200 hover:bg-zinc-700"} disabled:opacity-30`}
-            {...pedalProps("brake")}
-          >
-            {s("brake")}
-          </button>
-          <button
-            type="button"
-            disabled={!running}
-            onClick={() => doShift(-1)}
-            className="w-12 rounded-2xl bg-zinc-800 text-2xl font-bold text-zinc-200 hover:bg-zinc-700 disabled:opacity-30 sm:w-14"
-          >
-            −
-          </button>
-          <div className="flex w-14 flex-col items-center justify-center rounded-2xl border border-zinc-700 font-mono">
-            <div className="text-3xl font-bold">{view.gear === 0 ? "N" : view.gear}</div>
-            <div className="text-[10px] text-zinc-500">/ {gears}</div>
+        {/* 왼쪽: 변속 패들 + 브레이크 (왼손) · 오른쪽: 세로 엑셀 패드 (오른손, 누른 높이 = 개도) */}
+        <div className="mt-2 grid grid-cols-2 gap-2">
+          <div className="grid grid-rows-[auto_1fr] gap-2">
+            <div className="grid grid-cols-[1fr_auto_1fr] gap-2">
+              <button
+                type="button"
+                disabled={!running}
+                className="h-16 touch-none rounded-2xl bg-zinc-800 text-3xl font-bold text-zinc-200 hover:bg-zinc-700 active:bg-zinc-600 disabled:opacity-30"
+                {...shiftBtn(-1)}
+              >
+                −
+              </button>
+              <div className="flex w-14 flex-col items-center justify-center rounded-2xl border border-zinc-700 font-mono">
+                <div className="text-3xl font-bold">{view.gear === 0 ? "N" : view.gear}</div>
+                <div className="text-[10px] text-zinc-500">/ {gears}</div>
+              </div>
+              <button
+                type="button"
+                disabled={!running}
+                className="h-16 touch-none rounded-2xl bg-zinc-800 text-3xl font-bold text-zinc-200 hover:bg-zinc-700 active:bg-zinc-600 disabled:opacity-30"
+                {...shiftBtn(1)}
+              >
+                +
+              </button>
+            </div>
+            <button
+              type="button"
+              disabled={!running}
+              className={`flex min-h-24 touch-none items-center justify-center rounded-2xl text-lg font-bold transition-colors disabled:opacity-30 ${
+                pressed.brake ? "bg-red-500 text-white" : "bg-zinc-800 text-zinc-200 hover:bg-zinc-700"
+              }`}
+              {...brakeProps}
+            >
+              {s("brake")}
+            </button>
           </div>
           <button
             type="button"
             disabled={!running}
-            onClick={() => doShift(1)}
-            className="w-12 rounded-2xl bg-zinc-800 text-2xl font-bold text-zinc-200 hover:bg-zinc-700 disabled:opacity-30 sm:w-14"
+            className="relative min-h-44 touch-none overflow-hidden rounded-2xl bg-zinc-800 text-lg font-bold text-zinc-200 disabled:opacity-30 sm:min-h-52"
+            {...gasProps}
           >
-            +
-          </button>
-          <button
-            type="button"
-            disabled={!running}
-            className={`${PEDAL} ${pressed.gas ? "bg-emerald-500 text-white" : "bg-zinc-800 text-zinc-200 hover:bg-zinc-700"} disabled:opacity-30`}
-            {...pedalProps("gas")}
-          >
-            {s("gas")}
+            <div
+              className="absolute inset-x-0 bottom-0 bg-emerald-500/80"
+              style={{ height: `${Math.round(pressed.gas * 100)}%` }}
+            />
+            {[25, 50, 75].map((p) => (
+              <div key={p} className="absolute inset-x-3 border-t border-dashed border-white/15" style={{ bottom: `${p}%` }} />
+            ))}
+            <div className="relative flex flex-col items-center">
+              <span>{s("gas")}</span>
+              <span className="font-mono text-sm">{Math.round(pressed.gas * 100)}%</span>
+            </div>
           </button>
         </div>
 

@@ -29,6 +29,7 @@ import {
   shift,
   stepSim,
   torqueShape,
+  wheelRpm,
   type Setup,
 } from "./engine.ts";
 
@@ -491,7 +492,28 @@ assert.deepEqual(resolveLanding([cyl], 27, 0), {
   // 브레이크 → 정지, 아이들 복귀
   for (let i = 0; i < 1200; i++) stepSim(s, { thr: 0, brake: true }, set, 1 / 60);
   assert.equal(s.v, 0);
-  assert.equal(s.rpm, idleRpm(4));
+  assert.ok(Math.abs(s.rpm - idleRpm(4)) < 0.5, `아이들 복귀 실패 ${s.rpm}`);
+
+  // 주행 중 다운시프트: 수동은 블립, rpm 은 프레임당 급변 없이 수렴
+  s.gear = 4;
+  s.v = 25;
+  s.shiftT = 0;
+  for (let i = 0; i < 60; i++) stepSim(s, { thr: 0, brake: false }, set, 1 / 60);
+  assert.ok(shift(s, -1, set) && s.blipT > 0, "수동 다운시프트 블립 없음");
+  let maxJump = 0;
+  for (let i = 0; i < 60; i++) {
+    const before = s.rpm;
+    stepSim(s, { thr: 0, brake: false }, set, 1 / 60);
+    maxJump = Math.max(maxJump, Math.abs(s.rpm - before));
+  }
+  assert.ok(maxJump < 400, `다운시프트 rpm 급변 ${maxJump}`);
+  assert.ok(Math.abs(s.rpm - wheelRpm(s.v, gearRatios(6)[2])) < 200, "다운시프트 후 새 기어 회전수로 수렴 안 함");
+  // AT 는 블립 없음
+  const at = newSim();
+  at.rpm = 3000;
+  at.gear = 4;
+  at.v = 25;
+  assert.ok(shift(at, -1, { ...set, trans: "at" }) && at.blipT === 0);
 
   // 오버레브 다운시프트 거부 (50 m/s: 6→5 허용, 5→4 거부)
   s.gear = 6;

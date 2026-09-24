@@ -44,13 +44,14 @@ export function engineName(cyl: number, layout: Layout): string {
 }
 
 // ── 변속기 ──────────────────────────────────────────────
+/** sync: 변속 중 rpm 이 새 기어 회전수로 수렴하는 1차 지연 속도(1/s). 작을수록 부드럽게(AT 컨버터), 클수록 빠르게(DCT) */
 export const TRANS: Record<
   TransKind,
-  { gears: number; auto: boolean; shiftMs: number; cutOnShift: boolean }
+  { gears: number; auto: boolean; shiftMs: number; cutOnShift: boolean; sync: number }
 > = {
-  mt: { gears: 6, auto: false, shiftMs: 220, cutOnShift: true },
-  at: { gears: 8, auto: true, shiftMs: 320, cutOnShift: false },
-  dct: { gears: 7, auto: true, shiftMs: 70, cutOnShift: true },
+  mt: { gears: 6, auto: false, shiftMs: 220, cutOnShift: true, sync: 7 },
+  at: { gears: 8, auto: true, shiftMs: 320, cutOnShift: false, sync: 4 },
+  dct: { gears: 7, auto: true, shiftMs: 70, cutOnShift: true, sync: 10 },
 };
 
 /** 기어비: 1단 3.6 → 최종단 0.65 등비수열 */
@@ -97,6 +98,7 @@ export interface Sim {
   cutT: number; // 컷 남은 시간
   fireT: number; // 컷 해제 후 최소 점화 유지 시간
   shiftT: number; // 변속 중 남은 시간
+  blipT: number; // 다운시프트 레브매칭 블립 남은 시간 (소리용)
   lc: boolean; // 런치컨트롤 활성
 }
 export interface Input {
@@ -112,7 +114,7 @@ export interface Setup {
 }
 
 export function newSim(): Sim {
-  return { rpm: 0, v: 0, gear: 0, cut: false, cutT: 0, fireT: 0, shiftT: 0, lc: false };
+  return { rpm: 0, v: 0, gear: 0, cut: false, cutT: 0, fireT: 0, shiftT: 0, blipT: 0, lc: false };
 }
 
 /** 변속. 오버레브(레드라인+300 초과)가 될 다운시프트는 거부 → false */
@@ -121,6 +123,8 @@ export function shift(s: Sim, dir: 1 | -1, set: Setup): boolean {
   const g = s.gear + dir;
   if (g < 0 || g > tr.gears || s.shiftT > 0) return false;
   if (g >= 1 && wheelRpm(s.v, gearRatios(tr.gears)[g - 1]) > set.redline + 300) return false;
+  // 주행 중 다운시프트: 수동/DCT 는 레브매칭 블립 (AT 는 컨버터가 부드럽게 올림)
+  if (dir === -1 && g >= 1 && s.v > 2 && tr.cutOnShift) s.blipT = 0.18;
   s.gear = g;
   s.shiftT = tr.shiftMs / 1000;
   return true;
@@ -153,6 +157,7 @@ export function stepSim(s: Sim, inp: Input, set: Setup, dt: number): void {
     }
   }
   if (s.shiftT > 0) s.shiftT -= dt;
+  if (s.blipT > 0) s.blipT -= dt;
   const shifting = s.shiftT > 0;
 
   const x = s.rpm / set.redline;
@@ -176,8 +181,8 @@ export function stepSim(s: Sim, inp: Input, set: Setup, dt: number): void {
     const wr = wheelRpm(s.v, ratio);
     const flareTop = s.lc ? set.lcRpm + 150 : STALL_RPM;
     const target = Math.max(wr, idle + inp.thr * (flareTop - idle) * Math.max(0, 1 - wr / flareTop));
-    const maxD = 15000 * dt;
-    s.rpm += Math.max(-maxD, Math.min(maxD, target - s.rpm));
+    // 1차 지연으로 수렴 — 변속 중엔 미션별 속도로 천천히 (급변 방지)
+    s.rpm += (target - s.rpm) * Math.min(1, (shifting ? tr.sync : 14) * dt);
     s.rpm = Math.min(s.rpm, limit + 150);
 
     if (tr.auto && !shifting && !s.lc) {
@@ -201,7 +206,7 @@ export const EXHAUST: Record<
 /**
  * AudioWorklet 프로세서 소스. Blob URL 로 로드 (별도 파일/번들 설정 없음).
  * 원리: 크랭크각을 샘플 단위로 진행, 점화각 통과 시 뱅크별 배기 펄스(한쪽 방향 지수감쇠 + 노이즈) 발생.
- * 펄스열이 밖의 공진/로우패스/새추레이션 체인을 지나며 배기음이 된다. 파라미터: rpm · thr(부하) · cut(점화컷) · pop(후연소 확률).
+ * 펄스열이 밖의 공진/로우패스/새추레이션 체인을 지나며 배기음이 된다. 파라미터: rpm · thr(부하) · cut(점화컷) · pop(후연소 빈도 0~1).
  */
 export const WORKLET_SRC = `
 class EngineProcessor extends AudioWorkletProcessor {
@@ -218,14 +223,18 @@ class EngineProcessor extends AudioWorkletProcessor {
     this.ang = 0;
     this.fires = [{ a: 0, b: 0 }];
     this.env = [0, 0];
-    this.penv = [0, 0];
     this.tau = 0.008;
     this.decay = Math.exp(-1 / (this.tau * sampleRate));
-    this.pdecay = Math.exp(-1 / (0.03 * sampleRate));
     this.noise = 0.4;
     this.jit = 0.15;
     this.width = 0;
     this.bank = [1, 0.85];
+    // 팝앤뱅: 뱅크별 썸프(저음 사인) · 크랙(짧은 백색) · 꼬리(브라운 노이즈) · 크래클 버스트 잔여 샘플
+    this.pth = [0, 0]; this.pf = [60, 60]; this.pph = [0, 0];
+    this.pcr = [0, 0]; this.ptl = [0, 0]; this.bn = [0, 0]; this.burst = [0, 0];
+    this.thDec = Math.exp(-1 / (0.045 * sampleRate));
+    this.crDec = Math.exp(-1 / (0.005 * sampleRate));
+    this.tlDec = Math.exp(-1 / (0.07 * sampleRate));
     this.port.onmessage = (e) => {
       const d = e.data;
       if (d.fires) this.fires = d.fires;
@@ -242,11 +251,16 @@ class EngineProcessor extends AudioWorkletProcessor {
     const R = out[1] || L;
     const rpm = p.rpm[0], thr = p.thr[0], cut = p.cut[0] > 0.5, pop = p.pop[0];
     const dA = (rpm * 6) / sampleRate; // deg/sample
-    const fires = this.fires, n = fires.length, env = this.env, penv = this.penv;
-    const dec = this.decay, pdec = this.pdecay, noise = this.noise, jit = this.jit, width = this.width, bank = this.bank;
+    const fires = this.fires, n = fires.length, env = this.env;
+    const dec = this.decay, noise = this.noise, jit = this.jit, width = this.width, bank = this.bank;
     const fps = Math.max(1, (n * rpm) / 120); // 초당 점화 수
-    const amp = (0.3 + 0.7 * thr) / Math.sqrt(Math.max(1, fps * this.tau)); // 펄스 겹침 정규화
-    const pp = pop * Math.min(1, 30 / fps); // 팝은 초당 수십 회 이내
+    // 오버런(엑셀 오프 · 고회전) 은 연료컷 → 정규 펄스 약화, 팝이 도드라진다
+    const c01 = (x) => (x < 0 ? 0 : x > 1 ? 1 : x);
+    const ov = 1 - 0.6 * c01((rpm - 2000) / 1000) * (1 - c01(thr / 0.1));
+    const amp = ((0.3 + 0.7 * thr) * ov) / Math.sqrt(Math.max(1, fps * this.tau)); // 펄스 겹침 정규화
+    const popRate = (pop * 5) / sampleRate; // 뱅크당 초당 5회 @ pop=1 (푸아송)
+    const pth = this.pth, pf = this.pf, pph = this.pph, pcr = this.pcr, ptl = this.ptl, bn = this.bn, burst = this.burst;
+    const thDec = this.thDec, crDec = this.crDec, tlDec = this.tlDec;
     for (let i = 0; i < L.length; i++) {
       if (dA > 0) {
         const a0 = this.ang, a1 = a0 + dA;
@@ -254,22 +268,32 @@ class EngineProcessor extends AudioWorkletProcessor {
           const f = fires[k];
           let a = f.a;
           if (a <= a0) a += 720;
-          if (a <= a1) {
-            if (cut) {
-              if (pp > 0 && Math.random() < pp) penv[f.b] += 2 + 2 * Math.random();
-            } else {
-              env[f.b] += amp * bank[f.b] * (1 + jit * (Math.random() * 2 - 1));
-              if (pp > 0 && Math.random() < pp) penv[f.b] += 1.5 + 2 * Math.random();
-            }
-            if (penv[f.b] > 8) penv[f.b] = 8;
-          }
+          if (a <= a1 && !cut) env[f.b] += amp * bank[f.b] * (1 + jit * (Math.random() * 2 - 1));
         }
         this.ang = a1 >= 720 ? a1 - 720 : a1;
       }
-      const w0 = Math.random() * 2 - 1, w1 = Math.random() * 2 - 1;
-      const s0 = env[0] * (1 + noise * w0) + penv[0] * (0.4 + 1.5 * w0);
-      const s1 = env[1] * (1 + noise * w1) + penv[1] * (0.4 + 1.5 * w1);
-      env[0] *= dec; env[1] *= dec; penv[0] *= pdec; penv[1] *= pdec;
+      const m0 = Math.random() * 2 - 1, m1 = Math.random() * 2 - 1;
+      let s0 = env[0] * (1 + noise * m0);
+      let s1 = env[1] * (1 + noise * m1);
+      env[0] *= dec; env[1] *= dec;
+      // 팝앤뱅: 가끔 큰 뱅(저음 썸프 + 크랙) 뒤에 잔 크래클 버스트
+      for (let b = 0; b < 2; b++) {
+        const r = popRate * (burst[b] > 0 ? 6 : 1);
+        if (r > 0 && Math.random() < r) {
+          const big = burst[b] <= 0 && Math.random() < 0.35;
+          const A = big ? 2.5 + 2 * Math.random() : 0.4 + 0.6 * Math.random();
+          pth[b] = A; pf[b] = 45 + 70 * Math.random(); pph[b] = 0;
+          pcr[b] = A * 0.8; ptl[b] = A * (big ? 0.5 : 0.15);
+          if (big) burst[b] = (0.1 + 0.15 * Math.random()) * sampleRate;
+        }
+        if (burst[b] > 0) burst[b]--;
+        let pb = 0;
+        if (pth[b] > 1e-3) { pph[b] += (6.2832 * pf[b]) / sampleRate; pb += pth[b] * Math.sin(pph[b]); pth[b] *= thDec; }
+        const w = Math.random() * 2 - 1;
+        pb += pcr[b] * w; pcr[b] *= crDec;
+        bn[b] += 0.08 * (w - bn[b]); pb += ptl[b] * bn[b] * 5; ptl[b] *= tlDec;
+        if (b === 0) s0 += pb; else s1 += pb;
+      }
       const m = (s0 + s1) * 0.6, d = (s0 - s1) * width;
       L[i] = m + d;
       R[i] = m - d;
