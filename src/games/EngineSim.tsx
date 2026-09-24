@@ -374,7 +374,7 @@ export default function EngineSim() {
 
   const doShift = (dir: 1 | -1) => {
     if (!running) return;
-    shift(simRef.current, dir, setupRef.current);
+    shift(simRef.current, dir, setupRef.current, true);
   };
 
   const start = async () => {
@@ -424,9 +424,15 @@ export default function EngineSim() {
       const loaded = inp.thr > 0.2;
       // 변속컷은 부하 걸린 채 변속(플랫시프트)할 때만 — N→1 같은 무부하 변속엔 컷/팝 없음
       const cut = !cranking && (sim.cut || (sim.shiftT > 0 && tr.cutOnShift && loaded));
+      // 오버런 팝: 엑셀 뗀 순간 크게 터지고 ~1초 시정수로 잦아듦(ECU 가 연료컷으로 넘어감), rpm 2200 부터 5000 까지 비례,
+      // 기어 물린 상태(엔진 브레이크)에서만 제대로 — 중립 공회전 리프트는 몇 발만
+      const sinceLift = (now - liftAt) / 1000;
       const overrun =
-        inp.thr < 0.1 && sim.rpm > 2500
-          ? (0.25 + 0.55 * Math.min(1, (sim.rpm - 2500) / 3000)) * (now - liftAt < 700 ? 1.6 : 1)
+        inp.thr < 0.1 && sim.rpm > 2200
+          ? 0.8 *
+            Math.min(1, (sim.rpm - 2200) / 2800) *
+            (0.12 + 0.88 * Math.exp(-sinceLift / 0.9)) *
+            (sim.gear > 0 ? 1 : 0.4)
           : 0;
       const pop = set.pop && !cranking ? EXHAUST[set.exhaust].popMul * (cut ? (loaded ? 0.7 : 0) : overrun) : 0;
       const thrA = sim.blipT > 0 ? Math.max(inp.thr, 0.7) : inp.thr; // 다운시프트 레브매칭 블립

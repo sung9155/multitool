@@ -572,6 +572,41 @@ assert.deepEqual(resolveLanding([cyl], 27, 0), {
   assert.equal(a.v, 0);
   assert.equal(a.gear, 1);
 
+  // 고속에서 엑셀 뗌: 1초간 기어 유지, 이후 한 단씩 1초 이상 간격, 최종은 rpm 이 0.3 레드라인 밑인 기어 (7단 직행 금지)
+  const lift = newSim();
+  lift.gear = 3;
+  lift.v = 30; // 108 km/h, 3단 ≈ 6200 rpm
+  lift.rpm = wheelRpm(30, gearRatios(7)[2]);
+  lift.prevThr = 1;
+  for (let i = 0; i < 6; i++) stepSim(lift, { thr: 1, brake: false }, aset, 1 / 60);
+  const gearAtLift = lift.gear;
+  const shiftFrames: number[] = [];
+  for (let i = 0; i < 600; i++) {
+    const before = lift.gear;
+    stepSim(lift, { thr: 0, brake: false }, aset, 1 / 60);
+    if (lift.gear !== before) shiftFrames.push(i);
+  }
+  assert.ok(shiftFrames.length > 0 && shiftFrames[0] >= 60, `리프트 직후 기어 유지 안 됨 ${shiftFrames[0]}`);
+  for (let i = 1; i < shiftFrames.length; i++)
+    assert.ok(shiftFrames[i] - shiftFrames[i - 1] >= 60, `연속 업시프트 ${shiftFrames}`);
+  assert.ok(lift.gear > gearAtLift, `코스팅 업시프트 없음 ${lift.gear}`);
+  // 한 단 아래였다면 아직 0.25×레드라인 위 → 필요한 만큼만 올렸다 (108km/h 면 7단 ≈ 2300rpm 이 실차 정상)
+  assert.ok(wheelRpm(lift.v, gearRatios(7)[lift.gear - 2]) > 0.25 * aset.redline, "불필요한 업시프트");
+  assert.ok(lift.rpm < 0.3 * aset.redline + 400, `코스팅 rpm ${lift.rpm}`);
+
+  // 패들 개입: DCT 4단 주행 중 수동 다운시프트 → 부분 개도로 5초간 자동이 되돌리지 않음
+  const pad = newSim();
+  pad.gear = 4;
+  pad.v = 15; // 54 km/h — 3단으로 내려도 5초간 리미터엔 안 닿음 (자동이면 0.56×레드라인에서 되올릴 상황)
+  pad.rpm = wheelRpm(15, gearRatios(7)[3]);
+  assert.ok(shift(pad, -1, aset, true) && pad.manualT > 0);
+  for (let i = 0; i < 300; i++) stepSim(pad, { thr: 0.4, brake: false }, aset, 1 / 60);
+  assert.equal(pad.gear, 3, "수동 개입 후 자동이 되돌림");
+  // N→1 은 수동 유지 아님
+  const d = newSim();
+  d.rpm = 900;
+  assert.ok(shift(d, 1, aset, true) && d.manualT === 0);
+
   // 토크 곡선 형태
   assert.ok(torqueShape(0.6) === 1 && torqueShape(0.1) < torqueShape(0.6) && torqueShape(1) < 1);
 }

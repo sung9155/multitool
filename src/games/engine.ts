@@ -99,6 +99,9 @@ export interface Sim {
   fireT: number; // 컷 해제 후 최소 점화 유지 시간
   shiftT: number; // 변속 중 남은 시간
   blipT: number; // 다운시프트 레브매칭 블립 남은 시간 (소리용)
+  autoT: number; // 자동변속 쿨다운 (변속 직후 · 엑셀 뗀 직후 기어 유지)
+  manualT: number; // 자동 미션에서 패들 개입 후 수동 유지 시간 (보호 변속만)
+  prevThr: number;
   lc: boolean; // 런치컨트롤 활성
 }
 export interface Input {
@@ -114,15 +117,19 @@ export interface Setup {
 }
 
 export function newSim(): Sim {
-  return { rpm: 0, v: 0, gear: 0, cut: false, cutT: 0, fireT: 0, shiftT: 0, blipT: 0, lc: false };
+  return { rpm: 0, v: 0, gear: 0, cut: false, cutT: 0, fireT: 0, shiftT: 0, blipT: 0, autoT: 0, manualT: 0, prevThr: 0, lc: false };
 }
 
-/** 변속. 오버레브(레드라인+300 초과)가 될 다운시프트는 거부 → false */
-export function shift(s: Sim, dir: 1 | -1, set: Setup): boolean {
+/**
+ * 변속. 오버레브(레드라인+300 초과)가 될 다운시프트는 거부 → false.
+ * manual: 사용자 패들 조작. 자동 미션에서 주행 기어 간 패들 조작이면 8초간 수동 유지(자동은 보호 변속만).
+ */
+export function shift(s: Sim, dir: 1 | -1, set: Setup, manual = false): boolean {
   const tr = TRANS[set.trans];
   const g = s.gear + dir;
   if (g < 0 || g > tr.gears || s.shiftT > 0) return false;
   if (g >= 1 && wheelRpm(s.v, gearRatios(tr.gears)[g - 1]) > set.redline + 300) return false;
+  if (manual && tr.auto && s.gear >= 1 && g >= 1) s.manualT = 8;
   // 주행 중 다운시프트: 수동/DCT 는 레브매칭 블립 (AT 는 컨버터가 부드럽게 올림)
   if (dir === -1 && g >= 1 && s.v > 2 && tr.cutOnShift) s.blipT = 0.18;
   s.gear = g;
@@ -158,6 +165,10 @@ export function stepSim(s: Sim, inp: Input, set: Setup, dt: number): void {
   }
   if (s.shiftT > 0) s.shiftT -= dt;
   if (s.blipT > 0) s.blipT -= dt;
+  if (s.autoT > 0) s.autoT -= dt;
+  if (s.manualT > 0) s.manualT -= dt;
+  if (s.prevThr > 0.4 && inp.thr < 0.1) s.autoT = Math.max(s.autoT, 1.2); // 엑셀 뗀 직후엔 기어 유지 (실차 AT 의 리프트 홀드)
+  s.prevThr = inp.thr;
   const shifting = s.shiftT > 0;
 
   const x = s.rpm / set.redline;
@@ -185,9 +196,17 @@ export function stepSim(s: Sim, inp: Input, set: Setup, dt: number): void {
     s.rpm += (target - s.rpm) * Math.min(1, (shifting ? tr.sync : 14) * dt);
     s.rpm = Math.min(s.rpm, limit + 150);
 
-    if (tr.auto && !shifting && !s.lc) {
-      if (s.gear < tr.gears && x > (inp.thr > 0.5 ? 0.93 : 0.5)) shift(s, 1, set);
-      else if (s.gear > 1 && (x < 0.18 || (inp.thr > 0.9 && x < 0.45))) shift(s, -1, set);
+    // 자동변속 — 한 번에 한 단, 쿨다운 후 재판단. 업시프트 점은 개도에 비례(코스팅 0.3 → 풀스로틀 0.93),
+    // 브레이크 중엔 올리지 않고 내리기만. 패들 개입 중(manualT)엔 리미터/스톨 보호 변속만.
+    if (tr.auto && !shifting && !s.lc && s.autoT <= 0) {
+      const manual = s.manualT > 0;
+      const upAt = manual ? 0.98 : Math.min(0.93, 0.3 + 0.65 * inp.thr);
+      const downAt = manual ? 0.14 : inp.brake ? 0.28 : 0.18;
+      if (s.gear < tr.gears && x > upAt && !inp.brake) {
+        if (shift(s, 1, set)) s.autoT = inp.thr < 0.1 ? 1.5 : 0.5;
+      } else if (s.gear > 1 && (x < downAt || (!manual && inp.thr > 0.9 && x < 0.45))) {
+        if (shift(s, -1, set)) s.autoT = 0.5;
+      }
     }
   }
   if (inp.brake && s.v < 1) s.v = 0;
