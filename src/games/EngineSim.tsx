@@ -4,11 +4,14 @@ import { useToolState } from "../components/toolState";
 import { LineChart, PALETTE } from "../components/charts";
 import {
   CUSTOM_CURVE,
+  DEFAULT_VEHICLE,
   EXHAUST,
   TRANS,
+  VEHICLES,
   WORKLET_SRC,
   defaultOrder,
   effectiveLayout,
+  engineInertia,
   engineName,
   firingPattern,
   idleRpm,
@@ -88,6 +91,8 @@ const L10N: Record<Lang, Record<string, string>> = {
     turbo: "터보",
     zero100: "0→100 km/h",
     now: "현재",
+    vehicle: "차량",
+    vehAuto: "자동 추천",
   },
   en: {
     start: "🔑 Start",
@@ -150,6 +155,8 @@ const L10N: Record<Lang, Record<string, string>> = {
     turbo: "Turbo",
     zero100: "0→100 km/h",
     now: "Now",
+    vehicle: "Vehicle",
+    vehAuto: "Auto (suggested)",
   },
   zh: {
     start: "🔑 点火",
@@ -212,6 +219,8 @@ const L10N: Record<Lang, Record<string, string>> = {
     turbo: "涡轮",
     zero100: "0→100 km/h",
     now: "当前",
+    vehicle: "车辆",
+    vehAuto: "自动推荐",
   },
 };
 
@@ -221,7 +230,14 @@ interface Audio {
   pk1: BiquadFilterNode;
   pk2: BiquadFilterNode;
   lp: BiquadFilterNode;
+  shelf: BiquadFilterNode; // 테일파이프 방사 효율 (저역 로우셸프)
+  pk3: BiquadFilterNode; // 500Hz 프레즌스
+  hs: BiquadFilterNode; // 고역 꼬리 하이셸프
+  igain: GainNode; // 흡기 버스 레벨
   plp: BiquadFilterNode; // 팝 경로 로우패스 (엔진 경로보다 밝게)
+  delay: DelayNode; // 배기관 도파관 공진 (지연 + 피드백)
+  fb: GainNode;
+  fbLp: BiquadFilterNode;
   shaper: WaveShaperNode;
   gain: GainNode;
   p: Record<"rpm" | "thr" | "cut" | "pop", AudioParam>;
@@ -248,27 +264,56 @@ async function buildAudio(): Promise<Audio> {
     URL.revokeObjectURL(url);
   }
   await ctx.resume();
-  // 출력 0 = 엔진 배기 펄스, 출력 1 = 팝앤뱅 (밝은 별도 경로) → 같은 새추레이션·컴프로 합류
+  // 출력 0 = 엔진 배기 펄스 → 공진 필터 → 배기관 도파관 → 새추레이션
+  // 출력 1 = 팝앤뱅 (밝은 별도 경로) → 새추레이션 합류
+  // 출력 2 = 흡기 맥동 + 밸브 틱 (엔진 앞쪽 소리, 배기 필터 안 거침)
+  // → 컴프레서 → 드라이 + 짧은 잔향(차고 느낌) → 볼륨
   const node = new AudioWorkletNode(ctx, "engine", {
     numberOfInputs: 0,
-    numberOfOutputs: 2,
-    outputChannelCount: [2, 2],
+    numberOfOutputs: 3,
+    outputChannelCount: [2, 2, 2],
   });
   const hp = new BiquadFilterNode(ctx, { type: "highpass", frequency: 35 });
+  const shelf = new BiquadFilterNode(ctx, { type: "lowshelf", frequency: 160, gain: -9 });
   const pk1 = new BiquadFilterNode(ctx, { type: "peaking", frequency: 120, Q: 2, gain: 8 });
   const pk2 = new BiquadFilterNode(ctx, { type: "peaking", frequency: 320, Q: 3, gain: 4 });
+  const pk3 = new BiquadFilterNode(ctx, { type: "peaking", frequency: 500, Q: 1.5, gain: 0 });
+  const hs = new BiquadFilterNode(ctx, { type: "highshelf", frequency: 600, gain: -4 });
   const lp = new BiquadFilterNode(ctx, { type: "lowpass", frequency: 800, Q: 0.7 });
+  // 배기관 도파관: 합산 노드 → 지연 → 로우패스 → 피드백 → 합산 노드 (파이프 길이의 정상파 배음)
+  const pipe = new GainNode(ctx, { gain: 1 });
+  const delay = new DelayNode(ctx, { maxDelayTime: 0.05, delayTime: 0.0035 });
+  const fbLp = new BiquadFilterNode(ctx, { type: "lowpass", frequency: 1500, Q: 0.5 });
+  const fb = new GainNode(ctx, { gain: 0.5 });
   const shaper = new WaveShaperNode(ctx, { curve: shaperCurve(2), oversample: "2x" });
   const comp = new DynamicsCompressorNode(ctx, { threshold: -12, ratio: 4, attack: 0.003, release: 0.12 });
   const gain = new GainNode(ctx, { gain: 0.3 });
-  node.connect(hp).connect(pk1).connect(pk2).connect(lp).connect(shaper).connect(comp).connect(gain).connect(ctx.destination);
+  node.connect(hp).connect(shelf).connect(pk1).connect(pk2).connect(pk3).connect(hs).connect(lp).connect(pipe);
+  pipe.connect(delay).connect(fbLp).connect(fb).connect(pipe);
+  pipe.connect(shaper).connect(comp);
   const php = new BiquadFilterNode(ctx, { type: "highpass", frequency: 150, Q: 0.7 });
   const plp = new BiquadFilterNode(ctx, { type: "lowpass", frequency: 3500, Q: 0.7 });
   const pgain = new GainNode(ctx, { gain: 0.8 });
   node.connect(php, 1, 0);
   php.connect(plp).connect(pgain).connect(shaper);
+  const ibp = new BiquadFilterNode(ctx, { type: "bandpass", frequency: 600, Q: 0.6 });
+  const igain = new GainNode(ctx, { gain: 0.25 });
+  node.connect(ibp, 2, 0);
+  ibp.connect(igain).connect(comp);
+  // 잔향: 0.35초 감쇠 노이즈 임펄스 (좌우 비상관) 12%
+  const irLen = Math.floor(ctx.sampleRate * 0.35);
+  const ir = ctx.createBuffer(2, irLen, ctx.sampleRate);
+  for (let ch = 0; ch < 2; ch++) {
+    const d = ir.getChannelData(ch);
+    for (let i = 0; i < irLen; i++) d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (ctx.sampleRate * 0.09));
+  }
+  const conv = new ConvolverNode(ctx, { buffer: ir });
+  const wet = new GainNode(ctx, { gain: 0.12 });
+  comp.connect(gain);
+  comp.connect(conv).connect(wet).connect(gain);
+  gain.connect(ctx.destination);
   const P = (k: string) => node.parameters.get(k)!;
-  return { ctx, node, pk1, pk2, lp, plp, shaper, gain, p: { rpm: P("rpm"), thr: P("thr"), cut: P("cut"), pop: P("pop") } };
+  return { ctx, node, pk1, pk2, lp, shelf, pk3, hs, igain, plp, delay, fb, fbLp, shaper, gain, p: { rpm: P("rpm"), thr: P("thr"), cut: P("cut"), pop: P("pop") } };
 }
 
 /** 실린더 배치 아이콘: 직렬 한 줄, V 지그재그, 수평대향 두 줄 */
@@ -417,6 +462,7 @@ export default function EngineSim() {
   const [vol, setVol] = useToolState("vol", 70);
   const [presetId, setPresetId] = useToolState("eng", "custom");
   const [orderText, setOrderText] = useToolState("order", "");
+  const [vehId, setVehId] = useToolState("veh", "auto");
   const layout = layoutRaw as Layout;
   const crank = crankRaw as Crank;
   const exhaust = exhaustRaw as ExhaustKind;
@@ -431,12 +477,14 @@ export default function EngineSim() {
   const firesKey = JSON.stringify(fires);
   const cycle = preset ? cycleOf(preset) : 720;
   const diesel = preset?.fuel === "diesel";
+  const turbo = !!preset?.turbo;
   const spec = {
     torque: preset?.torque ?? peakTorque(cyl),
     idle: preset?.idle ?? idleRpm(cyl),
     liters: preset?.liters ?? cyl * 0.5,
     curve: preset ? curveOf(preset) : CUSTOM_CURVE,
   };
+  const veh = VEHICLES[vehId] ?? VEHICLES[preset?.vehicle ?? "sedan"] ?? DEFAULT_VEHICLE; // auto = 프리셋 추천
   const orderEditable = lay !== "inline" && !preset?.fires;
   const orderDefault = (preset?.order ?? defaultOrder(eCyl, preset?.layout ?? layout, preset?.crank ?? crank)).join("-");
   const dynoPts = dyno(spec.torque, spec.idle, redline, spec.curve);
@@ -459,8 +507,21 @@ export default function EngineSim() {
   const simRef = useRef(newSim());
   const inputRef = useRef({ gas: 0, brake: false, thr: 0 }); // gas: 목표 개도 0~1
   const audioRef = useRef<Audio | null>(null);
-  type Live = Setup & { exhaust: ExhaustKind; pop: boolean };
-  const live: Live = { cyl: eCyl, redline, trans, lcOn, lcRpm, ...spec, exhaust, pop: popOn && !diesel }; // 디젤은 팝앤뱅 없음
+  type Live = Setup & { exhaust: ExhaustKind; pop: boolean; turbo: boolean };
+  const live: Live = {
+    cyl: eCyl,
+    redline,
+    trans,
+    lcOn,
+    lcRpm,
+    ...spec,
+    inertia: preset?.inertia ?? engineInertia(spec.liters, diesel),
+    diesel,
+    turbo,
+    veh,
+    exhaust,
+    pop: popOn && !diesel, // 디젤은 팝앤뱅 없음
+  };
   const setupRef = useRef<Live>(live);
   setupRef.current = live;
 
@@ -472,7 +533,7 @@ export default function EngineSim() {
       fires,
       cycle,
       width: lay === "inline" ? 0 : 0.35,
-      jit: (diesel ? 0.3 : 0.08) + 0.25 / eCyl, // 디젤·소기통은 아이들이 거칠다
+      jit: (diesel ? 0.35 : 0.15) + 0.3 / eCyl, // 사이클 간 연소 편차 — 디젤·소기통은 아이들이 거칠다
       bank: lay === "flat" ? [1, 0.7] : [1, 0.85],
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -484,14 +545,24 @@ export default function EngineSim() {
     if (!a) return;
     const e = EXHAUST[exhaust];
     // 디젤: 짧고 거친 펄스 (클래터)
-    a.node.port.postMessage({ tau: e.tau * (diesel ? 0.7 : 1), noise: Math.min(0.9, e.noise + (diesel ? 0.25 : 0)) });
+    a.node.port.postMessage({ tau: e.tau * (diesel ? 0.7 : 1), noise: Math.min(0.9, e.noise + (diesel ? 0.25 : 0)), flow: e.flow });
     a.pk1.frequency.value = e.f1;
     a.pk1.gain.value = e.g1;
     a.pk2.frequency.value = e.f1 * 2.7;
-    a.pk2.gain.value = e.g1 / 2;
+    a.pk2.gain.value = turbo ? 0 : e.g2;
+    a.shelf.gain.value = e.shelf;
+    a.shelf.frequency.value = e.shelfHz;
+    a.pk3.gain.value = turbo ? -4 : e.pres;
+    // 터보: 터빈이 고역을 먹는다 (실측 WRX 터보백: 200Hz 위가 -12dB/oct 로 급감). 흡기도 조용하다
+    a.hs.gain.value = e.hs - (turbo ? 10 : 0);
+    a.lp.frequency.value = e.lp * (turbo ? 0.22 : 1);
+    a.igain.gain.value = turbo ? 0.12 : 0.25;
     a.plp.frequency.value = e.popLp;
+    a.delay.delayTime.value = e.pipe;
+    a.fb.gain.value = e.fb;
+    a.fbLp.frequency.value = e.fbLp;
     a.shaper.curve = shaperCurve(e.drive);
-  }, [exhaust, diesel, running]);
+  }, [exhaust, diesel, turbo, running]);
 
   useEffect(() => {
     const a = audioRef.current;
@@ -581,11 +652,13 @@ export default function EngineSim() {
       const a = audioRef.current;
       if (a) {
         const t = a.ctx.currentTime;
-        a.p.rpm.setTargetAtTime(Math.min(20000, cranking ? 250 : sim.rpm), t, 0.02);
+        // 아이들 헌팅: 무부하 중립에서 ±15rpm 느린 흔들림 (죽은 듯 일정한 아이들이 가장 인공적으로 들린다)
+        const wob = !cranking && sim.gear === 0 && inp.thr < 0.05 ? 10 * Math.sin((now / 1000) * 8.2) + 6 * Math.sin((now / 1000) * 19.5) : 0;
+        a.p.rpm.setTargetAtTime(Math.min(20000, cranking ? 250 : sim.rpm + wob), t, 0.02);
         a.p.thr.setTargetAtTime(thrA, t, 0.03);
         a.p.cut.setValueAtTime(cut ? 1 : 0, t);
         a.p.pop.setValueAtTime(Math.min(1, pop), t);
-        a.lp.frequency.setTargetAtTime(EXHAUST[set.exhaust].lp * (0.55 + 0.45 * thrA), t, 0.05);
+        a.lp.frequency.setTargetAtTime(EXHAUST[set.exhaust].lp * (set.turbo ? 0.22 : 1) * (0.55 + 0.45 * thrA), t, 0.05);
       }
       setView({
         rpm: cranking ? 250 : sim.rpm,
@@ -738,7 +811,9 @@ export default function EngineSim() {
       <div className="select-none rounded-2xl border border-zinc-700 bg-zinc-950 p-4 text-white shadow-xl">
         <div className="mb-1 flex items-center justify-center gap-2 font-mono text-xs tracking-widest text-zinc-400">
           <LayoutIcon n={eCyl} lay={lay} />
-          <span>{name}</span>
+          <span>
+            {name} · {lang === "ko" ? veh.name : veh.en} {veh.mass} kg
+          </span>
         </div>
         <div className="flex justify-center gap-4 font-mono text-[11px] text-zinc-500">
           <span>
@@ -956,6 +1031,23 @@ export default function EngineSim() {
             onChange={setTrans}
           />
         </div>
+        <label className="block sm:col-span-2">
+          <div className="mb-1 text-sm font-medium text-zinc-700 dark:text-zinc-300">{s("vehicle")}</div>
+          <select
+            value={VEHICLES[vehId] ? vehId : "auto"}
+            onChange={(e) => setVehId(e.target.value)}
+            className="w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-violet-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+          >
+            <option value="auto">
+              {s("vehAuto")} — {lang === "ko" ? veh.name : veh.en}
+            </option>
+            {Object.values(VEHICLES).map((v) => (
+              <option key={v.id} value={v.id}>
+                {lang === "ko" ? v.name : v.en} · {v.mass} kg · {v.drive.toUpperCase()}
+              </option>
+            ))}
+          </select>
+        </label>
 
         <div className="space-y-3 rounded-xl border border-zinc-200 p-4 dark:border-zinc-700 sm:col-span-2">
           <div className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">{s("ecu")}</div>

@@ -37,29 +37,31 @@ export interface EnginePreset {
   fuel: "gas" | "diesel";
   strokes: 2 | 4;
   turbo?: boolean;
+  vehicle?: string; // 어울리는 차량 클래스 (VEHICLES 키)
+  inertia?: number; // 엔진 관성 kg·m² 지정 (기본은 배기량에서 추정)
 }
 
 export const PRESETS: EnginePreset[] = [
-  { id: "gx160", name: "단기통 163cc 범용", real: "Honda GX160", cyl: 1, layout: "inline", liters: 0.163, torque: 10.3, torqueRpm: 2500, hp: 4.8, hpRpm: 3600, idle: 1400, redline: 4000, fuel: "gas", strokes: 4 },
-  { id: "bullet", name: "단기통 500 썸퍼", real: "Royal Enfield Bullet 500", cyl: 1, layout: "inline", liters: 0.499, torque: 41, torqueRpm: 4000, hp: 27, hpRpm: 5250, idle: 1000, redline: 5500, fuel: "gas", strokes: 4 },
-  { id: "yz250", name: "2행정 250 모토크로스", real: "Yamaha YZ250", cyl: 1, layout: "inline", liters: 0.249, torque: 40, torqueRpm: 8000, hp: 48, hpRpm: 8500, idle: 1700, redline: 9500, fuel: "gas", strokes: 2 },
-  { id: "evo1340", name: "V트윈 45° 1340", real: "Harley-Davidson Evolution 1340", cyl: 2, layout: "vee", bank: 45, fires: [{ a: 0, b: 0 }, { a: 315, b: 1 }], liters: 1.34, torque: 100, torqueRpm: 3500, hp: 58, hpRpm: 5000, idle: 950, redline: 5500, fuel: "gas", strokes: 4 },
-  { id: "cp2", name: "병렬 2기통 270° 크랭크", real: "Yamaha MT-07 CP2", cyl: 2, layout: "inline", fires: [{ a: 0, b: 0 }, { a: 270, b: 0 }], liters: 0.689, torque: 67, torqueRpm: 6500, hp: 73, hpRpm: 9000, idle: 1200, redline: 10000, fuel: "gas", strokes: 4 },
-  { id: "1kr", name: "직렬 3기통 1.0", real: "Toyota 1KR-FE", cyl: 3, layout: "inline", liters: 1.0, torque: 93, torqueRpm: 3600, hp: 68, hpRpm: 6000, idle: 800, redline: 6500, fuel: "gas", strokes: 4 },
-  { id: "k20a", name: "직렬 4기통 2.0 고회전", real: "Honda K20A (Type R)", cyl: 4, layout: "inline", liters: 2.0, torque: 215, torqueRpm: 6100, hp: 222, hpRpm: 8000, idle: 800, redline: 8400, fuel: "gas", strokes: 4 },
-  { id: "ej20", name: "수평대향 4기통 2.0 터보", real: "Subaru EJ20 (WRX STI)", cyl: 4, layout: "flat", bank: 180, order: [1, 3, 2, 4], liters: 2.0, torque: 392, torqueRpm: 4400, hp: 280, hpRpm: 6400, idle: 800, redline: 7500, fuel: "gas", strokes: 4, turbo: true },
-  { id: "tfsi25", name: "직렬 5기통 2.5 터보", real: "Audi 2.5 TFSI (RS3)", cyl: 5, layout: "inline", liters: 2.5, torque: 480, torqueRpm: 2500, hp: 400, hpRpm: 5850, idle: 750, redline: 7000, fuel: "gas", strokes: 4, turbo: true },
-  { id: "2jz", name: "직렬 6기통 3.0 트윈터보", real: "Toyota 2JZ-GTE", cyl: 6, layout: "inline", liters: 3.0, torque: 440, torqueRpm: 3600, hp: 320, hpRpm: 5600, idle: 700, redline: 7000, fuel: "gas", strokes: 4, turbo: true },
-  { id: "m64", name: "수평대향 6기통 3.6", real: "Porsche 911 (993) M64", cyl: 6, layout: "flat", bank: 180, order: [1, 6, 2, 4, 3, 5], bankMap: "halves", liters: 3.6, torque: 330, torqueRpm: 5000, hp: 272, hpRpm: 6100, idle: 800, redline: 6800, fuel: "gas", strokes: 4 },
-  { id: "busso", name: "V6 60° 3.0", real: "Alfa Romeo Busso V6 24V", cyl: 6, layout: "vee", bank: 60, order: [1, 4, 2, 5, 3, 6], bankMap: "halves", liters: 3.0, torque: 270, torqueRpm: 5000, hp: 220, hpRpm: 6300, idle: 800, redline: 7000, fuel: "gas", strokes: 4 },
-  { id: "coyote", name: "V8 90° 크로스플레인 5.0", real: "Ford Coyote 5.0 (Gen 3)", cyl: 8, layout: "vee", bank: 90, crank: "cross", order: [1, 5, 4, 8, 6, 3, 7, 2], bankMap: "halves", liters: 5.0, torque: 570, torqueRpm: 4600, hp: 460, hpRpm: 7000, idle: 750, redline: 7500, fuel: "gas", strokes: 4 },
-  { id: "f136", name: "V8 90° 플랫플레인 4.5", real: "Ferrari F136 (458 Italia)", cyl: 8, layout: "vee", bank: 90, crank: "flat", liters: 4.5, torque: 540, torqueRpm: 6000, hp: 570, hpRpm: 9000, idle: 900, redline: 9000, fuel: "gas", strokes: 4 },
-  { id: "ca2006", name: "F1 V8 2.4", real: "Cosworth CA2006", cyl: 8, layout: "vee", bank: 90, crank: "flat", liters: 2.4, torque: 290, torqueRpm: 17000, hp: 755, hpRpm: 19000, idle: 4000, redline: 19000, fuel: "gas", strokes: 4 },
-  { id: "s85", name: "V10 90° 5.0", real: "BMW S85 (M5 E60)", cyl: 10, layout: "vee", bank: 90, liters: 5.0, torque: 520, torqueRpm: 6100, hp: 507, hpRpm: 7750, idle: 700, redline: 8250, fuel: "gas", strokes: 4 },
-  { id: "viper", name: "V10 90° 8.4", real: "Dodge Viper 8.4", cyl: 10, layout: "vee", bank: 90, liters: 8.4, torque: 814, torqueRpm: 5000, hp: 640, hpRpm: 6200, idle: 750, redline: 6400, fuel: "gas", strokes: 4 },
-  { id: "l539", name: "V12 60° 6.5", real: "Lamborghini L539 (Aventador)", cyl: 12, layout: "vee", bank: 60, liters: 6.5, torque: 690, torqueRpm: 5500, hp: 700, hpRpm: 8250, idle: 900, redline: 8500, fuel: "gas", strokes: 4 },
-  { id: "6bt", name: "디젤 직렬 6기통 5.9 터보", real: "Cummins 6BT 12v", cyl: 6, layout: "inline", liters: 5.9, torque: 570, torqueRpm: 1600, hp: 215, hpRpm: 2500, idle: 750, redline: 3200, fuel: "diesel", strokes: 4, turbo: true },
-  { id: "tdi20", name: "디젤 직렬 4기통 2.0", real: "VW 2.0 TDI (EA189)", cyl: 4, layout: "inline", liters: 2.0, torque: 320, torqueRpm: 1750, hp: 140, hpRpm: 4000, idle: 800, redline: 4500, fuel: "diesel", strokes: 4, turbo: true },
+  { id: "gx160", vehicle: "kart", name: "단기통 163cc 범용", real: "Honda GX160", cyl: 1, layout: "inline", liters: 0.163, torque: 10.3, torqueRpm: 2500, hp: 4.8, hpRpm: 3600, idle: 1400, redline: 4000, fuel: "gas", strokes: 4 },
+  { id: "bullet", vehicle: "bike", name: "단기통 500 썸퍼", real: "Royal Enfield Bullet 500", cyl: 1, layout: "inline", liters: 0.499, torque: 41, torqueRpm: 4000, hp: 27, hpRpm: 5250, idle: 1000, redline: 5500, fuel: "gas", strokes: 4 },
+  { id: "yz250", vehicle: "bike", name: "2행정 250 모토크로스", real: "Yamaha YZ250", cyl: 1, layout: "inline", liters: 0.249, torque: 40, torqueRpm: 8000, hp: 48, hpRpm: 8500, idle: 1700, redline: 9500, fuel: "gas", strokes: 2 },
+  { id: "evo1340", vehicle: "bike", name: "V트윈 45° 1340", real: "Harley-Davidson Evolution 1340", cyl: 2, layout: "vee", bank: 45, fires: [{ a: 0, b: 0 }, { a: 315, b: 1 }], liters: 1.34, torque: 100, torqueRpm: 3500, hp: 58, hpRpm: 5000, idle: 950, redline: 5500, fuel: "gas", strokes: 4 },
+  { id: "cp2", vehicle: "bike", name: "병렬 2기통 270° 크랭크", real: "Yamaha MT-07 CP2", cyl: 2, layout: "inline", fires: [{ a: 0, b: 0 }, { a: 270, b: 0 }], liters: 0.689, torque: 67, torqueRpm: 6500, hp: 73, hpRpm: 9000, idle: 1200, redline: 10000, fuel: "gas", strokes: 4 },
+  { id: "1kr", vehicle: "hatch", name: "직렬 3기통 1.0", real: "Toyota 1KR-FE", cyl: 3, layout: "inline", liters: 1.0, torque: 93, torqueRpm: 3600, hp: 68, hpRpm: 6000, idle: 800, redline: 6500, fuel: "gas", strokes: 4 },
+  { id: "k20a", vehicle: "hatch", name: "직렬 4기통 2.0 고회전", real: "Honda K20A (Type R)", cyl: 4, layout: "inline", liters: 2.0, torque: 215, torqueRpm: 6100, hp: 222, hpRpm: 8000, idle: 800, redline: 8400, fuel: "gas", strokes: 4 },
+  { id: "ej20", vehicle: "awd", name: "수평대향 4기통 2.0 터보", real: "Subaru EJ20 (WRX STI)", cyl: 4, layout: "flat", bank: 180, order: [1, 3, 2, 4], liters: 2.0, torque: 392, torqueRpm: 4400, hp: 280, hpRpm: 6400, idle: 800, redline: 7500, fuel: "gas", strokes: 4, turbo: true },
+  { id: "tfsi25", vehicle: "awd", name: "직렬 5기통 2.5 터보", real: "Audi 2.5 TFSI (RS3)", cyl: 5, layout: "inline", liters: 2.5, torque: 480, torqueRpm: 2500, hp: 400, hpRpm: 5850, idle: 750, redline: 7000, fuel: "gas", strokes: 4, turbo: true },
+  { id: "2jz", vehicle: "sedan", name: "직렬 6기통 3.0 트윈터보", real: "Toyota 2JZ-GTE", cyl: 6, layout: "inline", liters: 3.0, torque: 440, torqueRpm: 3600, hp: 320, hpRpm: 5600, idle: 700, redline: 7000, fuel: "gas", strokes: 4, turbo: true },
+  { id: "m64", vehicle: "sedan", name: "수평대향 6기통 3.6", real: "Porsche 911 (993) M64", cyl: 6, layout: "flat", bank: 180, order: [1, 6, 2, 4, 3, 5], bankMap: "halves", liters: 3.6, torque: 330, torqueRpm: 5000, hp: 272, hpRpm: 6100, idle: 800, redline: 6800, fuel: "gas", strokes: 4 },
+  { id: "busso", vehicle: "sedan", name: "V6 60° 3.0", real: "Alfa Romeo Busso V6 24V", cyl: 6, layout: "vee", bank: 60, order: [1, 4, 2, 5, 3, 6], bankMap: "halves", liters: 3.0, torque: 270, torqueRpm: 5000, hp: 220, hpRpm: 6300, idle: 800, redline: 7000, fuel: "gas", strokes: 4 },
+  { id: "coyote", vehicle: "muscle", name: "V8 90° 크로스플레인 5.0", real: "Ford Coyote 5.0 (Gen 3)", cyl: 8, layout: "vee", bank: 90, crank: "cross", order: [1, 5, 4, 8, 6, 3, 7, 2], bankMap: "halves", liters: 5.0, torque: 570, torqueRpm: 4600, hp: 460, hpRpm: 7000, idle: 750, redline: 7500, fuel: "gas", strokes: 4 },
+  { id: "f136", vehicle: "sedan", name: "V8 90° 플랫플레인 4.5", real: "Ferrari F136 (458 Italia)", cyl: 8, layout: "vee", bank: 90, crank: "flat", liters: 4.5, torque: 540, torqueRpm: 6000, hp: 570, hpRpm: 9000, idle: 900, redline: 9000, fuel: "gas", strokes: 4 },
+  { id: "ca2006", vehicle: "f1", inertia: 0.1, name: "F1 V8 2.4", real: "Cosworth CA2006", cyl: 8, layout: "vee", bank: 90, crank: "flat", liters: 2.4, torque: 290, torqueRpm: 17000, hp: 755, hpRpm: 19000, idle: 4000, redline: 19000, fuel: "gas", strokes: 4 },
+  { id: "s85", vehicle: "sedan", name: "V10 90° 5.0", real: "BMW S85 (M5 E60)", cyl: 10, layout: "vee", bank: 90, liters: 5.0, torque: 520, torqueRpm: 6100, hp: 507, hpRpm: 7750, idle: 700, redline: 8250, fuel: "gas", strokes: 4 },
+  { id: "viper", vehicle: "muscle", name: "V10 90° 8.4", real: "Dodge Viper 8.4", cyl: 10, layout: "vee", bank: 90, liters: 8.4, torque: 814, torqueRpm: 5000, hp: 640, hpRpm: 6200, idle: 750, redline: 6400, fuel: "gas", strokes: 4 },
+  { id: "l539", vehicle: "awd", name: "V12 60° 6.5", real: "Lamborghini L539 (Aventador)", cyl: 12, layout: "vee", bank: 60, liters: 6.5, torque: 690, torqueRpm: 5500, hp: 700, hpRpm: 8250, idle: 900, redline: 8500, fuel: "gas", strokes: 4 },
+  { id: "6bt", vehicle: "truck", name: "디젤 직렬 6기통 5.9 터보", real: "Cummins 6BT 12v", cyl: 6, layout: "inline", liters: 5.9, torque: 570, torqueRpm: 1600, hp: 215, hpRpm: 2500, idle: 750, redline: 3200, fuel: "diesel", strokes: 4, turbo: true },
+  { id: "tdi20", vehicle: "hatch", name: "디젤 직렬 4기통 2.0", real: "VW 2.0 TDI (EA189)", cyl: 4, layout: "inline", liters: 2.0, torque: 320, torqueRpm: 1750, hp: 140, hpRpm: 4000, idle: 800, redline: 4500, fuel: "diesel", strokes: 4, turbo: true },
 ];
 
 export const findPreset = (id: string) => PRESETS.find((p) => p.id === id);

@@ -31,8 +31,9 @@ import {
   newSim,
   oddEven,
   parseOrder,
-  revRate,
+  engineInertia,
   shift,
+  VEHICLES,
   stepSim,
   torqueShape,
   wheelRpm,
@@ -479,7 +480,8 @@ assert.deepEqual(resolveLanding([cyl], 27, 0), {
   // 기어비 단조 감소, 양끝 고정
   const r = gearRatios(6);
   for (let i = 1; i < 6; i++) assert.ok(r[i] < r[i - 1]);
-  assert.ok(Math.abs(r[0] - 3.6) < 1e-9 && Math.abs(r[5] - 0.65) < 1e-9);
+  assert.ok(Math.abs(r[0] - 12.5) < 1e-9 && Math.abs(r[5] - 2.7) < 1e-9, "기본 차량(스포츠 세단) 종합 감속비");
+  assert.ok(gearRatios(6, VEHICLES.f1)[5] > gearRatios(6, VEHICLES.sedan)[5], "F1 은 최종단도 감속비가 크다");
 
   // 1단 풀스로틀 10초: 가속되고 리미터(+150) 못 넘음
   const set: Setup = { cyl: 4, redline: 7000, trans: "mt", lcOn: false, lcRpm: 4000 };
@@ -522,9 +524,9 @@ assert.deepEqual(resolveLanding([cyl], 27, 0), {
   at.v = 25;
   assert.ok(shift(at, -1, { ...set, trans: "at" }) && at.blipT === 0);
 
-  // 오버레브 다운시프트 거부 (50 m/s: 6→5 허용, 5→4 거부)
+  // 오버레브 다운시프트 거부 (55 m/s: 6→5 허용 ≈5900rpm, 5→4 거부 ≈7900rpm)
   s.gear = 6;
-  s.v = 50;
+  s.v = 55;
   s.shiftT = 0;
   assert.equal(shift(s, -1, set), true);
   s.shiftT = 0;
@@ -630,9 +632,8 @@ assert.deepEqual(resolveLanding([cyl], 27, 0), {
   assert.deepEqual(firingPattern(8, "vee", "cross", d8).map((f) => f.b), [0, 1, 1, 0, 1, 0, 0, 1], "기본 순서는 기본 패턴 재현");
   assert.deepEqual(firesFromOrder([1, 2, 3], oddEven, 360).map((f) => f.a), [0, 120, 240], "2행정 360° 사이클");
 
-  // 회전 상승률 범위, 큰 엔진이 느림
-  assert.ok(revRate(200, 2, 7500) > revRate(570, 5.9, 3200));
-  assert.ok(revRate(1, 100, 1000) >= 4000 && revRate(1e6, 0.1, 20000) <= 24000);
+  // 엔진 관성: 큰 엔진·디젤이 무겁다
+  assert.ok(engineInertia(2) < engineInertia(5) && engineInertia(5.9, true) > engineInertia(5.9));
 }
 
 // ── 엔진 프리셋 ──────────────────────────────────────────
@@ -670,22 +671,56 @@ assert.deepEqual(resolveLanding([cyl], 27, 0), {
   fs.rpm = f1.idle;
   for (let i = 0; i < 180; i++) stepSim(fs, { thr: 1, brake: false }, fset, 1 / 60);
   assert.ok(fs.rpm > 17000 && fs.rpm <= f1.redline + 150, `F1 회전 ${fs.rpm}`);
-  // 코요테 V8 0→100 km/h: 접지 한계(0.65g) 때문에 3.5~6초 (무제한이면 2.7초)
+  // 코요테 V8 + 머슬카(1750kg RWD): 풀스로틀 발진은 휠스핀 → rpm 이 차속보다 높게 치솟고, 부분 개도 발진이 더 빠르거나 비슷
   const cy = findPreset("coyote")!;
-  const cset: Setup = { ...fset, cyl: cy.cyl, redline: cy.redline, torque: cy.torque, idle: cy.idle, liters: cy.liters, curve: curveOf(cy) };
-  const cs = newSim();
-  cs.rpm = cy.idle;
-  shift(cs, 1, cset);
-  let t100 = -1;
-  let slipped = false;
-  for (let i = 0; i < 600 && t100 < 0; i++) {
-    if (cs.rpm > cy.redline - 200 && cs.shiftT <= 0) shift(cs, 1, cset);
-    stepSim(cs, { thr: 1, brake: false }, cset, 1 / 60);
-    slipped ||= cs.slip;
-    if (cs.v >= 100 / 3.6) t100 = i / 60;
+  const cset: Setup = { ...fset, cyl: cy.cyl, redline: cy.redline, torque: cy.torque, idle: cy.idle, liters: cy.liters, curve: curveOf(cy), veh: VEHICLES.muscle };
+  const launch = (thr1: number, vset: Setup = cset) => {
+    const cs = newSim();
+    cs.rpm = cy.idle;
+    shift(cs, 1, vset);
+    let t100 = -1;
+    let spun = false;
+    let maxGap = 0; // 휠스핀 중 (엔진 기준 구동륜 rpm − 차속 기준 rpm)
+    for (let i = 0; i < 900 && t100 < 0; i++) {
+      const thr = cs.gear === 1 ? thr1 : 1;
+      if (cs.rpm > cy.redline - 200 && cs.shiftT <= 0) shift(cs, 1, vset);
+      stepSim(cs, { thr, brake: false }, vset, 1 / 60);
+      if (cs.slip) {
+        spun = true;
+        const ratio = gearRatios(6, VEHICLES.muscle)[cs.gear - 1];
+        maxGap = Math.max(maxGap, wheelRpm(cs.vw, ratio, VEHICLES.muscle.wheel) - wheelRpm(cs.v, ratio, VEHICLES.muscle.wheel));
+      }
+      if (cs.v >= 100 / 3.6) t100 = i / 60;
+    }
+    return { t100, spun, maxGap };
+  };
+  const full = launch(1);
+  // 같은 차에 접지만 넉넉하면(μ 2배) 스핀 없이 더 빠르다 → 휠스핀은 시간 손해
+  const grip = launch(1, { ...cset, veh: { ...VEHICLES.muscle, mu: VEHICLES.muscle.mu * 2 } });
+  assert.ok(full.spun && full.maxGap > 1500, `풀스로틀 휠스핀 rpm 분리 ${full.maxGap.toFixed(0)}`);
+  assert.ok(full.t100 > 4.5 && full.t100 < 7.5, `코요테 풀스로틀 0→100 ${full.t100.toFixed(2)}s (실차 머스탱 GT ≈5.3)`);
+  assert.ok(!grip.spun && grip.t100 > 0 && grip.t100 < full.t100, `접지 충분 ${grip.t100.toFixed(2)}s vs 스핀 ${full.t100.toFixed(2)}s`);
+  // 휠스핀 중 엑셀을 떼면 구동륜이 차속으로 내려와 다시 물린다
+  const ws = newSim();
+  ws.rpm = cy.idle;
+  shift(ws, 1, cset);
+  ws.shiftT = 0;
+  for (let i = 0; i < 60; i++) stepSim(ws, { thr: 1, brake: false }, cset, 1 / 60);
+  assert.ok(ws.slip && ws.vw > ws.v + 1, "휠스핀 상태여야");
+  for (let i = 0; i < 60; i++) stepSim(ws, { thr: 0, brake: false }, cset, 1 / 60);
+  assert.ok(!ws.slip && Math.abs(ws.vw - ws.v) < 1e-9, "엑셀 떼면 재접지");
+  // AWD 슈퍼카는 같은 엔진으로 더 빨리 (접지 우위)
+  const aset: Setup = { ...cset, veh: VEHICLES.awd };
+  const as = newSim();
+  as.rpm = cy.idle;
+  shift(as, 1, aset);
+  let tAwd = -1;
+  for (let i = 0; i < 900 && tAwd < 0; i++) {
+    if (as.rpm > cy.redline - 200 && as.shiftT <= 0) shift(as, 1, aset);
+    stepSim(as, { thr: 1, brake: false }, aset, 1 / 60);
+    if (as.v >= 100 / 3.6) tAwd = i / 60;
   }
-  assert.ok(t100 > 3.5 && t100 < 6, `코요테 0→100 ${t100.toFixed(2)}s`);
-  assert.ok(slipped, "출발 시 접지 한계에 걸려야");
+  assert.ok(tAwd > 0 && tAwd < full.t100, `AWD ${tAwd.toFixed(2)}s 가 RWD 풀스로틀 ${full.t100.toFixed(2)}s 보다 빨라야`);
   // 디젤 1단 발진도 됨
   const dz = findPreset("6bt")!;
   const dset: Setup = { ...fset, cyl: dz.cyl, redline: dz.redline, torque: dz.torque, idle: dz.idle, liters: dz.liters, curve: curveOf(dz) };
