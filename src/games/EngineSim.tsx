@@ -230,10 +230,12 @@ interface Audio {
   pk1: BiquadFilterNode;
   pk2: BiquadFilterNode;
   lp: BiquadFilterNode;
+  hp: BiquadFilterNode; // 저역 컷 — 점화 빈도에 맞춰 움직인다 (단기통 30Hz 기본파는 살린다)
   shelf: BiquadFilterNode; // 테일파이프 방사 효율 (저역 로우셸프)
   pk3: BiquadFilterNode; // 500Hz 프레즌스
   hs: BiquadFilterNode; // 고역 꼬리 하이셸프
-  igain: GainNode; // 흡기 버스 레벨
+  igain: GainNode; // 흡기/기계음 버스 레벨
+  ibp: BiquadFilterNode; // 흡기/기계음 밴드패스 (디젤은 1.5kHz 클래터)
   plp: BiquadFilterNode; // 팝 경로 로우패스 (엔진 경로보다 밝게)
   delay: DelayNode; // 배기관 도파관 공진 (지연 + 피드백)
   fb: GainNode;
@@ -273,7 +275,7 @@ async function buildAudio(): Promise<Audio> {
     numberOfOutputs: 3,
     outputChannelCount: [2, 2, 2],
   });
-  const hp = new BiquadFilterNode(ctx, { type: "highpass", frequency: 35 });
+  const hp = new BiquadFilterNode(ctx, { type: "highpass", frequency: 50, Q: 0.7 }); // 실측: 레브 중 100Hz 아래 에너지는 거의 없다
   const shelf = new BiquadFilterNode(ctx, { type: "lowshelf", frequency: 160, gain: -9 });
   const pk1 = new BiquadFilterNode(ctx, { type: "peaking", frequency: 120, Q: 2, gain: 8 });
   const pk2 = new BiquadFilterNode(ctx, { type: "peaking", frequency: 320, Q: 3, gain: 4 });
@@ -288,16 +290,17 @@ async function buildAudio(): Promise<Audio> {
   const shaper = new WaveShaperNode(ctx, { curve: shaperCurve(2), oversample: "2x" });
   const comp = new DynamicsCompressorNode(ctx, { threshold: -12, ratio: 4, attack: 0.003, release: 0.12 });
   const gain = new GainNode(ctx, { gain: 0.3 });
-  node.connect(hp).connect(shelf).connect(pk1).connect(pk2).connect(pk3).connect(hs).connect(lp).connect(pipe);
+  // 새추레이션(헤더 쪽 압력 포화)은 관 공진 앞에: 공진음과 배음이 비선형에서 섞이면 차음(差音)이 100Hz 아래를 채운다
+  node.connect(hp).connect(shelf).connect(pk1).connect(pk2).connect(pk3).connect(hs).connect(lp).connect(shaper).connect(pipe);
   pipe.connect(delay).connect(fbLp).connect(fb).connect(pipe);
-  pipe.connect(shaper).connect(comp);
+  pipe.connect(comp);
   const php = new BiquadFilterNode(ctx, { type: "highpass", frequency: 150, Q: 0.7 });
   const plp = new BiquadFilterNode(ctx, { type: "lowpass", frequency: 3500, Q: 0.7 });
   const pgain = new GainNode(ctx, { gain: 0.8 });
   node.connect(php, 1, 0);
   php.connect(plp).connect(pgain).connect(shaper);
   const ibp = new BiquadFilterNode(ctx, { type: "bandpass", frequency: 600, Q: 0.6 });
-  const igain = new GainNode(ctx, { gain: 0.25 });
+  const igain = new GainNode(ctx, { gain: 0.45 });
   node.connect(ibp, 2, 0);
   ibp.connect(igain).connect(comp);
   // 잔향: 0.35초 감쇠 노이즈 임펄스 (좌우 비상관) 12%
@@ -308,12 +311,12 @@ async function buildAudio(): Promise<Audio> {
     for (let i = 0; i < irLen; i++) d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (ctx.sampleRate * 0.09));
   }
   const conv = new ConvolverNode(ctx, { buffer: ir });
-  const wet = new GainNode(ctx, { gain: 0.12 });
+  const wet = new GainNode(ctx, { gain: 0.3 }); // 실측 아이들 크레스트 10~13dB — 반사음이 펄스 사이를 채운다
   comp.connect(gain);
   comp.connect(conv).connect(wet).connect(gain);
   gain.connect(ctx.destination);
   const P = (k: string) => node.parameters.get(k)!;
-  return { ctx, node, pk1, pk2, lp, shelf, pk3, hs, igain, plp, delay, fb, fbLp, shaper, gain, p: { rpm: P("rpm"), thr: P("thr"), cut: P("cut"), pop: P("pop") } };
+  return { ctx, node, pk1, pk2, lp, hp, shelf, pk3, hs, igain, ibp, plp, delay, fb, fbLp, shaper, gain, p: { rpm: P("rpm"), thr: P("thr"), cut: P("cut"), pop: P("pop") } };
 }
 
 /** 실린더 배치 아이콘: 직렬 한 줄, V 지그재그, 수평대향 두 줄 */
@@ -507,7 +510,7 @@ export default function EngineSim() {
   const simRef = useRef(newSim());
   const inputRef = useRef({ gas: 0, brake: false, thr: 0 }); // gas: 목표 개도 0~1
   const audioRef = useRef<Audio | null>(null);
-  type Live = Setup & { exhaust: ExhaustKind; pop: boolean; turbo: boolean };
+  type Live = Setup & { exhaust: ExhaustKind; pop: boolean; turbo: boolean; cycle: number };
   const live: Live = {
     cyl: eCyl,
     redline,
@@ -518,6 +521,7 @@ export default function EngineSim() {
     inertia: preset?.inertia ?? engineInertia(spec.liters, diesel),
     diesel,
     turbo,
+    cycle,
     veh,
     exhaust,
     pop: popOn && !diesel, // 디젤은 팝앤뱅 없음
@@ -533,7 +537,7 @@ export default function EngineSim() {
       fires,
       cycle,
       width: lay === "inline" ? 0 : 0.35,
-      jit: (diesel ? 0.35 : 0.15) + 0.3 / eCyl, // 사이클 간 연소 편차 — 디젤·소기통은 아이들이 거칠다
+      jit: (diesel ? 0.3 : 0.08) + 0.15 / eCyl, // 사이클 간 연소 편차 — 크면 저역 변조 잡음이 생긴다 (실측엔 없음)
       bank: lay === "flat" ? [1, 0.7] : [1, 0.85],
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -545,7 +549,7 @@ export default function EngineSim() {
     if (!a) return;
     const e = EXHAUST[exhaust];
     // 디젤: 짧고 거친 펄스 (클래터)
-    a.node.port.postMessage({ tau: e.tau * (diesel ? 0.7 : 1), noise: Math.min(0.9, e.noise + (diesel ? 0.25 : 0)), flow: e.flow });
+    a.node.port.postMessage({ tau: e.tau * (diesel ? 0.7 : 1), noise: Math.min(0.9, e.noise + (diesel ? 0.25 : 0)), flow: e.flow, mech: diesel ? 9 : 1 });
     a.pk1.frequency.value = e.f1;
     a.pk1.gain.value = e.g1;
     a.pk2.frequency.value = e.f1 * 2.7;
@@ -554,9 +558,12 @@ export default function EngineSim() {
     a.shelf.frequency.value = e.shelfHz;
     a.pk3.gain.value = turbo ? -4 : e.pres;
     // 터보: 터빈이 고역을 먹는다 (실측 WRX 터보백: 200Hz 위가 -12dB/oct 로 급감). 흡기도 조용하다
-    a.hs.gain.value = e.hs - (turbo ? 10 : 0);
-    a.lp.frequency.value = e.lp * (turbo ? 0.22 : 1);
-    a.igain.gain.value = turbo ? 0.12 : 0.25;
+    // 디젤: 실측 대형 디젤 트럭은 1~3kHz 클래터가 22~53% — 고역 셸프를 올리고 기계음 버스를 키운다
+    a.hs.gain.value = e.hs - (turbo ? 10 : 0) + (diesel ? 6 : 0);
+    a.lp.frequency.value = e.lp * (turbo ? 0.22 : 1) * (diesel ? 2 : 1);
+    a.igain.gain.value = diesel ? 1.2 : turbo ? 0.12 : 0.45; // 실측 레브 녹음엔 엔진룸 기계음이 섞여 300~1kHz 가 두텁다
+    a.ibp.frequency.value = diesel ? 900 : 600;
+    a.ibp.Q.value = diesel ? 0.5 : 0.6;
     a.plp.frequency.value = e.popLp;
     a.delay.delayTime.value = e.pipe;
     a.fb.gain.value = e.fb;
@@ -658,7 +665,11 @@ export default function EngineSim() {
         a.p.thr.setTargetAtTime(thrA, t, 0.03);
         a.p.cut.setValueAtTime(cut ? 1 : 0, t);
         a.p.pop.setValueAtTime(Math.min(1, pop), t);
-        a.lp.frequency.setTargetAtTime(EXHAUST[set.exhaust].lp * (set.turbo ? 0.22 : 1) * (0.55 + 0.45 * thrA), t, 0.05);
+        a.lp.frequency.setTargetAtTime(EXHAUST[set.exhaust].lp * (set.turbo ? 0.22 : 1) * (set.diesel ? 2 : 1) * (0.55 + 0.45 * thrA), t, 0.05);
+        // 테일파이프 저역 셸프는 점화 빈도에 비례: 드문 펄스(할리·단기통 아이들)는 저음이 살고, 레브에선 100Hz 아래를 깎는다
+        const fps = (set.cyl * sim.rpm * 6) / set.cycle;
+        a.shelf.gain.setTargetAtTime(EXHAUST[set.exhaust].shelf * Math.min(1, Math.max(0, (fps - 5) / 35)), t, 0.05);
+        a.hp.frequency.setTargetAtTime(Math.min(60, Math.max(35, fps * 0.9)), t, 0.05);
       }
       setView({
         rpm: cranking ? 250 : sim.rpm,

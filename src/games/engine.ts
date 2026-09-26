@@ -355,9 +355,12 @@ export const EXHAUST: Record<
   // 공통: 100~300Hz 가 지배적, 100Hz 아래는 15~40%. 차이는 300Hz 위 꼬리 — 순정은 500Hz 에서 -25dB, 오픈헤더는 8kHz 까지 -15~-25dB 로 평평.
   // tau: 배기 펄스 감쇠 (실제 블로다운 1~3ms). 8ms 였을 땐 200Hz 위가 사라져 먹먹했다.
   // 펄스 자체(tau 3~4ms, 100Hz 위 -6dB/oct)는 배기 종류와 무관하게 비슷하고, 머플러는 주로 고역 노이즈 바닥(flow)과 로우패스를 결정한다.
-  stock: { lp: 550, f1: 100, g1: 4, g2: 2, drive: 1.3, tau: 0.004, noise: 0.3, popMul: 0.4, popLp: 1500, vol: 0.6, pipe: 0.005, fb: 0.25, fbLp: 500, shelf: -4, shelfHz: 100, pres: 0, hs: -6, flow: 0.08 },
-  sport: { lp: 1800, f1: 130, g1: 3, g2: 1.5, drive: 2.2, tau: 0.003, noise: 0.45, popMul: 1, popLp: 3500, vol: 0.85, pipe: 0.004, fb: 0.3, fbLp: 1200, shelf: -10, shelfHz: 160, pres: 3, hs: -4, flow: 0.12 },
-  straight: { lp: 5000, f1: 150, g1: 8, g2: -3, drive: 3, tau: 0.003, noise: 0.65, popMul: 1.4, popLp: 7000, vol: 1, pipe: 0.004, fb: 0.25, fbLp: 3000, shelf: -18, shelfHz: 250, pres: -3, hs: -12, flow: 0.25 },
+  // shelf 는 점화 빈도에 비례해 적용(EngineSim): 아이들의 드문 펄스는 저음이 살고(실측 할리·단기통 아이들 60~70% <100Hz), 레브에선 100Hz 아래가 거의 없다.
+  // 셸프 코너는 레브 기본파(200~300Hz)를 건드리지 않게 낮게. pipe 공진은 길게 울려 펄스 사이를 채운다 (실측 크레스트 10~13dB).
+  // fb 는 음수: 열린 관 끝의 압력 반사는 위상이 반전돼 1/4파장 공진(홀수 배음, DC 봉우리 없음)이 된다. 양수면 DC 근처가 +5dB 부풀어 100Hz 아래가 과해진다.
+  stock: { lp: 550, f1: 100, g1: 4, g2: 2, drive: 1.3, tau: 0.004, noise: 0.3, popMul: 0.4, popLp: 1500, vol: 0.6, pipe: 0.005, fb: -0.35, fbLp: 500, shelf: -6, shelfHz: 80, pres: 0, hs: -6, flow: 0.08 },
+  sport: { lp: 2200, f1: 130, g1: 3, g2: 0.5, drive: 1.8, tau: 0.002, noise: 0.45, popMul: 1, popLp: 3500, vol: 0.85, pipe: 0.004, fb: -0.45, fbLp: 1200, shelf: -14, shelfHz: 110, pres: 2, hs: -2, flow: 0.12 },
+  straight: { lp: 5000, f1: 150, g1: 5, g2: -3, drive: 3, tau: 0.003, noise: 0.65, popMul: 1.4, popLp: 7000, vol: 1, pipe: 0.0035, fb: -0.4, fbLp: 3000, shelf: -18, shelfHz: 150, pres: -3, hs: -12, flow: 0.25 },
 };
 
 /**
@@ -386,6 +389,7 @@ class EngineProcessor extends AudioWorkletProcessor {
     this.flow = 0.12; // 연속 유동 노이즈 세기 (배기 종류별)
     this.fn = [0, 0]; // 유동 노이즈 저역 상태 (뱅크별, 스테레오 비상관)
     this.fnCoef = 1 - Math.exp((-2 * Math.PI * 1800) / sampleRate);
+    this.mech = 1; // 기계음(흡기 맥동·밸브 틱) 배율 — 디젤 클래터는 6 정도
     this.ienv = [0, 0]; // 흡기 맥동 (출력 2: 엔진 앞쪽 소리)
     this.tick = 0; // 밸브트레인 틱
     this.iDec = Math.exp(-1 / (0.005 * sampleRate));
@@ -410,6 +414,7 @@ class EngineProcessor extends AudioWorkletProcessor {
       if (d.tau) { this.tau = d.tau; this.decay = Math.exp(-1 / (d.tau * sampleRate)); }
       if (d.noise !== undefined) this.noise = d.noise;
       if (d.flow !== undefined) this.flow = d.flow;
+      if (d.mech !== undefined) this.mech = d.mech;
       if (d.jit !== undefined) this.jit = d.jit;
       if (d.width !== undefined) this.width = d.width;
       if (d.bank) this.bank = d.bank;
@@ -446,9 +451,10 @@ class EngineProcessor extends AudioWorkletProcessor {
           let a = f.a;
           if (a <= a0) a += cycle;
           if (a <= a1) {
-            if (!cut) env[f.b] += amp * bank[f.b] * (1 + jit * (Math.random() * 2 - 1));
-            ienv[f.b] += amp * 0.6 * (0.15 + 0.85 * thr); // 흡기는 컷 중에도 (공기는 계속 흐른다), 개도에 강하게 비례
-            this.tick += 0.05;
+            // 사이클 편차는 아이들에서 크고 회전이 오르면 준다 (편차가 크면 배음 옆띠가 100Hz 아래까지 번진다)
+            if (!cut) env[f.b] += amp * bank[f.b] * (1 + jit * Math.min(1, 1500 / Math.max(1, rpm)) * (Math.random() * 2 - 1));
+            ienv[f.b] += amp * 0.6 * (0.15 + 0.85 * thr) * this.mech; // 흡기는 컷 중에도 (공기는 계속 흐른다), 개도에 강하게 비례
+            this.tick += 0.05 * this.mech;
           }
         }
         this.ang = a1 >= cycle ? a1 - cycle : a1;
