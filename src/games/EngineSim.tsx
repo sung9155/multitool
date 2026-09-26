@@ -1,24 +1,30 @@
-import { useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import { useLang, type Lang } from "../components/i18n";
 import { useToolState } from "../components/toolState";
+import { LineChart, PALETTE } from "../components/charts";
 import {
+  CUSTOM_CURVE,
   EXHAUST,
   TRANS,
   WORKLET_SRC,
+  defaultOrder,
   effectiveLayout,
   engineName,
   firingPattern,
   idleRpm,
   newSim,
+  parseOrder,
   peakTorque,
   shift,
   stepSim,
+  torqueShape,
   type Crank,
   type ExhaustKind,
   type Layout,
   type Setup,
   type TransKind,
 } from "./engine";
+import { PRESETS, curveOf, cycleOf, dyno, findPreset, presetFires } from "./enginePresets";
 
 const L10N: Record<Lang, Record<string, string>> = {
   ko: {
@@ -62,6 +68,26 @@ const L10N: Record<Lang, Record<string, string>> = {
     launch: "LAUNCH",
     shifting: "SHIFT",
     torque: "Nm",
+    preset: "엔진",
+    custom: "직접 만들기 (기통수·배치 선택)",
+    real: "실제 엔진",
+    specCyl: "기통 · 배치",
+    disp: "배기량",
+    order: "점화순서",
+    orderHint: "번호열을 고쳐 쓰면 뱅크 패턴이 바뀌어 소리가 달라집니다 · 왼쪽 뱅크 =",
+    odd: "홀수 번호",
+    orderBad: "1~N 을 한 번씩 쓴 순열이 아니라 기본 순서로 냅니다",
+    idle: "아이들",
+    peakTq: "최대토크",
+    peakHp: "최고출력",
+    dyno: "다이노 (시뮬 토크 곡선)",
+    fuelGas: "가솔린",
+    fuelDiesel: "디젤",
+    strokes2: "2행정",
+    strokes4: "4행정",
+    turbo: "터보",
+    zero100: "0→100 km/h",
+    now: "현재",
   },
   en: {
     start: "🔑 Start",
@@ -104,6 +130,26 @@ const L10N: Record<Lang, Record<string, string>> = {
     launch: "LAUNCH",
     shifting: "SHIFT",
     torque: "Nm",
+    preset: "Engine",
+    custom: "Build your own (cylinders · layout)",
+    real: "Real engine",
+    specCyl: "Cylinders · layout",
+    disp: "Displacement",
+    order: "Firing order",
+    orderHint: "Retype the sequence to change the bank pattern and the sound · left bank =",
+    odd: "odd numbers",
+    orderBad: "Not a permutation of 1..N — using the default order",
+    idle: "Idle",
+    peakTq: "Peak torque",
+    peakHp: "Peak power",
+    dyno: "Dyno (simulated torque curve)",
+    fuelGas: "Gasoline",
+    fuelDiesel: "Diesel",
+    strokes2: "Two-stroke",
+    strokes4: "Four-stroke",
+    turbo: "Turbo",
+    zero100: "0→100 km/h",
+    now: "Now",
   },
   zh: {
     start: "🔑 点火",
@@ -146,6 +192,26 @@ const L10N: Record<Lang, Record<string, string>> = {
     launch: "LAUNCH",
     shifting: "SHIFT",
     torque: "Nm",
+    preset: "引擎",
+    custom: "自定义 (气缸数 · 布局)",
+    real: "真实引擎",
+    specCyl: "气缸 · 布局",
+    disp: "排量",
+    order: "点火顺序",
+    orderHint: "改写序列会改变缸组模式和声音 · 左缸组 =",
+    odd: "奇数缸",
+    orderBad: "不是 1..N 的排列 — 使用默认顺序",
+    idle: "怠速",
+    peakTq: "最大扭矩",
+    peakHp: "最大功率",
+    dyno: "测功 (模拟扭矩曲线)",
+    fuelGas: "汽油",
+    fuelDiesel: "柴油",
+    strokes2: "二冲程",
+    strokes4: "四冲程",
+    turbo: "涡轮",
+    zero100: "0→100 km/h",
+    now: "当前",
   },
 };
 
@@ -155,6 +221,7 @@ interface Audio {
   pk1: BiquadFilterNode;
   pk2: BiquadFilterNode;
   lp: BiquadFilterNode;
+  plp: BiquadFilterNode; // 팝 경로 로우패스 (엔진 경로보다 밝게)
   shaper: WaveShaperNode;
   gain: GainNode;
   p: Record<"rpm" | "thr" | "cut" | "pop", AudioParam>;
@@ -181,10 +248,11 @@ async function buildAudio(): Promise<Audio> {
     URL.revokeObjectURL(url);
   }
   await ctx.resume();
+  // 출력 0 = 엔진 배기 펄스, 출력 1 = 팝앤뱅 (밝은 별도 경로) → 같은 새추레이션·컴프로 합류
   const node = new AudioWorkletNode(ctx, "engine", {
     numberOfInputs: 0,
-    numberOfOutputs: 1,
-    outputChannelCount: [2],
+    numberOfOutputs: 2,
+    outputChannelCount: [2, 2],
   });
   const hp = new BiquadFilterNode(ctx, { type: "highpass", frequency: 35 });
   const pk1 = new BiquadFilterNode(ctx, { type: "peaking", frequency: 120, Q: 2, gain: 8 });
@@ -194,8 +262,35 @@ async function buildAudio(): Promise<Audio> {
   const comp = new DynamicsCompressorNode(ctx, { threshold: -12, ratio: 4, attack: 0.003, release: 0.12 });
   const gain = new GainNode(ctx, { gain: 0.3 });
   node.connect(hp).connect(pk1).connect(pk2).connect(lp).connect(shaper).connect(comp).connect(gain).connect(ctx.destination);
+  const php = new BiquadFilterNode(ctx, { type: "highpass", frequency: 150, Q: 0.7 });
+  const plp = new BiquadFilterNode(ctx, { type: "lowpass", frequency: 3500, Q: 0.7 });
+  const pgain = new GainNode(ctx, { gain: 0.8 });
+  node.connect(php, 1, 0);
+  php.connect(plp).connect(pgain).connect(shaper);
   const P = (k: string) => node.parameters.get(k)!;
-  return { ctx, node, pk1, pk2, lp, shaper, gain, p: { rpm: P("rpm"), thr: P("thr"), cut: P("cut"), pop: P("pop") } };
+  return { ctx, node, pk1, pk2, lp, plp, shaper, gain, p: { rpm: P("rpm"), thr: P("thr"), cut: P("cut"), pop: P("pop") } };
+}
+
+/** 실린더 배치 아이콘: 직렬 한 줄, V 지그재그, 수평대향 두 줄 */
+function LayoutIcon({ n, lay }: { n: number; lay: Layout }) {
+  const cols = lay === "inline" ? n : Math.ceil(n / 2);
+  const w = cols * 9 + 8;
+  const dots: [number, number][] = [];
+  for (let i = 0; i < n; i++) {
+    if (lay === "inline") dots.push([6 + i * 9, 10]);
+    else {
+      const col = Math.floor(i / 2);
+      const b = i % 2;
+      dots.push([6 + col * 9 + (lay === "vee" ? b * 4 : 0), b ? 15 : 5]);
+    }
+  }
+  return (
+    <svg width={w} height={20} viewBox={`0 0 ${w} 20`} className="shrink-0">
+      {dots.map(([x, y], i) => (
+        <circle key={i} cx={x} cy={y} r="3" fill="none" stroke="#a1a1aa" strokeWidth="1.3" />
+      ))}
+    </svg>
+  );
 }
 
 const SEG_ON = "bg-violet-600 text-white";
@@ -254,21 +349,22 @@ function Tach({
     const [x1, y1] = pt(a1, rad);
     return `M${x0},${y0} A${rad},${rad} 0 ${a1 - a0 > 180 ? 1 : 0} 1 ${x1},${y1}`;
   };
-  const ticks = Array.from({ length: max / 500 + 1 }, (_, i) => i * 500);
+  const major = max > 10000 ? 2000 : 1000; // 고회전 엔진은 2000 단위 라벨
+  const ticks = Array.from({ length: max / (major / 2) + 1 }, (_, i) => (i * major) / 2);
   return (
     <svg viewBox="0 0 200 200" className="mx-auto h-64 w-64 sm:h-72 sm:w-72">
       <circle cx="100" cy="100" r="96" fill="#09090b" stroke="#3f3f46" strokeWidth="2" />
       <path d={arc(-135, 135, 84)} fill="none" stroke="#27272a" strokeWidth="8" />
       <path d={arc(ang(redline), 135, 84)} fill="none" stroke="#dc2626" strokeWidth="8" />
       {ticks.map((r) => {
-        const major = r % 1000 === 0;
-        const [x0, y0] = pt(ang(r), major ? 70 : 74);
+        const isMajor = r % major === 0;
+        const [x0, y0] = pt(ang(r), isMajor ? 70 : 74);
         const [x1, y1] = pt(ang(r), 79);
         const [lx, ly] = pt(ang(r), 58);
         return (
           <g key={r}>
-            <line x1={x0} y1={y0} x2={x1} y2={y1} stroke={r >= redline ? "#f87171" : "#e4e4e7"} strokeWidth={major ? 2 : 1} />
-            {major && (
+            <line x1={x0} y1={y0} x2={x1} y2={y1} stroke={r >= redline ? "#f87171" : "#e4e4e7"} strokeWidth={isMajor ? 2 : 1} />
+            {isMajor && (
               <text x={lx} y={ly} textAnchor="middle" dominantBaseline="middle" fill={r >= redline ? "#f87171" : "#e4e4e7"} fontSize="11" fontWeight="700">
                 {r / 1000}
               </text>
@@ -319,47 +415,83 @@ export default function EngineSim() {
   const [lcOn, setLcOn] = useToolState("lc", false);
   const [lcRpm, setLcRpm] = useToolState("lcrpm", 4000);
   const [vol, setVol] = useToolState("vol", 70);
+  const [presetId, setPresetId] = useToolState("eng", "custom");
+  const [orderText, setOrderText] = useToolState("order", "");
   const layout = layoutRaw as Layout;
   const crank = crankRaw as Crank;
   const exhaust = exhaustRaw as ExhaustKind;
   const trans = transRaw as TransKind;
-  const lay = effectiveLayout(cyl, layout);
+  const preset = findPreset(presetId);
+  // 유효 엔진 사양: 프리셋이면 카탈로그 값, 아니면 기통수에서 추정
+  const eCyl = preset?.cyl ?? cyl;
+  const lay = effectiveLayout(eCyl, preset?.layout ?? layout);
+  const parsedOrder = orderText ? parseOrder(orderText, eCyl) : null;
+  const orderBad = orderText !== "" && !parsedOrder;
+  const fires = preset ? presetFires(preset, parsedOrder ?? undefined) : firingPattern(cyl, layout, crank, parsedOrder ?? undefined);
+  const firesKey = JSON.stringify(fires);
+  const cycle = preset ? cycleOf(preset) : 720;
+  const diesel = preset?.fuel === "diesel";
+  const spec = {
+    torque: preset?.torque ?? peakTorque(cyl),
+    idle: preset?.idle ?? idleRpm(cyl),
+    liters: preset?.liters ?? cyl * 0.5,
+    curve: preset ? curveOf(preset) : CUSTOM_CURVE,
+  };
+  const orderEditable = lay !== "inline" && !preset?.fires;
+  const orderDefault = (preset?.order ?? defaultOrder(eCyl, preset?.layout ?? layout, preset?.crank ?? crank)).join("-");
+  const dynoPts = dyno(spec.torque, spec.idle, redline, spec.curve);
+
+  // 프리셋을 바꾸면 그 엔진의 레드라인으로, 점화순서 편집은 초기화
+  const prevPreset = useRef(presetId);
+  useEffect(() => {
+    if (prevPreset.current === presetId) return;
+    prevPreset.current = presetId;
+    setOrderText("");
+    if (preset) setRedline(preset.redline);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [presetId]);
 
   const [running, setRunning] = useState(false);
   const [noAudio, setNoAudio] = useState(false);
-  const [view, setView] = useState({ rpm: 0, kmh: 0, gear: 0, cut: false, lc: false, shifting: false, cranking: false });
+  const [view, setView] = useState({ rpm: 0, kmh: 0, gear: 0, cut: false, lc: false, shifting: false, cranking: false, z100: null as number | null, nm: 0, hp: 0, slip: false });
   const [pressed, setPressed] = useState({ gas: 0, brake: false });
 
   const simRef = useRef(newSim());
   const inputRef = useRef({ gas: 0, brake: false, thr: 0 }); // gas: 목표 개도 0~1
   const audioRef = useRef<Audio | null>(null);
-  const setupRef = useRef<Setup & { exhaust: ExhaustKind; pop: boolean }>({ cyl, redline, trans, lcOn, lcRpm, exhaust, pop: popOn });
-  setupRef.current = { cyl, redline, trans, lcOn, lcRpm, exhaust, pop: popOn };
+  type Live = Setup & { exhaust: ExhaustKind; pop: boolean };
+  const live: Live = { cyl: eCyl, redline, trans, lcOn, lcRpm, ...spec, exhaust, pop: popOn && !diesel }; // 디젤은 팝앤뱅 없음
+  const setupRef = useRef<Live>(live);
+  setupRef.current = live;
 
   // 엔진 구성 → 워클릿
   useEffect(() => {
     const a = audioRef.current;
     if (!a) return;
     a.node.port.postMessage({
-      fires: firingPattern(cyl, layout, crank),
+      fires,
+      cycle,
       width: lay === "inline" ? 0 : 0.35,
-      jit: 0.08 + 0.25 / cyl,
+      jit: (diesel ? 0.3 : 0.08) + 0.25 / eCyl, // 디젤·소기통은 아이들이 거칠다
       bank: lay === "flat" ? [1, 0.7] : [1, 0.85],
     });
-  }, [cyl, layout, crank, lay, running]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [firesKey, cycle, lay, diesel, eCyl, running]);
 
   // 배기 → 필터 체인
   useEffect(() => {
     const a = audioRef.current;
     if (!a) return;
     const e = EXHAUST[exhaust];
-    a.node.port.postMessage({ tau: e.tau, noise: e.noise });
+    // 디젤: 짧고 거친 펄스 (클래터)
+    a.node.port.postMessage({ tau: e.tau * (diesel ? 0.7 : 1), noise: Math.min(0.9, e.noise + (diesel ? 0.25 : 0)) });
     a.pk1.frequency.value = e.f1;
     a.pk1.gain.value = e.g1;
     a.pk2.frequency.value = e.f1 * 2.7;
     a.pk2.gain.value = e.g1 / 2;
+    a.plp.frequency.value = e.popLp;
     a.shaper.curve = shaperCurve(e.drive);
-  }, [exhaust, running]);
+  }, [exhaust, diesel, running]);
 
   useEffect(() => {
     const a = audioRef.current;
@@ -394,7 +526,7 @@ export default function EngineSim() {
     setRunning(false);
     audioRef.current?.ctx.close();
     audioRef.current = null;
-    setView({ rpm: 0, kmh: 0, gear: 0, cut: false, lc: false, shifting: false, cranking: false });
+    setView({ rpm: 0, kmh: 0, gear: 0, cut: false, lc: false, shifting: false, cranking: false, z100: null as number | null, nm: 0, hp: 0, slip: false });
   };
   useEffect(() => () => void audioRef.current?.ctx.close(), []);
 
@@ -407,6 +539,8 @@ export default function EngineSim() {
     const sim = simRef.current;
     let liftAt = -1e9; // 엑셀 뗀 시각 — 직후 0.7초는 팝이 잦다 (미연소 연료 배출)
     let prevThr = 0;
+    let launchT = -1; // 0→100 타이머 시작 시각
+    let z100: number | null = null;
     const loop = (now: number) => {
       const dt = Math.min(0.05, (now - last) / 1000);
       last = now;
@@ -421,6 +555,14 @@ export default function EngineSim() {
       }
       if (prevThr > 0.4 && inp.thr < 0.1) liftAt = now;
       prevThr = inp.thr;
+      // 0→100 km/h: 정지에서 움직이기 시작한 순간부터 잰다
+      if (sim.v < 0.05) launchT = -1;
+      else if (launchT < 0) {
+        launchT = now;
+        z100 = null;
+      }
+      if (z100 === null && launchT >= 0 && sim.v >= 100 / 3.6) z100 = (now - launchT) / 1000;
+      const nm = (set.torque ?? 0) * torqueShape(sim.rpm / set.redline, set.curve ?? CUSTOM_CURVE) * inp.thr;
       const loaded = inp.thr > 0.2;
       // 변속컷은 부하 걸린 채 변속(플랫시프트)할 때만 — N→1 같은 무부하 변속엔 컷/팝 없음
       const cut = !cranking && (sim.cut || (sim.shiftT > 0 && tr.cutOnShift && loaded));
@@ -439,7 +581,7 @@ export default function EngineSim() {
       const a = audioRef.current;
       if (a) {
         const t = a.ctx.currentTime;
-        a.p.rpm.setTargetAtTime(cranking ? 250 : sim.rpm, t, 0.02);
+        a.p.rpm.setTargetAtTime(Math.min(20000, cranking ? 250 : sim.rpm), t, 0.02);
         a.p.thr.setTargetAtTime(thrA, t, 0.03);
         a.p.cut.setValueAtTime(cut ? 1 : 0, t);
         a.p.pop.setValueAtTime(Math.min(1, pop), t);
@@ -453,6 +595,10 @@ export default function EngineSim() {
         lc: sim.lc,
         shifting: sim.shiftT > 0,
         cranking,
+        z100,
+        nm,
+        hp: (nm * sim.rpm) / 7127,
+        slip: sim.slip,
       });
       raf = requestAnimationFrame(loop);
     };
@@ -506,6 +652,25 @@ export default function EngineSim() {
   }, [running]);
 
   const syncPressed = () => setPressed({ gas: inputRef.current.gas, brake: inputRef.current.brake });
+
+  // 탭이 가려지면 rAF 가 멈춰 마지막 rpm 소리가 계속 남 → 페달 해제 + 오디오 일시정지, 돌아오면 재개
+  useEffect(() => {
+    if (!running) return;
+    const onVis = () => {
+      const a = audioRef.current;
+      if (document.hidden) {
+        inputRef.current.gas = 0;
+        inputRef.current.brake = false;
+        syncPressed();
+        void a?.ctx.suspend();
+      } else {
+        void a?.ctx.resume();
+      }
+    };
+    document.addEventListener("visibilitychange", onVis);
+    return () => document.removeEventListener("visibilitychange", onVis);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [running]);
   // 포인터 캡처: 누른 채 손가락이 버튼 밖으로 나가도 유지, 놓으면 해제. 멀티터치는 포인터별이라 엑셀 누른 채 변속 가능
   const capture = (e: React.PointerEvent<HTMLElement>) => {
     e.preventDefault();
@@ -562,13 +727,27 @@ export default function EngineSim() {
   });
 
   const gears = TRANS[trans].gears;
-  const name = `${engineName(cyl, layout)}${lay === "vee" && cyl === 8 ? ` ${s(crank === "cross" ? "cross" : "flatplane")}` : ""} · ${(cyl * 0.5).toFixed(1)} L · ${peakTorque(cyl)} ${s("torque")}`;
+  const litersText = (l: number) => (l < 1 ? `${Math.round(l * 1000)} cc` : `${l.toFixed(1)} L`);
+  const name = preset
+    ? `${preset.real} · ${litersText(preset.liters)} · ${preset.torque} ${s("torque")}`
+    : `${engineName(cyl, layout)}${lay === "vee" && cyl === 8 ? ` ${s(crank === "cross" ? "cross" : "flatplane")}` : ""} · ${litersText(cyl * 0.5)} · ${peakTorque(cyl)} ${s("torque")}`;
 
   return (
     <div className="mx-auto max-w-2xl space-y-5">
       {/* 대시보드 */}
       <div className="select-none rounded-2xl border border-zinc-700 bg-zinc-950 p-4 text-white shadow-xl">
-        <div className="mb-1 text-center font-mono text-xs tracking-widest text-zinc-400">{name}</div>
+        <div className="mb-1 flex items-center justify-center gap-2 font-mono text-xs tracking-widest text-zinc-400">
+          <LayoutIcon n={eCyl} lay={lay} />
+          <span>{name}</span>
+        </div>
+        <div className="flex justify-center gap-4 font-mono text-[11px] text-zinc-500">
+          <span>
+            {s("now")} {Math.round(view.hp)} hp · {Math.round(view.nm)} Nm
+          </span>
+          <span>
+            {s("zero100")} {view.z100 === null ? "—" : `${view.z100.toFixed(2)} s`}
+          </span>
+        </div>
         <Tach
           rpm={view.rpm}
           redline={redline}
@@ -578,6 +757,7 @@ export default function EngineSim() {
             { text: s("limit"), on: view.cut && !view.lc, color: "#dc2626" },
             { text: s("launch"), on: view.lc, color: "#2563eb" },
             { text: s("shifting"), on: view.shifting, color: "#d97706" },
+            { text: "SLIP", on: view.slip, color: "#ea580c" },
           ]}
         />
 
@@ -652,6 +832,53 @@ export default function EngineSim() {
 
       {/* 설정 */}
       <div className="grid gap-5 sm:grid-cols-2">
+        {/* 엔진 프리셋 (실제 스펙) 또는 직접 만들기 */}
+        <label className="block sm:col-span-2">
+          <div className="mb-1 text-sm font-medium text-zinc-700 dark:text-zinc-300">{s("preset")}</div>
+          <select
+            value={preset ? presetId : "custom"}
+            onChange={(e) => setPresetId(e.target.value)}
+            className="w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-violet-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+          >
+            <option value="custom">{s("custom")}</option>
+            {PRESETS.map((p) => (
+              <option key={p.id} value={p.id}>
+                {lang === "ko" ? `${p.name} — ${p.real}` : `${p.real} · ${p.cyl} cyl · ${litersText(p.liters)}`}
+              </option>
+            ))}
+          </select>
+        </label>
+        {preset && (
+          <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 rounded-xl border border-zinc-200 p-4 text-sm dark:border-zinc-700 sm:col-span-2 sm:grid-cols-[auto_1fr_auto_1fr]">
+            {(
+              [
+                [s("real"), preset.real],
+                [
+                  s("specCyl"),
+                  `${engineName(preset.cyl, preset.layout)}${preset.bank ? ` · ${preset.bank}°` : ""}${
+                    preset.crank ? ` · ${s(preset.crank === "cross" ? "cross" : "flatplane")}` : ""
+                  }`,
+                ],
+                [
+                  s("disp"),
+                  `${litersText(preset.liters)} · ${s(preset.fuel === "diesel" ? "fuelDiesel" : "fuelGas")}${
+                    preset.turbo ? ` · ${s("turbo")}` : ""
+                  } · ${s(preset.strokes === 2 ? "strokes2" : "strokes4")}`,
+                ],
+                [s("idle"), `${preset.idle} rpm`],
+                [s("peakTq"), `${preset.torque} Nm @ ${preset.torqueRpm}`],
+                [s("peakHp"), `${preset.hp} hp @ ${preset.hpRpm}`],
+              ] as [string, string][]
+            ).map(([k, v]) => (
+              <Fragment key={k}>
+                <dt className="text-zinc-500">{k}</dt>
+                <dd className="font-mono text-zinc-800 dark:text-zinc-200">{v}</dd>
+              </Fragment>
+            ))}
+          </dl>
+        )}
+        {!preset && (
+          <>
         <label className="block">
           <div className="mb-1 flex justify-between text-sm font-medium text-zinc-700 dark:text-zinc-300">
             <span>{s("cyl")}</span>
@@ -688,6 +915,23 @@ export default function EngineSim() {
             </div>
           )}
         </div>
+          </>
+        )}
+        {orderEditable && (
+          <label className="block sm:col-span-2">
+            <div className="mb-1 text-sm font-medium text-zinc-700 dark:text-zinc-300">{s("order")}</div>
+            <input
+              value={orderText}
+              placeholder={orderDefault}
+              spellCheck={false}
+              onChange={(e) => setOrderText(e.target.value)}
+              className="w-full rounded-md border border-zinc-300 bg-white px-3 py-2 font-mono text-sm text-zinc-900 outline-none focus:border-violet-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+            />
+            <p className={`mt-1 text-xs ${orderBad ? "text-red-500" : "text-zinc-500"}`}>
+              {orderBad ? s("orderBad") : `${s("orderHint")} ${preset?.bankMap === "halves" ? `1–${eCyl / 2}` : s("odd")}`}
+            </p>
+          </label>
+        )}
         <div>
           <div className="mb-1 text-sm font-medium text-zinc-700 dark:text-zinc-300">{s("exhaust")}</div>
           <Seg
@@ -720,7 +964,7 @@ export default function EngineSim() {
               <span>{s("redline")}</span>
               <span className="font-mono">{redline}</span>
             </div>
-            <input type="range" min={5000} max={10000} step={250} value={redline} onChange={(e) => setRedline(Number(e.target.value))} className="w-full accent-red-600" />
+            <input type="range" min={3000} max={20000} step={250} value={redline} onChange={(e) => setRedline(Number(e.target.value))} className="w-full accent-red-600" />
           </label>
           <label className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300">
             <input type="checkbox" checked={popOn} onChange={(e) => setPopOn(e.target.checked)} className="accent-violet-600" />
@@ -748,6 +992,23 @@ export default function EngineSim() {
             <input type="range" min={0} max={100} step={5} value={vol} onChange={(e) => setVol(Number(e.target.value))} className="w-full accent-violet-600" />
           </label>
         </div>
+      </div>
+
+      {/* 다이노: 시뮬 토크·출력 곡선, 엔진 켜져 있으면 현재 rpm 마커 */}
+      <div className="rounded-xl border border-zinc-200 p-4 dark:border-zinc-700">
+        <div className="mb-2 text-sm font-semibold text-zinc-800 dark:text-zinc-200">{s("dyno")}</div>
+        <LineChart
+          series={[
+            { points: dynoPts.map((d) => ({ x: d.rpm, y: d.nm })), color: PALETTE.amber, label: "Nm" },
+            { points: dynoPts.map((d) => ({ x: d.rpm, y: d.hp })), color: PALETTE.indigo, label: "hp" },
+          ]}
+          xMin={spec.idle}
+          xMax={redline}
+          yMin={0}
+          xUnit="rpm"
+          height={200}
+          markerX={running ? view.rpm : null}
+        />
       </div>
 
       <div className="rounded-xl bg-zinc-100 p-4 text-xs leading-relaxed text-zinc-600 dark:bg-zinc-900 dark:text-zinc-400">

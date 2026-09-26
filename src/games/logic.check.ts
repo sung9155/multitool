@@ -20,18 +20,25 @@ import {
   type Pad,
 } from "./logic.ts";
 import {
+  defaultOrder,
   effectiveLayout,
   engineName,
+  firesFromOrder,
   firingPattern,
   gearRatios,
+  halvesOf,
   idleRpm,
   newSim,
+  oddEven,
+  parseOrder,
+  revRate,
   shift,
   stepSim,
   torqueShape,
   wheelRpm,
   type Setup,
 } from "./engine.ts";
+import { PRESETS, curveOf, cycleOf, findPreset, hpAt, presetFires, torqueAt } from "./enginePresets.ts";
 
 // ── 스택: 겹침 계산 ──────────────────────────────────────
 const base = { x: 100, w: 100 }; // [100,200]
@@ -609,6 +616,84 @@ assert.deepEqual(resolveLanding([cyl], 27, 0), {
 
   // 토크 곡선 형태
   assert.ok(torqueShape(0.6) === 1 && torqueShape(0.1) < torqueShape(0.6) && torqueShape(1) < 1);
+
+  // 점화순서 파싱 · 순서 지정 패턴
+  assert.deepEqual(parseOrder("1-8-4-3-6-5-7-2", 8), [1, 8, 4, 3, 6, 5, 7, 2]);
+  assert.equal(parseOrder("1-8-4-3-6-5-7", 8), null);
+  assert.equal(parseOrder("1-1-4-3-6-5-7-2", 8), null);
+  assert.equal(parseOrder("1 8 4 3 6 5 7 9", 8), null);
+  assert.deepEqual(firesFromOrder([1, 5, 4, 8, 6, 3, 7, 2], halvesOf(8)).map((f) => f.b), [0, 1, 0, 1, 1, 0, 1, 0], "Ford 크로스플레인 뱅크 패턴");
+  assert.deepEqual(firingPattern(8, "vee", "cross", [1, 2, 3, 4, 5, 6, 7, 8]).map((f) => f.b), [0, 1, 0, 1, 0, 1, 0, 1]);
+  assert.deepEqual(firingPattern(4, "inline", "cross", [1, 3, 4, 2]).map((f) => f.b), [0, 0, 0, 0], "직렬은 뱅크 하나");
+  const d8 = defaultOrder(8, "vee", "cross");
+  assert.deepEqual([...d8].sort((a, b) => a - b), [1, 2, 3, 4, 5, 6, 7, 8]);
+  assert.deepEqual(firingPattern(8, "vee", "cross", d8).map((f) => f.b), [0, 1, 1, 0, 1, 0, 0, 1], "기본 순서는 기본 패턴 재현");
+  assert.deepEqual(firesFromOrder([1, 2, 3], oddEven, 360).map((f) => f.a), [0, 120, 240], "2행정 360° 사이클");
+
+  // 회전 상승률 범위, 큰 엔진이 느림
+  assert.ok(revRate(200, 2, 7500) > revRate(570, 5.9, 3200));
+  assert.ok(revRate(1, 100, 1000) >= 4000 && revRate(1e6, 0.1, 20000) <= 24000);
+}
+
+// ── 엔진 프리셋 ──────────────────────────────────────────
+{
+  const ids = new Set<string>();
+  for (const p of PRESETS) {
+    assert.ok(!ids.has(p.id), `중복 id ${p.id}`);
+    ids.add(p.id);
+    assert.ok(p.cyl >= 1 && p.cyl <= 12 && p.redline > p.idle && p.torque > 0 && p.liters > 0, p.id);
+    if (p.order) assert.deepEqual([...p.order].sort((a, b) => a - b), Array.from({ length: p.cyl }, (_, i) => i + 1), `${p.id} 점화순서`);
+    const fires = presetFires(p);
+    assert.equal(fires.length, p.cyl, `${p.id} 점화 수`);
+    const cyc = cycleOf(p);
+    assert.ok(fires.every((f) => f.a >= 0 && f.a < cyc && (f.b === 0 || f.b === 1)), `${p.id} 점화각`);
+    const c = curveOf(p);
+    assert.ok(c.end >= 0.3 && c.end <= 1 && c.peakAt > 0 && c.peakAt < 1, `${p.id} 곡선`);
+    // 곡선이 카탈로그 출력에 근접 (±20%)
+    let hpMax = 0;
+    for (let r = p.idle; r <= p.redline; r += 50) hpMax = Math.max(hpMax, hpAt(p, r));
+    assert.ok(Math.abs(hpMax - p.hp) / p.hp < 0.2, `${p.id} 출력 ${hpMax.toFixed(0)} vs ${p.hp}`);
+    assert.ok(Math.abs(torqueAt(p, p.torqueRpm) - p.torque) < 1e-6, `${p.id} 최대토크점`);
+  }
+  // 수평대향 4기통(스바루)은 한 뱅크 두 번 연속 → R R L L
+  assert.deepEqual(presetFires(findPreset("ej20")!).map((f) => f.b), [0, 0, 1, 1]);
+  // 포르쉐 수평대향 6기통은 교대
+  assert.deepEqual(presetFires(findPreset("m64")!).map((f) => f.b), [0, 1, 0, 1, 0, 1]);
+  // 할리 315/405 부등간격
+  assert.deepEqual(presetFires(findPreset("evo1340")!).map((f) => f.a), [0, 315]);
+  // 사용자가 순서를 바꾸면 뱅크 패턴이 바뀐다 (크로스 → 교대)
+  assert.deepEqual(presetFires(findPreset("coyote")!, [1, 5, 2, 6, 3, 7, 4, 8]).map((f) => f.b), [0, 1, 0, 1, 0, 1, 0, 1]);
+  // 프리셋으로 물리: F1 V8 중립 풀스로틀 3초면 리미터 근처
+  const f1 = findPreset("ca2006")!;
+  const fset: Setup = { cyl: f1.cyl, redline: f1.redline, trans: "mt", lcOn: false, lcRpm: 4000, torque: f1.torque, idle: f1.idle, liters: f1.liters, curve: curveOf(f1) };
+  const fs = newSim();
+  fs.rpm = f1.idle;
+  for (let i = 0; i < 180; i++) stepSim(fs, { thr: 1, brake: false }, fset, 1 / 60);
+  assert.ok(fs.rpm > 17000 && fs.rpm <= f1.redline + 150, `F1 회전 ${fs.rpm}`);
+  // 코요테 V8 0→100 km/h: 접지 한계(0.65g) 때문에 3.5~6초 (무제한이면 2.7초)
+  const cy = findPreset("coyote")!;
+  const cset: Setup = { ...fset, cyl: cy.cyl, redline: cy.redline, torque: cy.torque, idle: cy.idle, liters: cy.liters, curve: curveOf(cy) };
+  const cs = newSim();
+  cs.rpm = cy.idle;
+  shift(cs, 1, cset);
+  let t100 = -1;
+  let slipped = false;
+  for (let i = 0; i < 600 && t100 < 0; i++) {
+    if (cs.rpm > cy.redline - 200 && cs.shiftT <= 0) shift(cs, 1, cset);
+    stepSim(cs, { thr: 1, brake: false }, cset, 1 / 60);
+    slipped ||= cs.slip;
+    if (cs.v >= 100 / 3.6) t100 = i / 60;
+  }
+  assert.ok(t100 > 3.5 && t100 < 6, `코요테 0→100 ${t100.toFixed(2)}s`);
+  assert.ok(slipped, "출발 시 접지 한계에 걸려야");
+  // 디젤 1단 발진도 됨
+  const dz = findPreset("6bt")!;
+  const dset: Setup = { ...fset, cyl: dz.cyl, redline: dz.redline, torque: dz.torque, idle: dz.idle, liters: dz.liters, curve: curveOf(dz) };
+  const ds = newSim();
+  ds.rpm = dz.idle;
+  shift(ds, 1, dset);
+  for (let i = 0; i < 300; i++) stepSim(ds, { thr: 1, brake: false }, dset, 1 / 60);
+  assert.ok(ds.v > 5 && ds.rpm <= dz.redline + 150, `디젤 발진 ${ds.v} ${ds.rpm}`);
 }
 
 console.log("games logic ok");
