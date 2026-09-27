@@ -358,9 +358,10 @@ export const EXHAUST: Record<
   // shelf 는 점화 빈도에 비례해 적용(EngineSim): 아이들의 드문 펄스는 저음이 살고(실측 할리·단기통 아이들 60~70% <100Hz), 레브에선 100Hz 아래가 거의 없다.
   // 셸프 코너는 레브 기본파(200~300Hz)를 건드리지 않게 낮게. pipe 공진은 길게 울려 펄스 사이를 채운다 (실측 크레스트 10~13dB).
   // fb 는 음수: 열린 관 끝의 압력 반사는 위상이 반전돼 1/4파장 공진(홀수 배음, DC 봉우리 없음)이 된다. 양수면 DC 근처가 +5dB 부풀어 100Hz 아래가 과해진다.
-  stock: { lp: 550, f1: 100, g1: 4, g2: 2, drive: 1.3, tau: 0.004, noise: 0.3, popMul: 0.4, popLp: 1500, vol: 0.6, pipe: 0.005, fb: -0.35, fbLp: 500, shelf: -6, shelfHz: 80, pres: 0, hs: -6, flow: 0.08 },
-  sport: { lp: 2200, f1: 130, g1: 3, g2: 0.5, drive: 1.8, tau: 0.002, noise: 0.45, popMul: 1, popLp: 3500, vol: 0.85, pipe: 0.004, fb: -0.45, fbLp: 1200, shelf: -14, shelfHz: 110, pres: 2, hs: -2, flow: 0.12 },
-  straight: { lp: 5000, f1: 150, g1: 5, g2: -3, drive: 3, tau: 0.003, noise: 0.65, popMul: 1.4, popLp: 7000, vol: 1, pipe: 0.0035, fb: -0.4, fbLp: 3000, shelf: -18, shelfHz: 150, pres: -3, hs: -12, flow: 0.25 },
+  // flow·fb 는 낮게: 광대역 노이즈가 공진관을 지나면 '소라 껍데기' 휘파람이 된다. 녹음의 배음 사이 바닥은 바람·공간음이라 엔진음 기준으로 맞추지 않는다.
+  stock: { lp: 550, f1: 100, g1: 4, g2: 2, drive: 1.3, tau: 0.004, noise: 0.15, popMul: 0.4, popLp: 1500, vol: 0.6, pipe: 0.005, fb: -0.12, fbLp: 500, shelf: -6, shelfHz: 80, pres: 0, hs: -6, flow: 0 },
+  sport: { lp: 2200, f1: 130, g1: 3, g2: 0.5, drive: 1.8, tau: 0.002, noise: 0.2, popMul: 1, popLp: 3500, vol: 0.85, pipe: 0.004, fb: -0.15, fbLp: 1200, shelf: -14, shelfHz: 110, pres: 2, hs: -2, flow: 0 },
+  straight: { lp: 5000, f1: 150, g1: 5, g2: -3, drive: 3, tau: 0.003, noise: 0.3, popMul: 1.4, popLp: 7000, vol: 1, pipe: 0.0035, fb: -0.15, fbLp: 3000, shelf: -18, shelfHz: 150, pres: -3, hs: -12, flow: 0.02 },
 };
 
 /**
@@ -388,7 +389,7 @@ class EngineProcessor extends AudioWorkletProcessor {
     this.att = 1 - Math.exp(-1 / (0.0008 * sampleRate));
     this.flow = 0.12; // 연속 유동 노이즈 세기 (배기 종류별)
     this.fn = [0, 0]; // 유동 노이즈 저역 상태 (뱅크별, 스테레오 비상관)
-    this.fnCoef = 1 - Math.exp((-2 * Math.PI * 1800) / sampleRate);
+    this.fnCoef = 1 - Math.exp((-2 * Math.PI * 900) / sampleRate); // 고역 히스보다 낮은 '숨소리' 대역
     this.mech = 1; // 기계음(흡기 맥동·밸브 틱) 배율 — 디젤 클래터는 6 정도
     this.ienv = [0, 0]; // 흡기 맥동 (출력 2: 엔진 앞쪽 소리)
     this.tick = 0; // 밸브트레인 틱

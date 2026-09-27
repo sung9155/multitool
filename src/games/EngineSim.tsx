@@ -277,9 +277,10 @@ async function buildAudio(): Promise<Audio> {
   });
   const hp = new BiquadFilterNode(ctx, { type: "highpass", frequency: 50, Q: 0.7 }); // 실측: 레브 중 100Hz 아래 에너지는 거의 없다
   const shelf = new BiquadFilterNode(ctx, { type: "lowshelf", frequency: 160, gain: -9 });
-  const pk1 = new BiquadFilterNode(ctx, { type: "peaking", frequency: 120, Q: 2, gain: 8 });
-  const pk2 = new BiquadFilterNode(ctx, { type: "peaking", frequency: 320, Q: 3, gain: 4 });
-  const pk3 = new BiquadFilterNode(ctx, { type: "peaking", frequency: 500, Q: 1.5, gain: 0 });
+  // 피킹 Q 는 낮게: Q 가 높으면 펄스마다 필터가 울려 휘파람처럼 들린다
+  const pk1 = new BiquadFilterNode(ctx, { type: "peaking", frequency: 120, Q: 1.0, gain: 8 });
+  const pk2 = new BiquadFilterNode(ctx, { type: "peaking", frequency: 320, Q: 1.2, gain: 4 });
+  const pk3 = new BiquadFilterNode(ctx, { type: "peaking", frequency: 500, Q: 1.0, gain: 0 });
   const hs = new BiquadFilterNode(ctx, { type: "highshelf", frequency: 600, gain: -4 });
   const lp = new BiquadFilterNode(ctx, { type: "lowpass", frequency: 800, Q: 0.7 });
   // 배기관 도파관: 합산 노드 → 지연 → 로우패스 → 피드백 → 합산 노드 (파이프 길이의 정상파 배음)
@@ -300,7 +301,7 @@ async function buildAudio(): Promise<Audio> {
   node.connect(php, 1, 0);
   php.connect(plp).connect(pgain).connect(shaper);
   const ibp = new BiquadFilterNode(ctx, { type: "bandpass", frequency: 600, Q: 0.6 });
-  const igain = new GainNode(ctx, { gain: 0.45 });
+  const igain = new GainNode(ctx, { gain: 0.08 });
   node.connect(ibp, 2, 0);
   ibp.connect(igain).connect(comp);
   // 잔향: 0.35초 감쇠 노이즈 임펄스 (좌우 비상관) 12%
@@ -311,7 +312,7 @@ async function buildAudio(): Promise<Audio> {
     for (let i = 0; i < irLen; i++) d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (ctx.sampleRate * 0.09));
   }
   const conv = new ConvolverNode(ctx, { buffer: ir });
-  const wet = new GainNode(ctx, { gain: 0.3 }); // 실측 아이들 크레스트 10~13dB — 반사음이 펄스 사이를 채운다
+  const wet = new GainNode(ctx, { gain: 0 }); // 노이즈 임펄스 잔향은 '관에 대고 듣는' 느낌을 만든다 — 끔 (ponytail: 공간감은 필요해지면 실측 IR 로)
   comp.connect(gain);
   comp.connect(conv).connect(wet).connect(gain);
   gain.connect(ctx.destination);
@@ -561,7 +562,7 @@ export default function EngineSim() {
     // 디젤: 실측 대형 디젤 트럭은 1~3kHz 클래터가 22~53% — 고역 셸프를 올리고 기계음 버스를 키운다
     a.hs.gain.value = e.hs - (turbo ? 10 : 0) + (diesel ? 6 : 0);
     a.lp.frequency.value = e.lp * (turbo ? 0.22 : 1) * (diesel ? 2 : 1);
-    a.igain.gain.value = diesel ? 1.2 : turbo ? 0.12 : 0.45; // 실측 레브 녹음엔 엔진룸 기계음이 섞여 300~1kHz 가 두텁다
+    a.igain.gain.value = diesel ? 1.2 : turbo ? 0.05 : 0.08; // 노이즈 버스라 크면 '휘휘' 바람 소리가 된다
     a.ibp.frequency.value = diesel ? 900 : 600;
     a.ibp.Q.value = diesel ? 0.5 : 0.6;
     a.plp.frequency.value = e.popLp;
