@@ -438,7 +438,7 @@ class EngineProcessor extends AudioWorkletProcessor {
     const c01 = (x) => (x < 0 ? 0 : x > 1 ? 1 : x);
     const ov = 1 - 0.6 * c01((rpm - 2000) / 1000) * (1 - c01(thr / 0.1));
     const amp = ((0.3 + 0.7 * thr) * ov) / Math.sqrt(Math.max(1, fps * this.tau)); // 펄스 겹침 정규화
-    const pp = pop * 0.55; // 배기 이벤트당 후연소 확률 (pop=1 이면 절반 이상 → 기관총 크래클)
+    const pp = pop * 0.25; // 배기 이벤트당 후연소 확률 (pop=1 이면 1/4 → 촘촘하되 기관총은 아님)
     const pimp = this.pimp, pcr = this.pcr, pcrDec = this.pcrDec, ptl = this.ptl, lastW = this.lastW, bn = this.bn, fuel = this.fuel;
     const impDec = this.impDec, tlDec = this.tlDec;
     // 출력 1 이 연결돼 있으면 팝은 그쪽(밝은 별도 필터 경로)으로, 아니면 엔진 출력에 섞는다
@@ -463,7 +463,7 @@ class EngineProcessor extends AudioWorkletProcessor {
             const b = f.b;
             if (pp > 0) {
               if (Math.random() < pp) {
-                const A = 0.8 + 0.5 * Math.random() + 0.45 * fuel[b];
+                const A = 0.7 + 0.4 * Math.random() + 0.3 * fuel[b];
                 const big = A > 1.8;
                 pimp[b] = A * 1.3; pcr[b] = A * 0.7; pcrDec[b] = big ? this.crDecBang : this.crDecPop; ptl[b] = big ? A * 0.35 : A * 0.08;
                 fuel[b] = 0;

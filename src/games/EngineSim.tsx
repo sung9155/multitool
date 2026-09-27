@@ -297,7 +297,7 @@ async function buildAudio(): Promise<Audio> {
   pipe.connect(comp);
   const php = new BiquadFilterNode(ctx, { type: "highpass", frequency: 150, Q: 0.7 });
   const plp = new BiquadFilterNode(ctx, { type: "lowpass", frequency: 3500, Q: 0.7 });
-  const pgain = new GainNode(ctx, { gain: 2.0 }); // 뱅은 새추레이션을 넘길 만큼 크게 — 배기관 공진도 같이 울린다
+  const pgain = new GainNode(ctx, { gain: 1.3 }); // 뱅이 새추레이션을 살짝 넘길 정도
   node.connect(php, 1, 0);
   php.connect(plp).connect(pgain).connect(shaper);
   const ibp = new BiquadFilterNode(ctx, { type: "bandpass", frequency: 600, Q: 0.6 });
@@ -655,9 +655,9 @@ export default function EngineSim() {
       const sinceLift = (now - liftAt) / 1000;
       const overrun =
         inp.thr < 0.15 && sim.rpm > 1800
-          ? liftK * Math.min(1, (sim.rpm - 1800) / 1500) * (0.15 + 0.85 * Math.exp(-sinceLift / 1.2))
+          ? liftK * Math.min(1, (sim.rpm - 1800) / 1500) * (0.06 + 0.94 * Math.exp(-sinceLift / 0.8))
           : 0;
-      const pop = set.pop && !cranking ? EXHAUST[set.exhaust].popMul * (cut ? (loaded ? 0.7 : 0) : overrun) : 0;
+      const pop = set.pop && !cranking ? EXHAUST[set.exhaust].popMul * (cut ? (loaded ? 0.5 : 0) : overrun) : 0;
       const thrA = sim.blipT > 0 ? Math.max(inp.thr, 0.7) : inp.thr; // 다운시프트 레브매칭 블립
       const a = audioRef.current;
       if (a) {
