@@ -297,11 +297,11 @@ async function buildAudio(): Promise<Audio> {
   pipe.connect(comp);
   const php = new BiquadFilterNode(ctx, { type: "highpass", frequency: 150, Q: 0.7 });
   const plp = new BiquadFilterNode(ctx, { type: "lowpass", frequency: 3500, Q: 0.7 });
-  const pgain = new GainNode(ctx, { gain: 0.8 });
+  const pgain = new GainNode(ctx, { gain: 1.3 });
   node.connect(php, 1, 0);
   php.connect(plp).connect(pgain).connect(shaper);
   const ibp = new BiquadFilterNode(ctx, { type: "bandpass", frequency: 600, Q: 0.6 });
-  const igain = new GainNode(ctx, { gain: 0.08 });
+  const igain = new GainNode(ctx, { gain: 0.03 });
   node.connect(ibp, 2, 0);
   ibp.connect(igain).connect(comp);
   // 잔향: 0.35초 감쇠 노이즈 임펄스 (좌우 비상관) 12%
@@ -562,7 +562,7 @@ export default function EngineSim() {
     // 디젤: 실측 대형 디젤 트럭은 1~3kHz 클래터가 22~53% — 고역 셸프를 올리고 기계음 버스를 키운다
     a.hs.gain.value = e.hs - (turbo ? 10 : 0) + (diesel ? 6 : 0);
     a.lp.frequency.value = e.lp * (turbo ? 0.22 : 1) * (diesel ? 2 : 1);
-    a.igain.gain.value = diesel ? 1.2 : turbo ? 0.05 : 0.08; // 노이즈 버스라 크면 '휘휘' 바람 소리가 된다
+    a.igain.gain.value = diesel ? 1.2 : 0.03; // 흡기/기계음은 테일파이프 관점에선 거의 안 들린다 (엔진룸 소리처럼 되지 않게)
     a.ibp.frequency.value = diesel ? 900 : 600;
     a.ibp.Q.value = diesel ? 0.5 : 0.6;
     a.plp.frequency.value = e.popLp;
@@ -616,8 +616,11 @@ export default function EngineSim() {
     let last = performance.now();
     const startAt = last + 500; // 크랭킹
     const sim = simRef.current;
-    let liftAt = -1e9; // 엑셀 뗀 시각 — 직후 0.7초는 팝이 잦다 (미연소 연료 배출)
-    let prevThr = 0;
+    // 팝앤뱅 원리: 엑셀을 떼면 ECU 가 연료를 계속 뿌리고 점화를 지각 → 미연소 혼합기가 뜨거운 배기관에서 터진다.
+    // 높은 rpm 에서 뗄수록(연료·열이 많음) 크고, 뗀 직후 최대, rpm 이 떨어지며 잦아든다. 중립 블립도 같다.
+    let liftAt = -1e9; // 엑셀 뗀 시각
+    let highAt = -1e9; // 마지막으로 개도 40% 이상이던 시각
+    let liftK = 0; // 뗄 때 rpm 에 따른 세기 0~1
     let launchT = -1; // 0→100 타이머 시작 시각
     let z100: number | null = null;
     const loop = (now: number) => {
@@ -632,8 +635,11 @@ export default function EngineSim() {
         inp.thr += Math.max(-dt * 10, Math.min(dt * 6, inp.gas - inp.thr));
         stepSim(sim, { thr: inp.thr, brake: inp.brake }, set, dt);
       }
-      if (prevThr > 0.4 && inp.thr < 0.1) liftAt = now;
-      prevThr = inp.thr;
+      if (inp.thr > 0.4) highAt = now;
+      if (inp.thr < 0.15 && now - highAt < 400 && now - liftAt > 400) {
+        liftAt = now; // 뗀 직후 한 번만
+        liftK = Math.min(1, Math.max(0, (sim.rpm - 2000) / 3500)); // 2000rpm 이하에서 떼면 없음, 5500 이상이면 최대
+      }
       // 0→100 km/h: 정지에서 움직이기 시작한 순간부터 잰다
       if (sim.v < 0.05) launchT = -1;
       else if (launchT < 0) {
@@ -645,15 +651,11 @@ export default function EngineSim() {
       const loaded = inp.thr > 0.2;
       // 변속컷은 부하 걸린 채 변속(플랫시프트)할 때만 — N→1 같은 무부하 변속엔 컷/팝 없음
       const cut = !cranking && (sim.cut || (sim.shiftT > 0 && tr.cutOnShift && loaded));
-      // 오버런 팝: 엑셀 뗀 순간 크게 터지고 ~1초 시정수로 잦아듦(ECU 가 연료컷으로 넘어감), rpm 2200 부터 5000 까지 비례,
-      // 기어 물린 상태(엔진 브레이크)에서만 제대로 — 중립 공회전 리프트는 몇 발만
+      // 오버런 팝: 뗀 직후 최대(liftK), 1.2초 시정수로 잦아듦, rpm 이 1800 근처로 내려오면 멈춤. 기어 물림/중립 동일
       const sinceLift = (now - liftAt) / 1000;
       const overrun =
-        inp.thr < 0.1 && sim.rpm > 2200
-          ? 0.8 *
-            Math.min(1, (sim.rpm - 2200) / 2800) *
-            (0.12 + 0.88 * Math.exp(-sinceLift / 0.9)) *
-            (sim.gear > 0 ? 1 : 0.4)
+        inp.thr < 0.15 && sim.rpm > 1800
+          ? liftK * Math.min(1, (sim.rpm - 1800) / 1500) * (0.15 + 0.85 * Math.exp(-sinceLift / 1.2))
           : 0;
       const pop = set.pop && !cranking ? EXHAUST[set.exhaust].popMul * (cut ? (loaded ? 0.7 : 0) : overrun) : 0;
       const thrA = sim.blipT > 0 ? Math.max(inp.thr, 0.7) : inp.thr; // 다운시프트 레브매칭 블립

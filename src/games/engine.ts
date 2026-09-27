@@ -359,9 +359,10 @@ export const EXHAUST: Record<
   // 셸프 코너는 레브 기본파(200~300Hz)를 건드리지 않게 낮게. pipe 공진은 길게 울려 펄스 사이를 채운다 (실측 크레스트 10~13dB).
   // fb 는 음수: 열린 관 끝의 압력 반사는 위상이 반전돼 1/4파장 공진(홀수 배음, DC 봉우리 없음)이 된다. 양수면 DC 근처가 +5dB 부풀어 100Hz 아래가 과해진다.
   // flow·fb 는 낮게: 광대역 노이즈가 공진관을 지나면 '소라 껍데기' 휘파람이 된다. 녹음의 배음 사이 바닥은 바람·공간음이라 엔진음 기준으로 맞추지 않는다.
-  stock: { lp: 550, f1: 100, g1: 4, g2: 2, drive: 1.3, tau: 0.004, noise: 0.15, popMul: 0.4, popLp: 1500, vol: 0.6, pipe: 0.005, fb: -0.12, fbLp: 500, shelf: -6, shelfHz: 80, pres: 0, hs: -6, flow: 0 },
-  sport: { lp: 2200, f1: 130, g1: 3, g2: 0.5, drive: 1.8, tau: 0.002, noise: 0.2, popMul: 1, popLp: 3500, vol: 0.85, pipe: 0.004, fb: -0.15, fbLp: 1200, shelf: -14, shelfHz: 110, pres: 2, hs: -2, flow: 0 },
-  straight: { lp: 5000, f1: 150, g1: 5, g2: -3, drive: 3, tau: 0.003, noise: 0.3, popMul: 1.4, popLp: 7000, vol: 1, pipe: 0.0035, fb: -0.15, fbLp: 3000, shelf: -18, shelfHz: 150, pres: -3, hs: -12, flow: 0.02 },
+  // 관점은 테일파이프 바로 옆: 멀리서 찍은 녹음보다 저역이 무겁다. shelf 는 절반, 펄스는 3ms, 300~1k 는 억제.
+  stock: { lp: 500, f1: 90, g1: 5, g2: 1, drive: 1.3, tau: 0.004, noise: 0.1, popMul: 0.4, popLp: 1500, vol: 0.6, pipe: 0.005, fb: -0.12, fbLp: 500, shelf: -3, shelfHz: 70, pres: -2, hs: -8, flow: 0 },
+  sport: { lp: 1600, f1: 110, g1: 5, g2: 0, drive: 2.2, tau: 0.003, noise: 0.12, popMul: 1, popLp: 3500, vol: 0.85, pipe: 0.004, fb: -0.15, fbLp: 1200, shelf: -7, shelfHz: 90, pres: -1, hs: -5, flow: 0 },
+  straight: { lp: 4000, f1: 130, g1: 6, g2: -3, drive: 3, tau: 0.003, noise: 0.2, popMul: 1.4, popLp: 7000, vol: 1, pipe: 0.0035, fb: -0.15, fbLp: 3000, shelf: -9, shelfHz: 110, pres: -3, hs: -12, flow: 0.01 },
 };
 
 /**
@@ -479,7 +480,7 @@ class EngineProcessor extends AudioWorkletProcessor {
       for (let b = 0; b < 2; b++) {
         const r = popRate * (burst[b] > 0 ? 6 : 1);
         if (r > 0 && Math.random() < r) {
-          const big = burst[b] <= 0 && Math.random() < 0.3;
+          const big = burst[b] <= 0 && Math.random() < 0.15 + 0.35 * pop; // 뗀 직후(pop 큼)엔 큰 뱅 비율이 높다
           const A = big ? 3 + 2 * Math.random() : 0.6 + 0.8 * Math.random();
           pimp[b] = A;
           pcr[b] = A * 0.5; pcrDec[b] = big ? this.crDecBang : this.crDecPop;
