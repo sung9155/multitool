@@ -20,6 +20,10 @@ import {
   type Pad,
 } from "./logic.ts";
 import {
+  CUSTOM_CURVE,
+  ignitionAdvance,
+  netTorque,
+  throttleEff,
   defaultOrder,
   effectiveLayout,
   engineName,
@@ -618,6 +622,17 @@ assert.deepEqual(resolveLanding([cyl], 27, 0), {
 
   // 토크 곡선 형태
   assert.ok(torqueShape(0.6) === 1 && torqueShape(0.1) < torqueShape(0.6) && torqueShape(1) < 1);
+  // 스로틀 맵: 0→0, 1→1, 단조 증가, 저회전에선 같은 개도로 더 많은 토크
+  assert.equal(throttleEff(0, 0.5), 0);
+  assert.ok(Math.abs(throttleEff(1, 0.5) - 1) < 1e-9);
+  for (let i = 1; i <= 10; i++) assert.ok(throttleEff(i / 10, 0.3) > throttleEff((i - 1) / 10, 0.3));
+  assert.ok(throttleEff(0.3, 0.1) > 0.55 && throttleEff(0.3, 1) < 0.5, "저회전 30% 개도가 고회전보다 토크 비율 높아야");
+  // 점화 맵: 경부하 진각, 고부하 고회전 지각, 5~45° 범위
+  assert.ok(ignitionAdvance(0.3, 0) > ignitionAdvance(0.3, 1));
+  assert.ok(ignitionAdvance(1, 1) < ignitionAdvance(0.5, 1));
+  for (let x = 0; x <= 1; x += 0.1) for (let t = 0; t <= 1; t += 0.25) { const a = ignitionAdvance(x, t); assert.ok(a > 5 && a < 45, `점화 ${x} ${t} ${a}`); }
+  // 순 토크: 개도 0 이면 음수(엔진 브레이크), 전개면 곡선값
+  assert.ok(netTorque(200, CUSTOM_CURVE, 0.5, 0) < 0 && Math.abs(netTorque(200, CUSTOM_CURVE, 0.6, 1) - 200) < 1e-9);
 
   // 점화순서 파싱 · 순서 지정 패턴
   assert.deepEqual(parseOrder("1-8-4-3-6-5-7-2", 8), [1, 8, 4, 3, 6, 5, 7, 2]);

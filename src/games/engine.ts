@@ -149,6 +149,28 @@ export function torqueShape(x: number, c: Curve = CUSTOM_CURVE): number {
   const v = Math.max(0, Math.min(1.2, x));
   return v < c.peakAt ? c.floor + (1 - c.floor) * (v / c.peakAt) : 1 - (1 - c.end) * ((v - c.peakAt) / (1 - c.peakAt));
 }
+/**
+ * 스로틀 맵: 개도 → 공기량(토크) 비율. 저회전에선 조금만 열어도 공기가 거의 다 차서 앞쪽이 가파르고,
+ * 고회전에선 선형에 가깝다. x = rpm/레드라인.  ECU 토크 테이블(rpm × 개도)의 열 방향 형태가 이것.
+ */
+export function throttleEff(thr: number, x: number): number {
+  const t = Math.max(0, Math.min(1, thr));
+  const k = 3.5 - 2.5 * Math.max(0, Math.min(1, x));
+  return (1 - Math.exp(-k * t)) / (1 - Math.exp(-k));
+}
+/** 순 토크(Nm): 연소 토크 − 펌핑/마찰 손실. 개도 0 이면 음수(엔진 브레이크) */
+export function netTorque(Tpk: number, curve: Curve, x: number, thr: number): number {
+  return Tpk * torqueShape(x, curve) * throttleEff(thr, x) - 0.15 * Tpk * x * (1 - Math.min(1, thr / 0.1));
+}
+/**
+ * 점화 시기 맵(° BTDC): 부하가 낮으면 진각(연소가 느림), 고부하·고회전은 노크 한계로 지각.
+ * 오버런 팝 영역과 리미터는 ECU 가 이 표 위에 덧씌우는 특수 영역 (표시는 EcuMap 에서).
+ */
+export function ignitionAdvance(x: number, thr: number): number {
+  const xx = Math.max(0, Math.min(1.1, x));
+  const t = Math.max(0, Math.min(1, thr));
+  return 10 + 8 * Math.min(1, xx / 0.4) + 20 * Math.pow(1 - t, 0.8) - 4 * Math.max(0, xx - 0.8) * t;
+}
 /** 엔진+플라이휠+클러치 관성 kg·m² — 배기량에 비례, 디젤은 무겁다 */
 export function engineInertia(liters: number, diesel = false): number {
   return (0.02 + 0.06 * liters) * (diesel ? 1.5 : 1); // 250cc 단기통 0.035 · 2.0L 0.14 · 5.0L V8 0.32
@@ -260,7 +282,7 @@ export function stepSim(s: Sim, inp: Input, set: Setup, dt: number): void {
 
   const x = s.rpm / set.redline;
   const load = s.cut ? 0 : shifting ? (tr.cutOnShift ? 0 : 0.3) : 1;
-  const Teng = Tpk * torqueShape(x, curve) * inp.thr * load;
+  const Teng = Tpk * torqueShape(x, curve) * throttleEff(inp.thr, x) * load; // 스로틀 맵 적용
 
   const drag = 0.6 * veh.cda * s.v * s.v; // 0.5·ρ(1.2)·CdA·v²
   const roll = 0.012 * M * G;

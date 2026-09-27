@@ -16,13 +16,17 @@ import {
   engineName,
   firingPattern,
   idleRpm,
+  ignitionAdvance,
+  netTorque,
   newSim,
   parseOrder,
   peakTorque,
   shift,
   stepSim,
+  throttleEff,
   torqueShape,
   type Crank,
+  type Curve,
   type ExhaustKind,
   type Layout,
   type PopStyle,
@@ -105,6 +109,14 @@ const L10N: Record<Lang, Record<string, string>> = {
     popHint_pop: "적당한 팝에 가끔 뱅 — 흔한 스테이지1 팝맵",
     popHint_bang: "드물지만 큰 총소리 — 연료를 모았다 한 번에 터뜨림",
     popHint_antilag: "오프스로틀 내내 크래클 + 리미터 뱅 — 랠리 안티랙 식",
+    ecuMap: "ECU 맵 (rpm × 개도)",
+    mapTorque: "토크",
+    mapIgn: "점화 시기",
+    axisThr: "개도",
+    regionPop: "팝앤뱅 (오버런: 분사 유지 + 점화 지각)",
+    regionLimit: "리미터 (컷)",
+    regionLaunch: "런치컨트롤",
+    ecuMapNote: "실제 ECU 는 rpm×부하 표를 보간해 연료·점화·부스트를 정하고, 리맵은 이 칸들의 값을 고쳐 쓰는 것. 흰 점이 현재 운전점.",
   },
   en: {
     start: "🔑 Start",
@@ -179,6 +191,14 @@ const L10N: Record<Lang, Record<string, string>> = {
     popHint_pop: "Moderate pops with occasional bangs — a typical stage-1 pop map",
     popHint_bang: "Rare but loud gunshots — fuel builds up, then one big one",
     popHint_antilag: "Crackle whenever off throttle plus limiter bangs — rally anti-lag style",
+    ecuMap: "ECU map (rpm × throttle)",
+    mapTorque: "Torque",
+    mapIgn: "Ignition timing",
+    axisThr: "throttle",
+    regionPop: "Pops & bangs (overrun: keep fuel, retard spark)",
+    regionLimit: "Rev limiter (cut)",
+    regionLaunch: "Launch control",
+    ecuMapNote: "A real ECU interpolates rpm×load tables for fuel, spark and boost; a remap rewrites these cells. The white dot is the current operating point.",
   },
   zh: {
     start: "🔑 点火",
@@ -253,6 +273,14 @@ const L10N: Record<Lang, Record<string, string>> = {
     popHint_pop: "适度回火加偶尔爆响 — 常见的一阶程序",
     popHint_bang: "稀少但很响的枪声 — 燃油积累后一次爆发",
     popHint_antilag: "松油门期间持续噼啪 + 限转爆响 — 拉力防迟滞式",
+    ecuMap: "ECU 脉谱 (转速 × 开度)",
+    mapTorque: "扭矩",
+    mapIgn: "点火提前角",
+    axisThr: "开度",
+    regionPop: "回火爆响 (收油: 保持喷油 + 推迟点火)",
+    regionLimit: "限转 (断火)",
+    regionLaunch: "弹射起步",
+    ecuMapNote: "真实 ECU 通过插值转速×负荷表决定喷油、点火和增压，刷写就是改这些格子的值。白点为当前工况点。",
   },
 };
 
@@ -371,6 +399,130 @@ function LayoutIcon({ n, lay }: { n: number; lay: Layout }) {
         <circle key={i} cx={x} cy={y} r="3" fill="none" stroke="#a1a1aa" strokeWidth="1.3" />
       ))}
     </svg>
+  );
+}
+
+/**
+ * ECU 3D 맵: rpm(행) × 개도(열) 표를 아이소메트릭으로. 셀 높이·색 = 값(토크 Nm 또는 점화 ° BTDC).
+ * ECU 가 표 위에 덧씌우는 특수 영역을 그대로 반영: 리미터(컷 → 토크 0 / 점화 없음), 팝앤뱅(오버런 지각 → 음수 점화), 런치(리미터 낮춤).
+ */
+function EcuMap({
+  mode,
+  torque,
+  curve,
+  idle,
+  redline,
+  popStyle,
+  lcOn,
+  lcRpm,
+  live,
+  labels,
+}: {
+  mode: "torque" | "ignition";
+  torque: number;
+  curve: Curve;
+  idle: number;
+  redline: number;
+  popStyle: PopStyle;
+  lcOn: boolean;
+  lcRpm: number;
+  live: { rpm: number; thr: number } | null;
+  labels: { rpm: string; thr: string; pop: string; limit: string; launch: string; unit: string };
+}) {
+  const R = 12;
+  const C = 8;
+  const top = redline + 500;
+  const rpmAt = (i: number) => idle + ((top - idle) * i) / (R - 1);
+  const thrAt = (j: number) => j / (C - 1);
+  const popMin = POP_STYLES[popStyle].minRpm;
+  const region = (rpm: number, thr: number): "limit" | "launch" | "pop" | null =>
+    rpm >= redline ? "limit" : lcOn && rpm >= lcRpm && thr >= 0.5 ? "launch" : popStyle !== "off" && thr <= 0.15 && rpm >= popMin ? "pop" : null;
+  const val = (rpm: number, thr: number) => {
+    const reg = region(rpm, thr);
+    const x = rpm / redline;
+    if (mode === "torque") return reg === "limit" || reg === "launch" ? -0.15 * torque * x : netTorque(torque, curve, x, thr);
+    if (reg === "limit" || reg === "launch") return 0; // 점화 컷
+    if (reg === "pop") return -8; // 오버런 지각 (ATDC)
+    return ignitionAdvance(x, thr);
+  };
+  const grid = Array.from({ length: R }, (_, i) => Array.from({ length: C }, (_, j) => val(rpmAt(i), thrAt(j))));
+  const flat = grid.flat();
+  const vmin = Math.min(...flat);
+  const vmax = Math.max(...flat);
+  const norm = (v: number) => (vmax === vmin ? 0.5 : (v - vmin) / (vmax - vmin));
+  // 아이소메트릭: 열(개도)은 오른쪽 아래로, 행(rpm)은 왼쪽 아래로
+  const ax = 30, ay = 12, bx = 14, by = 9, zh = 80, ox = 170, oy = 96;
+  const pt = (i: number, j: number, v: number): [number, number] => [ox + j * ax - i * bx, oy + j * ay + i * by - norm(v) * zh];
+  const color = (v: number, reg: ReturnType<typeof region>) => {
+    if (reg === "limit") return "#dc2626";
+    if (reg === "launch") return "#2563eb";
+    if (reg === "pop") return "#ea580c";
+    return `hsl(${Math.round(220 - 220 * norm(v))} 80% ${45 + 15 * norm(v)}%)`;
+  };
+  const cells: { i: number; j: number }[] = [];
+  for (let i = 0; i < R - 1; i++) for (let j = 0; j < C - 1; j++) cells.push({ i, j });
+  cells.sort((a, b) => a.i + a.j - (b.i + b.j)); // 뒤(작은 i+j)부터 그린다
+  const fmt = (v: number) => (mode === "torque" ? `${Math.round(v)} Nm` : `${v.toFixed(0)}° ${v < 0 ? "ATDC" : "BTDC"}`);
+  let dot: [number, number] | null = null;
+  let liveVal = 0;
+  if (live) {
+    const fi = Math.max(0, Math.min(R - 1, ((live.rpm - idle) / (top - idle)) * (R - 1)));
+    const fj = Math.max(0, Math.min(C - 1, live.thr * (C - 1)));
+    liveVal = val(Math.max(idle, Math.min(top, live.rpm)), live.thr);
+    dot = pt(fi, fj, liveVal);
+  }
+  const [x0, y0] = pt(0, 0, vmin);
+  const [xr, yr] = pt(R - 1, 0, vmin);
+  const [xc, yc] = pt(0, C - 1, vmin);
+  return (
+    <div>
+      <svg viewBox="0 0 380 230" className="w-full max-w-md">
+        {cells.map(({ i, j }) => {
+          const reg = region(rpmAt(i), thrAt(j));
+          const v = (grid[i][j] + grid[i][j + 1] + grid[i + 1][j] + grid[i + 1][j + 1]) / 4;
+          const d = [pt(i, j, grid[i][j]), pt(i, j + 1, grid[i][j + 1]), pt(i + 1, j + 1, grid[i + 1][j + 1]), pt(i + 1, j, grid[i + 1][j])]
+            .map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`)
+            .join(" ");
+          return <polygon key={`${i}-${j}`} points={d} fill={color(v, reg)} stroke="#18181b" strokeWidth="0.6" opacity={reg ? 0.9 : 0.95} />;
+        })}
+        <text x={xr - 4} y={yr + 12} fontSize="9" fill="#a1a1aa" textAnchor="end">
+          {Math.round(top)} {labels.rpm}
+        </text>
+        <text x={x0 - 4} y={y0 + 12} fontSize="9" fill="#a1a1aa" textAnchor="end">
+          {idle}
+        </text>
+        <text x={xc + 6} y={yc + 12} fontSize="9" fill="#a1a1aa">
+          100% {labels.thr}
+        </text>
+        {dot && (
+          <g>
+            <line x1={dot[0]} y1={dot[1]} x2={dot[0]} y2={dot[1] + 14} stroke="#fff" strokeWidth="1" />
+            <circle cx={dot[0]} cy={dot[1]} r="4.5" fill="#fff" stroke="#000" strokeWidth="1.5" />
+          </g>
+        )}
+      </svg>
+      <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs text-zinc-500">
+        <span>
+          <span className="mr-1 inline-block h-2.5 w-2.5 rounded-sm bg-orange-600" />
+          {labels.pop}
+        </span>
+        <span>
+          <span className="mr-1 inline-block h-2.5 w-2.5 rounded-sm bg-red-600" />
+          {labels.limit}
+        </span>
+        {lcOn && (
+          <span>
+            <span className="mr-1 inline-block h-2.5 w-2.5 rounded-sm bg-blue-600" />
+            {labels.launch}
+          </span>
+        )}
+        {live && (
+          <span className="font-mono text-zinc-700 dark:text-zinc-300">
+            {Math.round(live.rpm)} rpm · {Math.round(live.thr * 100)}% → {fmt(liveVal)}
+          </span>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -538,7 +690,8 @@ export default function EngineSim() {
 
   const [running, setRunning] = useState(false);
   const [noAudio, setNoAudio] = useState(false);
-  const [view, setView] = useState({ rpm: 0, kmh: 0, gear: 0, cut: false, lc: false, shifting: false, cranking: false, z100: null as number | null, nm: 0, hp: 0, slip: false });
+  const [mapMode, setMapMode] = useState<"torque" | "ignition">("torque");
+  const [view, setView] = useState({ rpm: 0, kmh: 0, gear: 0, cut: false, lc: false, shifting: false, cranking: false, z100: null as number | null, nm: 0, hp: 0, slip: false, thr: 0 });
   const [pressed, setPressed] = useState({ gas: 0, brake: false });
 
   const simRef = useRef(newSim());
@@ -646,7 +799,7 @@ export default function EngineSim() {
     setRunning(false);
     audioRef.current?.ctx.close();
     audioRef.current = null;
-    setView({ rpm: 0, kmh: 0, gear: 0, cut: false, lc: false, shifting: false, cranking: false, z100: null as number | null, nm: 0, hp: 0, slip: false });
+    setView({ rpm: 0, kmh: 0, gear: 0, cut: false, lc: false, shifting: false, cranking: false, z100: null as number | null, nm: 0, hp: 0, slip: false, thr: 0 });
   };
   useEffect(() => () => void audioRef.current?.ctx.close(), []);
 
@@ -688,7 +841,7 @@ export default function EngineSim() {
         z100 = null;
       }
       if (z100 === null && launchT >= 0 && sim.v >= 100 / 3.6) z100 = (now - launchT) / 1000;
-      const nm = (set.torque ?? 0) * torqueShape(sim.rpm / set.redline, set.curve ?? CUSTOM_CURVE) * inp.thr;
+      const nm = (set.torque ?? 0) * torqueShape(sim.rpm / set.redline, set.curve ?? CUSTOM_CURVE) * throttleEff(inp.thr, sim.rpm / set.redline);
       const loaded = inp.thr > 0.2;
       // 변속컷은 부하 걸린 채 변속(플랫시프트)할 때만 — N→1 같은 무부하 변속엔 컷/팝 없음
       const cut = !cranking && (sim.cut || (sim.shiftT > 0 && tr.cutOnShift && loaded));
@@ -728,6 +881,7 @@ export default function EngineSim() {
         nm,
         hp: (nm * sim.rpm) / 7127,
         slip: sim.slip,
+        thr: inp.thr,
       });
       raf = requestAnimationFrame(loop);
     };
@@ -1150,6 +1304,34 @@ export default function EngineSim() {
             </div>
             <input type="range" min={0} max={100} step={5} value={vol} onChange={(e) => setVol(Number(e.target.value))} className="w-full accent-violet-600" />
           </label>
+
+          {/* ECU 3D 맵: rpm × 개도 토크/점화 테이블 + 특수 영역 + 현재 운전점 */}
+          <div className="pt-2">
+            <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+              <div className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">{s("ecuMap")}</div>
+              <Seg
+                value={mapMode}
+                options={[
+                  { v: "torque", label: s("mapTorque") },
+                  { v: "ignition", label: s("mapIgn") },
+                ]}
+                onChange={setMapMode}
+              />
+            </div>
+            <EcuMap
+              mode={mapMode}
+              torque={spec.torque}
+              curve={spec.curve}
+              idle={spec.idle}
+              redline={redline}
+              popStyle={diesel ? "off" : popStyle}
+              lcOn={lcOn}
+              lcRpm={lcRpm}
+              live={running && !view.cranking ? { rpm: view.rpm, thr: view.thr } : null}
+              labels={{ rpm: "rpm", thr: s("axisThr"), pop: s("regionPop"), limit: s("regionLimit"), launch: s("regionLaunch"), unit: "" }}
+            />
+            <p className="mt-1 text-xs text-zinc-500">{s("ecuMapNote")}</p>
+          </div>
         </div>
       </div>
 
