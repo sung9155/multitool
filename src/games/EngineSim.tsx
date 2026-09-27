@@ -297,7 +297,7 @@ async function buildAudio(): Promise<Audio> {
   pipe.connect(comp);
   const php = new BiquadFilterNode(ctx, { type: "highpass", frequency: 150, Q: 0.7 });
   const plp = new BiquadFilterNode(ctx, { type: "lowpass", frequency: 3500, Q: 0.7 });
-  const pgain = new GainNode(ctx, { gain: 1.3 });
+  const pgain = new GainNode(ctx, { gain: 2.0 }); // 뱅은 새추레이션을 넘길 만큼 크게 — 배기관 공진도 같이 울린다
   node.connect(php, 1, 0);
   php.connect(plp).connect(pgain).connect(shaper);
   const ibp = new BiquadFilterNode(ctx, { type: "bandpass", frequency: 600, Q: 0.6 });

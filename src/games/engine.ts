@@ -402,13 +402,14 @@ class EngineProcessor extends AudioWorkletProcessor {
     this.jit = 0.15;
     this.width = 0;
     this.bank = [1, 0.85];
-    // 팝앤뱅 (음정 없음): 임펄스 스냅(1.5ms) · 크랙(미분 노이즈, 팝 8ms / 뱅 25ms) · 뱅만 브라운 꼬리(40ms) · 크래클 버스트
+    // 팝앤뱅 (음정 없음): 배기 이벤트(점화각)마다 확률로 터진다 → 크랭크 속도에 맞는 크래클. 안 터진 이벤트만큼 연료(fuel)가 쌓여 큰 뱅.
+    // 파형: 임펄스 스냅(1ms) · 크랙(미분 노이즈, 팝 6ms / 뱅 20ms) · 뱅만 브라운 꼬리(30ms)
     this.pimp = [0, 0]; this.pcr = [0, 0]; this.pcrDec = [0, 0]; this.ptl = [0, 0];
-    this.lastW = [0, 0]; this.bn = [0, 0]; this.burst = [0, 0];
-    this.impDec = Math.exp(-1 / (0.0015 * sampleRate));
-    this.crDecPop = Math.exp(-1 / (0.008 * sampleRate));
-    this.crDecBang = Math.exp(-1 / (0.025 * sampleRate));
-    this.tlDec = Math.exp(-1 / (0.04 * sampleRate));
+    this.lastW = [0, 0]; this.bn = [0, 0]; this.fuel = [0, 0];
+    this.impDec = Math.exp(-1 / (0.001 * sampleRate));
+    this.crDecPop = Math.exp(-1 / (0.006 * sampleRate));
+    this.crDecBang = Math.exp(-1 / (0.02 * sampleRate));
+    this.tlDec = Math.exp(-1 / (0.03 * sampleRate));
     this.port.onmessage = (e) => {
       const d = e.data;
       if (d.fires) this.fires = d.fires;
@@ -436,8 +437,8 @@ class EngineProcessor extends AudioWorkletProcessor {
     const c01 = (x) => (x < 0 ? 0 : x > 1 ? 1 : x);
     const ov = 1 - 0.6 * c01((rpm - 2000) / 1000) * (1 - c01(thr / 0.1));
     const amp = ((0.3 + 0.7 * thr) * ov) / Math.sqrt(Math.max(1, fps * this.tau)); // 펄스 겹침 정규화
-    const popRate = (pop * 5) / sampleRate; // 뱅크당 초당 5회 @ pop=1 (푸아송)
-    const pimp = this.pimp, pcr = this.pcr, pcrDec = this.pcrDec, ptl = this.ptl, lastW = this.lastW, bn = this.bn, burst = this.burst;
+    const pp = pop * 0.55; // 배기 이벤트당 후연소 확률 (pop=1 이면 절반 이상 → 기관총 크래클)
+    const pimp = this.pimp, pcr = this.pcr, pcrDec = this.pcrDec, ptl = this.ptl, lastW = this.lastW, bn = this.bn, fuel = this.fuel;
     const impDec = this.impDec, tlDec = this.tlDec;
     // 출력 1 이 연결돼 있으면 팝은 그쪽(밝은 별도 필터 경로)으로, 아니면 엔진 출력에 섞는다
     const out1 = outputs[1];
@@ -457,6 +458,16 @@ class EngineProcessor extends AudioWorkletProcessor {
             if (!cut) env[f.b] += amp * bank[f.b] * (1 + jit * Math.min(1, 1500 / Math.max(1, rpm)) * (Math.random() * 2 - 1));
             ienv[f.b] += amp * 0.6 * (0.15 + 0.85 * thr) * this.mech; // 흡기는 컷 중에도 (공기는 계속 흐른다), 개도에 강하게 비례
             this.tick += 0.05 * this.mech;
+            // 후연소: 이 실린더의 배기 이벤트에서 미연소 혼합기가 터질지. 건너뛴 이벤트만큼 fuel 이 쌓여 다음 팝이 커진다(뱅)
+            const b = f.b;
+            if (pp > 0) {
+              if (Math.random() < pp) {
+                const A = 0.8 + 0.5 * Math.random() + 0.45 * fuel[b];
+                const big = A > 1.8;
+                pimp[b] = A * 1.3; pcr[b] = A * 0.7; pcrDec[b] = big ? this.crDecBang : this.crDecPop; ptl[b] = big ? A * 0.35 : A * 0.08;
+                fuel[b] = 0;
+              } else fuel[b] = Math.min(6, fuel[b] + 1);
+            } else fuel[b] = 0;
           }
         }
         this.ang = a1 >= cycle ? a1 - cycle : a1;
@@ -475,19 +486,9 @@ class EngineProcessor extends AudioWorkletProcessor {
         IL[i] = iv; IR[i] = iv;
       }
       ienv[0] *= iDec; ienv[1] *= iDec; this.tick *= tDec;
-      // 팝앤뱅: 가끔 큰 뱅(임펄스 + 긴 크랙 + 브라운 꼬리) 뒤에 잔 크래클 버스트. 음정 성분 없음 — 저음은 배기관 공진 몫
+      // 팝 파형 합성 (트리거는 위 점화 루프에서 배기 이벤트에 맞춰). 음정 성분 없음 — 저음은 배기관 공진 몫
       let p0 = 0, p1 = 0;
       for (let b = 0; b < 2; b++) {
-        const r = popRate * (burst[b] > 0 ? 6 : 1);
-        if (r > 0 && Math.random() < r) {
-          const big = burst[b] <= 0 && Math.random() < 0.15 + 0.35 * pop; // 뗀 직후(pop 큼)엔 큰 뱅 비율이 높다
-          const A = big ? 3 + 2 * Math.random() : 0.6 + 0.8 * Math.random();
-          pimp[b] = A;
-          pcr[b] = A * 0.5; pcrDec[b] = big ? this.crDecBang : this.crDecPop;
-          ptl[b] = big ? A * 0.25 : 0;
-          if (big) burst[b] = (0.1 + 0.15 * Math.random()) * sampleRate;
-        }
-        if (burst[b] > 0) burst[b]--;
         const w = Math.random() * 2 - 1;
         let pb = pimp[b] * w; pimp[b] *= impDec; // 스냅
         pb += pcr[b] * (w - lastW[b]) * 0.7; lastW[b] = w; pcr[b] *= pcrDec[b]; // 크랙 (고역 강조 노이즈)
