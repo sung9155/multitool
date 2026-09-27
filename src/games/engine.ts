@@ -361,8 +361,9 @@ export const EXHAUST: Record<
   // flow·fb 는 낮게: 광대역 노이즈가 공진관을 지나면 '소라 껍데기' 휘파람이 된다. 녹음의 배음 사이 바닥은 바람·공간음이라 엔진음 기준으로 맞추지 않는다.
   // 관점은 테일파이프 바로 옆: 멀리서 찍은 녹음보다 저역이 무겁다. shelf 는 절반, 펄스는 3ms, 300~1k 는 억제.
   stock: { lp: 500, f1: 90, g1: 5, g2: 1, drive: 1.3, tau: 0.004, noise: 0.1, popMul: 0.4, popLp: 1500, vol: 0.6, pipe: 0.005, fb: -0.12, fbLp: 500, shelf: -3, shelfHz: 70, pres: -2, hs: -8, flow: 0 },
-  sport: { lp: 1600, f1: 110, g1: 5, g2: 0, drive: 2.2, tau: 0.003, noise: 0.12, popMul: 1, popLp: 3500, vol: 0.85, pipe: 0.004, fb: -0.15, fbLp: 1200, shelf: -7, shelfHz: 90, pres: -1, hs: -5, flow: 0 },
-  straight: { lp: 4000, f1: 130, g1: 6, g2: -3, drive: 3, tau: 0.003, noise: 0.2, popMul: 1.4, popLp: 7000, vol: 1, pipe: 0.0035, fb: -0.15, fbLp: 3000, shelf: -9, shelfHz: 110, pres: -3, hs: -12, flow: 0.01 },
+  // sport/straight 의 pipe 공진(fb)은 거의 끔: 통과대역 안의 콤 봉우리가 '빈 파이프' 음색을 만든다. 거친 질감은 drive(새추레이션)로.
+  sport: { lp: 1400, f1: 110, g1: 5, g2: 0, drive: 2.8, tau: 0.003, noise: 0.05, popMul: 1, popLp: 3500, vol: 0.85, pipe: 0.004, fb: -0.04, fbLp: 1200, shelf: -7, shelfHz: 90, pres: -2, hs: -6, flow: 0 },
+  straight: { lp: 3000, f1: 130, g1: 6, g2: -3, drive: 3.5, tau: 0.003, noise: 0.08, popMul: 1.4, popLp: 7000, vol: 1, pipe: 0.0035, fb: -0.05, fbLp: 3000, shelf: -9, shelfHz: 110, pres: -4, hs: -12, flow: 0 },
 };
 
 /**
