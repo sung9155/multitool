@@ -366,6 +366,29 @@ export const EXHAUST: Record<
   straight: { lp: 3000, f1: 130, g1: 6, g2: -3, drive: 3.5, tau: 0.003, noise: 0.08, popMul: 1.4, popLp: 7000, vol: 1, pipe: 0.0035, fb: -0.05, fbLp: 3000, shelf: -9, shelfHz: 110, pres: -4, hs: -12, flow: 0 },
 };
 
+// ── 팝앤뱅 스타일 (ECU 맵 종류) ───────────────────────────
+export type PopStyle = "off" | "crackle" | "pop" | "bang" | "antilag";
+export const POP_STYLES: Record<
+  PopStyle,
+  {
+    prob: number; // 배기 이벤트당 후연소 확률 (pop 세기 1 기준)
+    amp: number; // 팝 크기 배율
+    fuel: number; // 건너뛴 이벤트당 연료 누적 → 다음 팝 크기 증가
+    bangTh: number; // 이 진폭을 넘으면 뱅(긴 크랙 + 저음 꼬리)
+    decay: number; // 뗀 뒤 감쇠 시정수(s)
+    floor: number; // 감쇠 후 잔여 비율
+    always: number; // 리프트와 무관하게 오프스로틀이면 유지되는 세기 (안티랙)
+    minRpm: number; // 이 아래에선 안 남
+    limiter: number; // 리미터/변속 컷 중 세기
+  }
+> = {
+  off: { prob: 0, amp: 0, fuel: 0, bangTh: 9, decay: 0.8, floor: 0, always: 0, minRpm: 1800, limiter: 0 },
+  crackle: { prob: 0.5, amp: 0.65, fuel: 0.1, bangTh: 9, decay: 1.0, floor: 0.08, always: 0, minRpm: 1800, limiter: 0.4 },
+  pop: { prob: 0.25, amp: 1, fuel: 0.3, bangTh: 1.8, decay: 0.8, floor: 0.06, always: 0, minRpm: 1800, limiter: 0.5 },
+  bang: { prob: 0.07, amp: 1.5, fuel: 0.9, bangTh: 1.3, decay: 0.7, floor: 0.03, always: 0, minRpm: 2200, limiter: 0.8 },
+  antilag: { prob: 0.35, amp: 1.2, fuel: 0.5, bangTh: 1.6, decay: 2.0, floor: 0.3, always: 0.6, minRpm: 1200, limiter: 0.9 },
+};
+
 /**
  * AudioWorklet 프로세서 소스. Blob URL 로 로드 (별도 파일/번들 설정 없음).
  * 원리: 크랭크각을 샘플 단위로 진행, 점화각 통과 시 뱅크별 배기 펄스(한쪽 방향 지수감쇠 + 노이즈) 발생.
@@ -407,6 +430,7 @@ class EngineProcessor extends AudioWorkletProcessor {
     // 파형: 임펄스 스냅(1ms) · 크랙(미분 노이즈, 팝 6ms / 뱅 20ms) · 뱅만 브라운 꼬리(30ms)
     this.pimp = [0, 0]; this.pcr = [0, 0]; this.pcrDec = [0, 0]; this.ptl = [0, 0];
     this.lastW = [0, 0]; this.bn = [0, 0]; this.fuel = [0, 0];
+    this.popProb = 0.25; this.popAmp = 1; this.popFuel = 0.3; this.popBang = 1.8; // 팝 스타일 (POP_STYLES)
     this.impDec = Math.exp(-1 / (0.001 * sampleRate));
     this.crDecPop = Math.exp(-1 / (0.006 * sampleRate));
     this.crDecBang = Math.exp(-1 / (0.02 * sampleRate));
@@ -419,6 +443,7 @@ class EngineProcessor extends AudioWorkletProcessor {
       if (d.noise !== undefined) this.noise = d.noise;
       if (d.flow !== undefined) this.flow = d.flow;
       if (d.mech !== undefined) this.mech = d.mech;
+      if (d.popProb !== undefined) { this.popProb = d.popProb; this.popAmp = d.popAmp; this.popFuel = d.popFuel; this.popBang = d.popBang; }
       if (d.jit !== undefined) this.jit = d.jit;
       if (d.width !== undefined) this.width = d.width;
       if (d.bank) this.bank = d.bank;
@@ -438,7 +463,8 @@ class EngineProcessor extends AudioWorkletProcessor {
     const c01 = (x) => (x < 0 ? 0 : x > 1 ? 1 : x);
     const ov = 1 - 0.6 * c01((rpm - 2000) / 1000) * (1 - c01(thr / 0.1));
     const amp = ((0.3 + 0.7 * thr) * ov) / Math.sqrt(Math.max(1, fps * this.tau)); // 펄스 겹침 정규화
-    const pp = pop * 0.25; // 배기 이벤트당 후연소 확률 (pop=1 이면 1/4 → 촘촘하되 기관총은 아님)
+    const pp = pop * this.popProb; // 배기 이벤트당 후연소 확률
+    const popAmp = this.popAmp, popFuel = this.popFuel, popBang = this.popBang;
     const pimp = this.pimp, pcr = this.pcr, pcrDec = this.pcrDec, ptl = this.ptl, lastW = this.lastW, bn = this.bn, fuel = this.fuel;
     const impDec = this.impDec, tlDec = this.tlDec;
     // 출력 1 이 연결돼 있으면 팝은 그쪽(밝은 별도 필터 경로)으로, 아니면 엔진 출력에 섞는다
@@ -463,8 +489,8 @@ class EngineProcessor extends AudioWorkletProcessor {
             const b = f.b;
             if (pp > 0) {
               if (Math.random() < pp) {
-                const A = 0.7 + 0.4 * Math.random() + 0.3 * fuel[b];
-                const big = A > 1.8;
+                const A = (0.7 + 0.4 * Math.random() + popFuel * fuel[b]) * popAmp;
+                const big = A > popBang;
                 pimp[b] = A * 1.3; pcr[b] = A * 0.7; pcrDec[b] = big ? this.crDecBang : this.crDecPop; ptl[b] = big ? A * 0.35 : A * 0.08;
                 fuel[b] = 0;
               } else fuel[b] = Math.min(6, fuel[b] + 1);

@@ -6,6 +6,7 @@ import {
   CUSTOM_CURVE,
   DEFAULT_VEHICLE,
   EXHAUST,
+  POP_STYLES,
   TRANS,
   VEHICLES,
   WORKLET_SRC,
@@ -24,6 +25,7 @@ import {
   type Crank,
   type ExhaustKind,
   type Layout,
+  type PopStyle,
   type Setup,
   type TransKind,
 } from "./engine";
@@ -93,6 +95,16 @@ const L10N: Record<Lang, Record<string, string>> = {
     now: "현재",
     vehicle: "차량",
     vehAuto: "자동 추천",
+    popStyle: "팝앤뱅 맵",
+    popOff: "끔",
+    popCrackle: "크래클",
+    popPop: "팝",
+    popBang: "뱅",
+    popAntilag: "안티랙",
+    popHint_crackle: "잔 팝이 촘촘하고 뱅은 거의 없음 — BMW·AMG 식 버블",
+    popHint_pop: "적당한 팝에 가끔 뱅 — 흔한 스테이지1 팝맵",
+    popHint_bang: "드물지만 큰 총소리 — 연료를 모았다 한 번에 터뜨림",
+    popHint_antilag: "오프스로틀 내내 크래클 + 리미터 뱅 — 랠리 안티랙 식",
   },
   en: {
     start: "🔑 Start",
@@ -157,6 +169,16 @@ const L10N: Record<Lang, Record<string, string>> = {
     now: "Now",
     vehicle: "Vehicle",
     vehAuto: "Auto (suggested)",
+    popStyle: "Pops & bangs map",
+    popOff: "Off",
+    popCrackle: "Crackle",
+    popPop: "Pop",
+    popBang: "Bang",
+    popAntilag: "Anti-lag",
+    popHint_crackle: "Dense small crackles, hardly any bangs — BMW/AMG-style burble",
+    popHint_pop: "Moderate pops with occasional bangs — a typical stage-1 pop map",
+    popHint_bang: "Rare but loud gunshots — fuel builds up, then one big one",
+    popHint_antilag: "Crackle whenever off throttle plus limiter bangs — rally anti-lag style",
   },
   zh: {
     start: "🔑 点火",
@@ -221,6 +243,16 @@ const L10N: Record<Lang, Record<string, string>> = {
     now: "当前",
     vehicle: "车辆",
     vehAuto: "自动推荐",
+    popStyle: "回火爆响程序",
+    popOff: "关",
+    popCrackle: "噼啪",
+    popPop: "回火",
+    popBang: "爆响",
+    popAntilag: "防迟滞",
+    popHint_crackle: "细密的小噼啪，几乎没有爆响 — BMW/AMG 式",
+    popHint_pop: "适度回火加偶尔爆响 — 常见的一阶程序",
+    popHint_bang: "稀少但很响的枪声 — 燃油积累后一次爆发",
+    popHint_antilag: "松油门期间持续噼啪 + 限转爆响 — 拉力防迟滞式",
   },
 };
 
@@ -460,7 +492,8 @@ export default function EngineSim() {
   const [exhaustRaw, setExhaust] = useToolState<ExhaustKind>("ex", "sport");
   const [transRaw, setTrans] = useToolState<TransKind>("tr", "mt");
   const [redline, setRedline] = useToolState("rl", 7500);
-  const [popOn, setPopOn] = useToolState("pop", true);
+  const [popStyleRaw, setPopStyle] = useToolState<PopStyle>("pops", "pop");
+  const popStyle = (POP_STYLES[popStyleRaw as PopStyle] ? popStyleRaw : "pop") as PopStyle;
   const [lcOn, setLcOn] = useToolState("lc", false);
   const [lcRpm, setLcRpm] = useToolState("lcrpm", 4000);
   const [vol, setVol] = useToolState("vol", 70);
@@ -511,7 +544,7 @@ export default function EngineSim() {
   const simRef = useRef(newSim());
   const inputRef = useRef({ gas: 0, brake: false, thr: 0 }); // gas: 목표 개도 0~1
   const audioRef = useRef<Audio | null>(null);
-  type Live = Setup & { exhaust: ExhaustKind; pop: boolean; turbo: boolean; cycle: number };
+  type Live = Setup & { exhaust: ExhaustKind; popStyle: PopStyle; turbo: boolean; cycle: number };
   const live: Live = {
     cyl: eCyl,
     redline,
@@ -525,8 +558,16 @@ export default function EngineSim() {
     cycle,
     veh,
     exhaust,
-    pop: popOn && !diesel, // 디젤은 팝앤뱅 없음
+    popStyle: diesel ? "off" : popStyle, // 디젤은 팝앤뱅 없음
   };
+
+  // 팝 스타일 → 워클릿 (이벤트당 확률 · 크기 · 연료 누적 · 뱅 문턱)
+  useEffect(() => {
+    const a = audioRef.current;
+    if (!a) return;
+    const st = POP_STYLES[popStyle];
+    a.node.port.postMessage({ popProb: st.prob, popAmp: st.amp, popFuel: st.fuel, popBang: st.bangTh });
+  }, [popStyle, running]);
   const setupRef = useRef<Live>(live);
   setupRef.current = live;
 
@@ -651,13 +692,14 @@ export default function EngineSim() {
       const loaded = inp.thr > 0.2;
       // 변속컷은 부하 걸린 채 변속(플랫시프트)할 때만 — N→1 같은 무부하 변속엔 컷/팝 없음
       const cut = !cranking && (sim.cut || (sim.shiftT > 0 && tr.cutOnShift && loaded));
-      // 오버런 팝: 뗀 직후 최대(liftK), 1.2초 시정수로 잦아듦, rpm 이 1800 근처로 내려오면 멈춤. 기어 물림/중립 동일
+      // 오버런 팝: 뗀 직후 최대(liftK), 스타일별 시정수로 잦아듦, minRpm 근처로 내려오면 멈춤. 기어 물림/중립 동일. 안티랙은 오프스로틀 내내(always)
+      const st = POP_STYLES[set.popStyle];
       const sinceLift = (now - liftAt) / 1000;
       const overrun =
-        inp.thr < 0.15 && sim.rpm > 1800
-          ? liftK * Math.min(1, (sim.rpm - 1800) / 1500) * (0.06 + 0.94 * Math.exp(-sinceLift / 0.8))
+        inp.thr < 0.15 && sim.rpm > st.minRpm
+          ? Math.max(liftK, st.always) * Math.min(1, (sim.rpm - st.minRpm) / 1500) * (st.floor + (1 - st.floor) * Math.exp(-sinceLift / st.decay))
           : 0;
-      const pop = set.pop && !cranking ? EXHAUST[set.exhaust].popMul * (cut ? (loaded ? 0.5 : 0) : overrun) : 0;
+      const pop = st.prob > 0 && !cranking ? EXHAUST[set.exhaust].popMul * (cut ? (loaded ? st.limiter : 0) : overrun) : 0;
       const thrA = sim.blipT > 0 ? Math.max(inp.thr, 0.7) : inp.thr; // 다운시프트 레브매칭 블립
       const a = audioRef.current;
       if (a) {
@@ -1072,10 +1114,21 @@ export default function EngineSim() {
             </div>
             <input type="range" min={3000} max={20000} step={250} value={redline} onChange={(e) => setRedline(Number(e.target.value))} className="w-full accent-red-600" />
           </label>
-          <label className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300">
-            <input type="checkbox" checked={popOn} onChange={(e) => setPopOn(e.target.checked)} className="accent-violet-600" />
-            {s("pop")}
-          </label>
+          <div>
+            <div className="mb-1 text-sm text-zinc-700 dark:text-zinc-300">{s("popStyle")}</div>
+            <Seg
+              value={popStyle}
+              options={[
+                { v: "off", label: s("popOff") },
+                { v: "crackle", label: s("popCrackle") },
+                { v: "pop", label: s("popPop") },
+                { v: "bang", label: s("popBang") },
+                { v: "antilag", label: s("popAntilag") },
+              ]}
+              onChange={setPopStyle}
+            />
+            {popStyle !== "off" && <p className="mt-1 text-xs text-zinc-500">{s(`popHint_${popStyle}`)}</p>}
+          </div>
           <label className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300">
             <input type="checkbox" checked={lcOn} onChange={(e) => setLcOn(e.target.checked)} className="accent-violet-600" />
             {s("lc")}
